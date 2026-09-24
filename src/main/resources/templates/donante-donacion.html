@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DonaTrack — Tracking Donation #DT-2026-0412</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Signika:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="navbar">
+    <a href="donante-dashboard.html" class="navbar-brand">
+    <span class="logo-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2.3 4 6.2 4c2.2 0 3.9 1.3 4.8 2.9C11.9 5.3 13.6 4 15.8 4c3.9 0 5.8 4.1 4.2 7.7C19.5 16.4 12 21 12 21z" fill="white"/></svg>
+    </span>
+        DonaTrack
+    </a>
+    <nav class="navbar-links" aria-label="Main navigation">
+        <a href="donante-dashboard.html" class="active" aria-current="page">Dashboard</a>
+        <a href="donante-entidades.html">Entidades beneficiarias</a>
+        <a href="donante-ranking.html">Ranking</a>
+    </nav>
+    <div class="navbar-actions">
+        <span class="badge badge-info"><span class="dot" aria-hidden="true"></span>Seguimiento en tiempo real</span>
+        <span class="avatar">EM</span>
+        <a href="login.html" class="btn btn-ghost btn-sm" title="Sign out">Cerrar sesión</a>
+        <button class="navbar-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+    </div>
+</header>
+
+<main id="main" class="main-content">
+
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+            <li><a href="donante-dashboard.html">Dashboard</a></li>
+            <li aria-current="page">Donation #DT-2026-0412</li>
+        </ol>
+    </nav>
+
+    <div class="split-view">
+
+        <!-- Mapa (marcador: el maquetado no integra un mapa real) -->
+        <section class="map-canvas" aria-label="Live route map">
+            <div class="map-legend">
+                <span class="legend-key"><span class="legend-swatch" style="background: var(--color-text-muted);"></span> Depósito</span>
+                <span class="legend-key"><span class="legend-swatch" style="background: var(--color-primary);"></span> Vehículo</span>
+                <span class="legend-key"><span class="legend-swatch" style="background: var(--color-danger);"></span> Destino</span>
+            </div>
+
+            <div class="map-controls">
+                <button class="icon-btn" aria-label="Zoom in">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <button class="icon-btn" aria-label="Zoom out">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <button class="icon-btn" aria-label="Centre map on vehicle" data-toast-success="Map centred on vehicle ABC-1234">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+                </button>
+            </div>
+
+            <!-- Ruta simulada -->
+            <svg width="100%" height="100%" style="position:absolute; inset:0;" aria-hidden="true">
+                <path d="M 90 380 Q 220 340 300 300 T 520 220 T 720 190" fill="none" stroke="#7CC5D8" stroke-width="3" stroke-dasharray="8 8"/>
+            </svg>
+
+            <span class="map-pin" style="left: 12%; top: 78%;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13"/></svg>
+        Depósito
+      </span>
+
+            <span class="map-pin map-pin-active" style="left: 42%; top: 58%;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Velocidad · 45 km/h
+      </span>
+
+            <span class="map-pin" style="left: 82%; top: 36%; border-color: var(--color-danger); color: var(--color-danger);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        St. Jude's Children Hospital
+      </span>
+
+            <p class="map-note">Mockup: static map placeholder. Route and positions are sample data.</p>
+        </section>
+
+        <!-- Panel de detalle -->
+        <div class="card detail-panel">
+
+            <div class="detail-section">
+                <div class="flex items-center justify-between" style="margin-bottom: var(--space-2);">
+                    <h1 style="font-size: var(--text-lg); margin:0;">Seguimiento de donación</h1>
+                    <span class="badge badge-success">Envío activo</span>
+                </div>
+                <p class="card-subtitle" style="margin-bottom: var(--space-3);">ID: #DT-2026-0412</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="data-tile">
+                        <span class="data-tile-label">LLegada estimada</span>
+                        <span class="data-tile-value">Hoy a las 14:20 hs</span>
+                    </div>
+                    <div class="data-tile">
+                        <span class="data-tile-label">Tipo de cargamento</span>
+                        <span class="data-tile-value">Suplementos médicos</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progreso con estado de carga simulado (>300 ms) -->
+            <div class="detail-section" id="progress-section" data-simulate-loading="900">
+                <div class="flex items-center justify-between" style="margin-bottom: var(--space-3);">
+                    <h2 class="heading-sm" style="margin:0;">Progreso de la entrega</h2>
+                    <span class="card-subtitle" style="font-size: var(--text-xs);">Actualizado hace 2 min</span>
+                </div>
+
+                <div data-skeleton aria-hidden="true">
+                    <div class="skeleton" style="height:14px; width:70%; margin-bottom: var(--space-3);"></div>
+                    <div class="skeleton" style="height:14px; width:85%; margin-bottom: var(--space-3);"></div>
+                    <div class="skeleton" style="height:14px; width:60%;"></div>
+                </div>
+
+                <ol class="timeline" data-content>
+                    <li class="timeline-done">
+                        <span class="timeline-marker" aria-hidden="true"></span>
+                        <span class="timeline-step-title">Paquete recogido</span>
+                        <span class="timeline-step-meta">12 Abril 2026 — 08:30</span>
+                    </li>
+                    <li class="timeline-current">
+                        <span class="timeline-marker" aria-hidden="true"></span>
+                        <span class="timeline-step-title">En traslado <span class="badge badge-warning">Actual</span></span>
+                        <span class="timeline-step-meta">Cerca del sector 5</span>
+                    </li>
+                    <li>
+                        <span class="timeline-marker" aria-hidden="true"></span>
+                        <span class="timeline-step-title">Entregado</span>
+                        <span class="timeline-step-meta">Pendiente — llegada estimada hoy a las 14:20 </span>
+                    </li>
+                </ol>
+            </div>
+
+            <div class="detail-section">
+                <h2 class="heading-sm">Vehículo y conductor</h2>
+                <div class="flex items-center gap-3" style="margin-bottom: var(--space-3);">
+                    <span class="avatar">RG</span>
+                    <div>
+                        <strong style="display:block; font-size: var(--text-sm);">Ricardo Gomez</strong>
+                        <span class="card-subtitle">Experto en logística certificado</span>
+                    </div>
+                    <span class="badge badge-success" style="margin-left:auto;">Verificado</span>
+                </div>
+
+                <div class="data-tile" style="margin-bottom: var(--space-3);">
+                    <span class="data-tile-label">Vehículo asignado</span>
+                    <span class="data-tile-value">Freightliner M2 106 · Patente AB-123-CD</span>
+                </div>
+            </div>
+
+            <div class="detail-section" style="background: var(--color-info-bg);">
+                <h2 class="heading-sm" style="color: var(--color-info);">Detalles de la entidad</h2>
+                <strong style="display:block; font-size: var(--text-sm);">St. Jude's Children Hospital</strong>
+                <p class="card-subtitle" style="margin: var(--space-1) 0;">
+                    Entrada B, edificio 4<br>
+                    Recepcionista: Sarah Connor<br>
+                    Contacto: (+54) 113982-1044
+                </p>
+                <div class="flex items-center justify-between" style="margin-top: var(--space-3);">
+                    <span class="badge badge-danger">Prioridad: alta</span>
+                    <a class="btn btn-ghost btn-sm" href="donante-entidades.html">Ver perfil de la entidad</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<script src="js/main.js"></script>
+</body>
+</html>

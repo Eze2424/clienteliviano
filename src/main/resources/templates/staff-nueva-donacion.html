@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DonaTrack — Register Incoming Donation</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Signika:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="navbar">
+    <a href="staff-dashboard.html" class="navbar-brand">
+    <span class="logo-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2.3 4 6.2 4c2.2 0 3.9 1.3 4.8 2.9C11.9 5.3 13.6 4 15.8 4c3.9 0 5.8 4.1 4.2 7.7C19.5 16.4 12 21 12 21z" fill="white"/></svg>
+    </span>
+        DonaTrack
+    </a>
+    <nav class="navbar-links" aria-label="Main navigation">
+        <a href="staff-dashboard.html">Dashboard</a>
+        <a href="staff-nueva-donacion.html" class="active" aria-current="page">Donations</a>
+        <a href="#" aria-disabled="true" title="Vista no incluida en esta entrega">Beneficiaries</a>
+        <a href="#">Reports</a>
+    </nav>
+    <div class="navbar-actions">
+        <span class="badge badge-neutral">dEPÓSITO</span>
+        <div class="user-chip">
+            <span class="avatar">MF</span>
+            <span class="user-chip-meta">
+        <span class="name">Maya Fernandez</span>
+        <span class="role">Adminstradora</span>
+      </span>
+        </div>
+        <a href="login.html" class="btn btn-ghost btn-sm" title="Sign out">Cerrar sesión</a>
+        <button class="navbar-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+    </div>
+</header>
+
+<main id="main" class="main-content">
+
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+            <li><a href="staff-dashboard.html">Dashboard</a></li>
+            <li aria-current="page">Ingresar donación</li>
+        </ol>
+    </nav>
+
+    <div class="split-view" style="grid-template-columns: 1fr 340px;">
+
+        <!-- Formulario de alta -->
+        <form class="card" novalidate>
+
+            <div class="flex items-center justify-between" style="margin-bottom: var(--space-5); flex-wrap: wrap; gap: var(--space-3);">
+                <div>
+                    <h1 style="margin-bottom: var(--space-1);">Registrar nueva donación</h1>
+                    <p class="card-subtitle" style="margin:0;">Registrá la donación y adjuntá imagenes de la misma.</p>
+                </div>
+                <!-- <div class="flex gap-2">
+                  <button type="button" class="btn btn-secondary btn-sm" data-toast-success="Receipt scanned — 12 items detected">Scan receipt</button>
+                  <button type="button" class="btn btn-primary btn-sm" data-toast-success="New intake started">Nuevo ingreso</button>
+                </div> -->
+            </div>
+
+            <!-- Paso 1: donante -->
+            <fieldset class="field" style="border:0; padding:0; margin-bottom: var(--space-6);">
+                <legend style="font-family: var(--font-heading); font-weight:600; font-size: var(--text-md); margin-bottom: var(--space-3);">Donador</legend>
+
+                <div class="radio-group" role="radiogroup" aria-label="Donor type" style="margin-bottom: var(--space-3);">
+                    <label class="radio-option">
+                        <input type="radio" name="donor-type" value="existing" checked>
+                        <span>Donador existente</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="donor-type" value="new">
+                        <span>Registrar nuevo donador</span>
+                    </label>
+                </div>
+
+                <div class="select-chip-group" data-single-select style="margin-bottom: var(--space-3);">
+                    <button type="button" class="select-chip" aria-pressed="false">Hope Harvest Co.</button>
+                    <button type="button" class="select-chip" aria-pressed="false">St. Michael Church</button>
+                    <button type="button" class="select-chip" aria-pressed="true">Green Grocers Collective</button>
+                    <button type="button" class="select-chip" aria-pressed="false">Neighbors United</button>
+                </div>
+
+                <div class="field">
+                    <label for="donor-search">Search donors</label>
+                    <input id="donor-search" type="search" placeholder="Search by name, email or phone">
+                    <span class="field-hint">Pick an existing donor to keep the history linked to one record.</span>
+                </div>
+
+                <!-- Subformulario de alta de donante -->
+                <div class="card" style="background: var(--color-bg);">
+                    <h2 class="heading-sm" style="margin-bottom: var(--space-3);">Create new donor</h2>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="donor-name">Full name</label>
+                            <input id="donor-name" type="text" placeholder="E.g. Ana Beatriz Souza">
+                        </div>
+                        <div class="field">
+                            <label for="donor-org">Organisation <span class="field-optional">(optional)</span></label>
+                            <input id="donor-org" type="text" placeholder="E.g. Green Grocers Collective">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="donor-email">Email address</label>
+                            <input id="donor-email" type="email" placeholder="name@example.org">
+                        </div>
+                        <div class="field">
+                            <label for="donor-phone">Phone number</label>
+                            <input id="donor-phone" type="tel" placeholder="+54 9 11 1234 5678">
+                        </div>
+                    </div>
+                    <div class="field" style="margin-bottom:0;">
+                        <label for="donor-address">Street address</label>
+                        <input id="donor-address" type="text" placeholder="Street, number, city">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Paso 2: detalle de la donación -->
+            <fieldset class="field" style="border:0; padding:0; margin-bottom: var(--space-6);">
+                <legend style="font-family: var(--font-heading); font-weight:600; font-size: var(--text-md); margin-bottom: var(--space-3);">Donation details</legend>
+
+                <div class="field">
+                    <label for="donation-desc">General description</label>
+                    <textarea id="donation-desc" placeholder="Describe the items: brand, condition, packaging, any special handling notes (e.g. refrigeration required)"></textarea>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="category">Category</label>
+                        <select id="category">
+                            <option selected>Food</option>
+                            <option>Clothing</option>
+                            <option>Furniture</option>
+                            <option>Medical supplies</option>
+                            <option>Cleaning supplies</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="subcategory">Subcategory</label>
+                        <select id="subcategory">
+                            <option selected>Produce</option>
+                            <option>Canned goods</option>
+                            <option>Dry goods</option>
+                            <option>Beverages</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="unit">Unit</label>
+                        <select id="unit">
+                            <option selected>Boxes</option>
+                            <option>Kilograms</option>
+                            <option>Litres</option>
+                            <option>Units</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="quantity">Quantity</label>
+                        <input id="quantity" type="number" value="12" min="1">
+                    </div>
+                    <div class="field">
+                        <label for="volume">
+                            Approximate volume (m³)
+                            <span class="tooltip-host">
+                <button type="button" class="help-trigger" aria-label="How volume is used">?</button>
+                <span class="tooltip" role="tooltip">Volume determines which storage zone the system suggests.</span>
+              </span>
+                        </label>
+                        <input id="volume" type="text" placeholder="0.35">
+                    </div>
+                    <div class="field">
+                        <label for="weight">Weight (kg)</label>
+                        <input id="weight" type="text" placeholder="18">
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <span class="field-label">Condition</span>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="switch-track" aria-hidden="true"></span>
+                            <span>Mark as new if brand new</span>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label for="expiry">Expiration date <span class="field-optional">(if food)</span></label>
+                        <input id="expiry" type="date">
+                        <span class="field-hint">Items expiring within 7 days are prioritised in matchmaking.</span>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Paso 3: verificación -->
+            <fieldset class="field" style="border:0; padding:0; margin-bottom: var(--space-6);">
+                <legend style="font-family: var(--font-heading); font-weight:600; font-size: var(--text-md); margin-bottom: var(--space-3);">Verification photos</legend>
+
+                <div class="photo-grid" style="margin-bottom: var(--space-4);">
+                    <div class="photo-thumb">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                        Canned goods
+                    </div>
+                    <div class="photo-thumb">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                        Shipping label
+                    </div>
+                    <button type="button" class="photo-thumb" style="cursor:pointer;" data-toast-success="Photo added to the intake record">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                        Add photo
+                    </button>
+                </div>
+
+                <div class="flex gap-4" style="flex-wrap: wrap;">
+                    <label class="radio-option"><input type="checkbox" checked> <span>Receipt received</span></label>
+                    <label class="radio-option"><input type="checkbox" checked> <span>Photos attached</span></label>
+                    <label class="radio-option"><input type="checkbox"> <span>Packaging intact</span></label>
+                </div>
+            </fieldset>
+
+            <!-- Acciones -->
+            <div class="flex items-center gap-3" style="flex-wrap: wrap; border-top: 1px solid var(--color-border); padding-top: var(--space-5);">
+                <button type="button" class="btn btn-secondary" data-toast-success="Draft saved — you can resume this intake later">Save draft</button>
+                <button type="button" class="btn btn-secondary" data-toast-success="Donation registered and dispatched">Register and dispatch</button>
+                <button type="button" class="btn btn-primary" id="matchmaking-btn">
+                    <span id="matchmaking-label">Run matchmaking</span>
+                </button>
+                <p class="card-subtitle" style="margin:0; flex:1; min-width: 200px;">Matchmaking assigns beneficiaries based on need, location and urgency.</p>
+            </div>
+        </form>
+
+        <!-- Panel de vista previa -->
+        <aside class="card detail-panel" aria-label="Intake preview">
+            <div class="detail-section">
+                <div class="flex items-center gap-3">
+                    <span class="avatar">GG</span>
+                    <div>
+                        <strong style="display:block; font-size: var(--text-sm);">Preview</strong>
+                        <span class="card-subtitle">Quick summary of this intake</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <span class="card-subtitle">Donor</span>
+                <strong style="display:block; margin-bottom: var(--space-3);">Green Grocers Collective</strong>
+
+                <span class="card-subtitle">Items</span>
+                <strong style="display:block;">Canned goods — 12 boxes</strong>
+            </div>
+
+            <div class="detail-section">
+                <h2 class="heading-sm">Storage suggestion</h2>
+                <div class="select-chip-group" data-single-select>
+                    <button type="button" class="select-chip" aria-pressed="true">Zone A — Dry Rack 3</button>
+                    <button type="button" class="select-chip" aria-pressed="false">Shelf B4</button>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="data-tile">
+                        <span class="data-tile-label">Estimated volume</span>
+                        <span class="data-tile-value">0.35 m³</span>
+                    </div>
+                    <div class="data-tile">
+                        <span class="data-tile-label">Weight</span>
+                        <span class="data-tile-value">18 kg</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h2 class="heading-sm">Activity log</h2>
+                <ul class="list-reset card-subtitle" style="font-size: var(--text-xs); line-height: 1.9;">
+                    <li>09:12 — Intake created by Maya F.</li>
+                    <li>09:15 — Photos uploaded</li>
+                    <li>09:20 — Suggested storage: Zone A</li>
+                </ul>
+            </div>
+
+            <div class="detail-section">
+                <button class="btn btn-secondary btn-block" style="margin-bottom: var(--space-2);" data-open-modal="inventory-modal">Update inventory item</button>
+                <button class="btn btn-secondary btn-block" style="margin-bottom: var(--space-2);" data-toast-success="CSV template downloaded">Upload CSV</button>
+                <a class="btn btn-secondary btn-block" href="staff-dashboard.html">Truck tracking</a>
+            </div>
+        </aside>
+
+    </div>
+</main>
+
+<!-- Modal: actualizar item de inventario -->
+<div class="modal-overlay" id="inventory-modal" role="dialog" aria-modal="true" aria-labelledby="inventory-title">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <h3 id="inventory-title" style="margin:0;">Update inventory item</h3>
+                <p class="modal-desc">Modify status or location for <strong>#FOOD-102</strong>.</p>
+            </div>
+            <button class="modal-close" data-close-modal aria-label="Close dialog">✕</button>
+        </div>
+
+        <div class="field">
+            <label for="inv-status">Current status</label>
+            <select id="inv-status" data-autofocus>
+                <option selected>In warehouse</option>
+                <option>Assigned to beneficiary</option>
+                <option>In transit</option>
+                <option>Delivered</option>
+            </select>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label for="inv-qty">Quantity</label>
+                <input id="inv-qty" type="number" value="10" min="0">
+            </div>
+            <div class="field">
+                <label for="inv-unit">Unit</label>
+                <select id="inv-unit">
+                    <option>Boxes</option>
+                    <option selected>Litres</option>
+                    <option>Kilograms</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="inv-zone">Relocate to zone</label>
+            <input id="inv-zone" type="text" value="Zone A-4">
+            <span class="field-hint">Leave unchanged to keep the item in its current location.</span>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close-modal>Cancel</button>
+            <button class="btn btn-primary" data-close-modal data-toast-success="Inventory item #FOOD-102 updated">Save changes</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/main.js"></script>
+<script>
+    /* Matchmaking: estado de carga visible (> 300 ms) y notificación de resultado */
+    document.getElementById('matchmaking-btn').addEventListener('click', function () {
+        var btn = this;
+        var label = document.getElementById('matchmaking-label');
+        if (btn.disabled) return;
+
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+        label.textContent = 'Matching beneficiaries…';
+        btn.insertAdjacentHTML('afterbegin', '<span class="spinner" aria-hidden="true"></span>');
+
+        setTimeout(function () {
+            var spinner = btn.querySelector('.spinner');
+            if (spinner) spinner.remove();
+            btn.disabled = false;
+            btn.removeAttribute('aria-busy');
+            label.textContent = 'Run matchmaking';
+            showToast({ message: '3 beneficiaries matched — Comedor El Lucero is the best fit', type: 'success' });
+        }, 1600);
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DonaTrack — Track every donation, see the impact</title>
+    <meta name="description" content="DonaTrack connects donors, partners and beneficiaries with transparent delivery tracking.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Signika:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="navbar">
+    <a href="index.html" class="navbar-brand">
+    <span class="logo-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2.3 4 6.2 4c2.2 0 3.9 1.3 4.8 2.9C11.9 5.3 13.6 4 15.8 4c3.9 0 5.8 4.1 4.2 7.7C19.5 16.4 12 21 12 21z" fill="white"/></svg>
+    </span>
+        DonaTrack
+    </a>
+    <nav class="navbar-links" aria-label="Main navigation">
+        <a href="index.html" class="active" aria-current="page">Home</a>
+        <a href="#how-it-works">Cómo funciona</a>
+        <a href="#impact">Impacto</a>
+        <a href="#donate">Doná</a>
+        <a href="#impact">Mapa</a>
+    </nav>
+    <div class="navbar-actions">
+        <a href="registro.html" class="btn btn-secondary btn-sm">Registro</a>
+        <a href="login.html" class="btn btn-primary btn-sm">Iniciar sesión</a>
+        <button class="navbar-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+    </div>
+</header>
+
+<main id="main">
+    <section class="container" style="padding-top: var(--space-6); padding-bottom: var(--space-6);">
+        <div class="grid grid-cols-2" style="align-items: stretch;">
+            <div class="card" style="display:flex; flex-direction:column; justify-content:center; border:none; box-shadow:none; padding: var(--space-4) 0;">
+                <h1>Seguí cada donacación. Observa el impacto en tiempo real.</h1>
+                <p style="font-size: var(--text-md);">DonaTrack conecta donadores y entidades beneficiarias con un seguimiento transparente
+                    de la entrega — fotos, ubicación y confirmación de entregas,
+                    te permite saber exactamente cómo ayuda tu donación.</p>
+                <div class="flex gap-3" style="margin: var(--space-4) 0 var(--space-6);">
+                    <a href="registro.html" class="btn btn-primary">Dona ahora</a>
+                    <a href="#impact" class="btn btn-secondary">Mira el mapa</a>
+                </div>
+                <div class="grid grid-cols-3" style="gap: var(--space-4);">
+                    <div>
+                        <div style="font-family:var(--font-heading); font-size:var(--text-xl); font-weight:700;">1,248</div>
+                        <div class="card-subtitle">Entregas del mes</div>
+                    </div>
+                    <div>
+                        <div style="font-family:var(--font-heading); font-size:var(--text-xl); font-weight:700;">4,320</div>
+                        <div class="card-subtitle">Entidades ayudadas</div>
+                    </div>
+                    <div>
+                        <div style="font-family:var(--font-heading); font-size:var(--text-xl); font-weight:700;">15 </div>
+                        <div class="card-subtitle">Nuevos donantes</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: var(--space-3);">
+                <div style="position:relative; border-radius: var(--radius-md); overflow:hidden;">
+                    <!-- hay que pasarlo a un carrusel de fotos -->
+                    <img src="https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&q=80" alt="Two women exchanging a donation box at a doorstep" style="width:100%; aspect-ratio: 4/3; object-fit:cover;">
+                    <span class="badge badge-success" style="position:absolute; bottom:var(--space-3); right:var(--space-3); background:var(--color-surface);">124 verified</span>
+                </div>
+                <div style="margin-top: var(--space-3);">
+                    <strong>Últimas entregas realizadas</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="impact" class="container" style="padding-bottom: var(--space-7);">
+        <div class="grid grid-cols-2" style="align-items:start;">
+            <div>
+                <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                    <h2 style="margin:0;">Donaciones exitosas del mes</h2>
+                    <a href="#" class="btn btn-secondary btn-sm">Mira más historias</a>
+                </div>
+                <div class="grid grid-cols-2">
+                    <article class="card">
+                        <img src="https://images.unsplash.com/photo-1593113598332-cd288d649433?w=300&q=80" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover; margin-bottom: var(--space-3);">
+                        <h2 class="heading-sm">Community Food Parcels — Quito, Ecuador</h2>
+                        <p class="card-subtitle">Donor: Riverdale Foundation · 120 families fed</p>
+                        <p>Volunteers delivered 120 food parcels with photo and recipient signatures.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="card-subtitle">Delivered 2026-03-08</span>
+                            <a href="#" class="btn btn-outline btn-sm">View Proof</a>
+                        </div>
+                    </article>
+                    <article class="card">
+                        <img src="https://images.unsplash.com/photo-1584515933487-779824d29309?w=300&q=80" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover; margin-bottom: var(--space-3);">
+                        <h2 class="heading-sm">Medicines for Children — Lima, Peru</h2>
+                        <p class="card-subtitle">Donor: Lifeline Pharma · 300 patients supported</p>
+                        <p>Cold-chain verified delivery with timestamped photos and guardian signatures.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="card-subtitle">Delivered 2026-03-11</span>
+                            <a href="#" class="btn btn-outline btn-sm">View Proof</a>
+                        </div>
+                    </article>
+                    <article class="card">
+                        <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&q=80" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover; margin-bottom: var(--space-3);">
+                        <h2 class="heading-sm">Winter Clothing Drive — Sarajevo</h2>
+                        <p class="card-subtitle">Donor: WarmHands Collective · 480 garments</p>
+                        <p>Each recipient signed a digital receipt; photos captured at point of delivery.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="card-subtitle">Delivered 2026-02-28</span>
+                            <a href="#" class="btn btn-outline btn-sm">View Proof</a>
+                        </div>
+                    </article>
+                    <article class="card">
+                        <img src="https://images.unsplash.com/photo-1580891536414-5a9f7c7e4e57?w=300&q=80" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover; margin-bottom: var(--space-3);">
+                        <h2 class="heading-sm">School Supplies — Nairobi, Kenya</h2>
+                        <p class="card-subtitle">Donor: BrightFuture · 220 students</p>
+                        <p>Backpacks and school kits verified by teacher signatures and classroom photos.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="card-subtitle">Delivered 2026-03-05</span>
+                            <a href="#" class="btn btn-outline btn-sm">View Proof</a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title-row">
+                    <h3>Mapa de entregas</h3>
+                </div>
+                <div class="flex gap-2" style="margin-bottom: var(--space-4);">
+                    <button class="select-chip" aria-pressed="true">Todas</button>
+                    <button class="select-chip" aria-pressed="false">Alimentos</button>
+                    <button class="select-chip" aria-pressed="false">Medicamentos</button>
+                    <button class="select-chip" aria-pressed="false">Vestimenta</button>
+                </div>
+                <div role="img" aria-label="Map showing recent delivery locations" style="aspect-ratio: 4/3; border-radius: var(--radius-md); background: linear-gradient(135deg, #EAF3E8 0%, #E4EEF7 100%); position:relative; overflow:hidden; margin-bottom: var(--space-4);">
+                    <span style="position:absolute; top:30%; left:40%; width:14px; height:14px; border-radius:50%; background:var(--color-danger); border:2px solid #fff;"></span>
+                    <span style="position:absolute; top:55%; left:60%; width:14px; height:14px; border-radius:50%; background:var(--color-primary); border:2px solid #fff;"></span>
+                    <span style="position:absolute; top:45%; left:25%; width:14px; height:14px; border-radius:50%; background:var(--color-info); border:2px solid #fff;"></span>
+                </div>
+                <h2 class="heading-sm" style="margin-bottom: var(--space-3);">Entregas recientes</h2>
+                <ul class="flex flex-col gap-3">
+                    <li class="flex items-center justify-between">
+                        <div>
+                            <strong style="font-size: var(--text-sm);">Miraflores Health Clinic, Lima</strong>
+                            <div class="card-subtitle">2026-03-11 · Medicines · Verified</div>
+                        </div>
+                        <a href="#" class="btn btn-ghost btn-sm">Foto</a>
+                    </li>
+                    <li class="flex items-center justify-between">
+                        <div>
+                            <strong style="font-size: var(--text-sm);">Northside Shelter, Bogotá</strong>
+                            <div class="card-subtitle">2026-03-09 · Food Parcels · Verified</div>
+                        </div>
+                        <a href="#" class="btn btn-ghost btn-sm">Foto</a>
+                    </li>
+                    <li class="flex items-center justify-between">
+                        <div>
+                            <strong style="font-size: var(--text-sm);">Riverdale School, Nairobi</strong>
+                            <div class="card-subtitle">2026-03-05 · School Supplies · Verified</div>
+                        </div>
+                        <a href="#" class="btn btn-ghost btn-sm">Foto</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="donate" class="container" style="padding-bottom: var(--space-7);">
+        <div class="card flex items-center justify-between" style="flex-wrap:wrap; gap: var(--space-4); background: var(--color-primary-light); border:none;">
+            <div>
+                <h3 style="margin-bottom: var(--space-1);">Sos donador o beneficiario?</h3>
+                <p style="margin:0;">Inicia sesión o registrate para seguir el progreso de las donaciones
+                    y recibir actualizaciones en tiempo real.</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="registro.html" class="btn btn-secondary">Registro de donante</a>
+                <a href="registro.html" class="btn btn-secondary">Registro de beneficiario</a>
+                <a href="login.html" class="btn btn-primary">Ir al Dashboard</a>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <span>© 2026 DonaTrack Platform. Conectando corazones, cambiando vidas.</span>
+    <div class="flex gap-4">
+        <a href="informacion-legal-y-privacidad.html">Políticas de privacidad</a>
+        <a href="informacion-legal-y-privacidad.html">Términos de servicio</a>
+    </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

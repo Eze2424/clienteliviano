@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DonaTrack — My Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Signika:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="navbar">
+    <a href="donante-dashboard.html" class="navbar-brand">
+    <span class="logo-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2.3 4 6.2 4c2.2 0 3.9 1.3 4.8 2.9C11.9 5.3 13.6 4 15.8 4c3.9 0 5.8 4.1 4.2 7.7C19.5 16.4 12 21 12 21z" fill="white"/></svg>
+    </span>
+        DonaTrack
+    </a>
+    <nav class="navbar-links" aria-label="Main navigation">
+        <a href="donante-dashboard.html" class="active" aria-current="page">Dashboard</a>
+        <a href="donante-entidades.html">Entidades beneficiarias</a>
+        <a href="donante-ranking.html">Ranking</a>
+    </nav>
+    <div class="navbar-actions">
+        <!-- <button class="btn btn-primary btn-sm" data-open-modal="new-donation-modal">Nueva donacion</button> -->
+        <button class="icon-btn" aria-label="Notifications, 3 unread" data-open-modal="notif-modal">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+            <span class="notif-dot" aria-hidden="true"></span>
+        </button>
+        <div class="user-chip">
+            <span class="avatar">EM</span>
+            <span class="user-chip-meta">
+        <span class="name">Elena Martinez</span>
+        <span class="role">Sostenedor</span>
+      </span>
+        </div>
+        <a href="login.html" class="btn btn-ghost btn-sm" title="Sign out">Cerrar sesión</a>
+        <button class="navbar-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+    </div>
+</header>
+
+<main id="main" class="main-content">
+
+    <div style="margin-bottom: var(--space-5);">
+        <h1 style="margin-bottom: var(--space-1);">Mis donaciones</h1>
+        <p class="card-subtitle" style="margin:0;">Seguí el camino de tus donaciones, a dónde fueron y el impacto que tuvieron.</p>
+    </div>
+
+    <div class="container" style="padding:0;">
+        <div class="grid grid-cols-3" style="grid-template-columns: 1fr 2fr 1fr; align-items:start;">
+
+            <!-- Columna izquierda -->
+            <div class="flex flex-col gap-4">
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="card-subtitle">Total de donaciones</div>
+                            <div style="font-family:var(--font-heading); font-size:var(--text-2xl); font-weight:700;">132</div>
+                        </div>
+                        <div class="icon-btn" style="background: var(--color-primary-light); color: var(--color-primary-ink);" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"/><path d="M3 8h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="heading-sm" style="margin-bottom: var(--space-3);">Última donación</h2>
+                    <img src="https://images.unsplash.com/photo-1607113531194-58a5c62baba1?w=400&q=80" alt="Boxes of household goods ready for delivery" style="width:100%; aspect-ratio:4/3; object-fit:cover; border-radius: var(--radius-md);">
+                    <p style="margin-top: var(--space-2); font-size: var(--text-sm);">Entregado a Hope Shelter — 29-03-2026 · Ubicación: Eastside Community Center</p>
+                </div>
+
+                <div class="card">
+                    <h2 class="heading-sm" style="margin-bottom: var(--space-3);">Datos destacados</h2>
+                    <div class="grid grid-cols-2" style="gap: var(--space-3);">
+                        <div>
+                            <div style="font-family:var(--font-heading); font-weight:700; font-size: var(--text-lg);">8</div>
+                            <div class="card-subtitle">ONGs benificiadas</div>
+                        </div>
+                        <div>
+                            <div style="font-family:var(--font-heading); font-weight:700; font-size: var(--text-lg);">118</div>
+                            <div class="card-subtitle">Donaciones entregadas</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna central -->
+            <div class="flex flex-col gap-4">
+                <div class="card">
+                    <div class="card-title-row">
+                        <div>
+                            <h3>Donaciones recientes</h3>
+                            <p class="card-subtitle" style="margin:0;">Seguí tus donaciones más receientes</p>
+                        </div>
+                        <!-- <button class="btn btn-primary btn-sm" data-open-modal="new-donation-modal">Agregar donación</button> -->
+                    </div>
+
+                    <div class="tabs" role="tablist" aria-label="Filter by status" style="margin-bottom: var(--space-3);">
+                        <button class="tab" role="tab" aria-selected="true">En depósito</button>
+                        <button class="tab" role="tab" aria-selected="false">Asignada</button>
+                        <button class="tab" role="tab" aria-selected="false">Entregada</button>
+                    </div>
+                    <div class="flex gap-2" style="margin-bottom: var(--space-4);">
+                        <button class="select-chip" aria-pressed="true">Alimento</button>
+                        <button class="select-chip" aria-pressed="false">Vestimenta</button>
+                        <button class="select-chip" aria-pressed="false">Mobiliario</button>
+                    </div>
+
+                    <ul class="flex flex-col gap-4">
+                        <li class="flex gap-3" style="border-bottom:1px solid var(--color-border); padding-bottom: var(--space-4);">
+                            <img src="https://images.unsplash.com/photo-1595246140625-573b715d11dc?w=150&q=80" alt="" style="width:64px;height:64px;border-radius:var(--radius-md); object-fit:cover; flex-shrink:0;">
+                            <div style="flex:1;">
+                                <strong>March Food Drive — No perecedero</strong>
+                                <p class="card-subtitle" style="margin:2px 0;">ONG: Community Harvest · 29-03-2026 </p>
+                                <div class="flex items-center gap-2">
+                                    <span class="badge badge-warning">Esperando asignación</span>
+                                    <span class="card-subtitle">48 items · Recibido hace 2 días</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <a href="donante-donacion.html" class="btn btn-outline btn-sm">Seguir</a>
+                            </div>
+                        </li>
+                        <li class="flex gap-3" style="border-bottom:1px solid var(--color-border); padding-bottom: var(--space-4);">
+                            <img src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=150&q=80" alt="" style="width:64px;height:64px;border-radius:var(--radius-md); object-fit:cover; flex-shrink:0;">
+                            <div style="flex:1;">
+                                <strong>Abrigos de invierno</strong>
+                                <p class="card-subtitle" style="margin:2px 0;">ONG: Warm Hands Foundation · 21-03-2026 </p>
+                                <div class="flex items-center gap-2">
+                                    <span class="badge badge-info">Asignado · Hope Transit</span>
+                                    <span class="card-subtitle">62 items · Asignado hace 5 días</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <a href="donante-donacion.html" class="btn btn-outline btn-sm">Seguir</a>
+                            </div>
+                        </li>
+                        <li class="flex gap-3" style="border-bottom:1px solid var(--color-border); padding-bottom: var(--space-4);">
+                            <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=150&q=80" alt="" style="width:64px;height:64px;border-radius:var(--radius-md); object-fit:cover; flex-shrink:0;">
+                            <div style="flex:1;">
+                                <strong>Mobiliario — Veldor</strong>
+                                <p class="card-subtitle" style="margin:2px 0;">ONG: Homes for All · 10-03-2026 </p>
+                                <div class="flex items-center gap-2">
+                                    <span class="badge badge-success">Entregado</span>
+                                    <span class="card-subtitle">3 items · Entregado hace 20 días</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <a href="#" class="btn btn-outline btn-sm">Seguir</a>
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <img src="https://images.unsplash.com/photo-1602529550560-7c1d1bd7f6f4?w=150&q=80" alt="" style="width:64px;height:64px;border-radius:var(--radius-md); object-fit:cover; flex-shrink:0;">
+                            <div style="flex:1;">
+                                <strong>Household Goods — Outreach Run</strong>
+                                <p class="card-subtitle" style="margin:2px 0;">NGO: BrightPath · 2026-02-28 · North Logistics Hub</p>
+                                <div class="flex items-center gap-2">
+                                    <span class="badge badge-neutral">Pending Scheduling</span>
+                                    <span class="card-subtitle">16 items · Received 14 days ago</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <a href="#" class="btn btn-secondary btn-sm">View Receipt</a>
+                                <a href="#" class="btn btn-outline btn-sm">Assign</a>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3>Estado de las entregas</h3>
+                    <p class="card-subtitle" style="margin-top:-8px;">Actualizaciones en tiempo real de las donacioens</p>
+                    <ul class="flex flex-col gap-4" style="margin-top: var(--space-3);">
+                        <li class="flex gap-3 items-center">
+              <span class="icon-btn" style="background: var(--color-primary-light); color: var(--color-primary-ink); pointer-events:none;" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </span>
+                            <div>
+                                <strong style="font-size: var(--text-sm);">Donación asignada a Comdero corazones felices</strong>
+                                <div class="card-subtitle">Alimentos no perecederos · 30-03-2026 · 10:14 hs</div>
+                            </div>
+                        </li>
+                        <li class="flex gap-3 items-center">
+              <span class="icon-btn" style="background: var(--color-success-bg); color: var(--color-success); pointer-events:none;" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+              </span>
+                            <div>
+                                <strong style="font-size: var(--text-sm);">Donación entregada a Refugio esperanza</strong>
+                                <div class="card-subtitle">Donación de mobiliario · 10-03-2026 · 14:40 hs</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Columna derecha -->
+            <div class="flex flex-col gap-4">
+                <div class="card">
+                    <h2 class="heading-sm" style="margin-bottom: var(--space-3);">Insignias</h2>
+                    <div class="grid grid-cols-3" style="gap: var(--space-2); text-align:center;">
+                        <div>
+                            <div style="width:48px;height:48px;border-radius:50%; background:var(--color-primary-light); margin: 0 auto var(--space-1); display:flex; align-items:center; justify-content:center;">🤝</div>
+                            <div class="card-subtitle">Racha</div>
+                        </div>
+                        <div>
+                            <div style="width:48px;height:48px;border-radius:50%; background:var(--color-primary-light); margin: 0 auto var(--space-1); display:flex; align-items:center; justify-content:center;">✋</div>
+                            <div class="card-subtitle">Hábil donador</div>
+                        </div>
+                        <div>
+                            <div style="width:48px;height:48px;border-radius:50%; background:var(--color-primary-light); margin: 0 auto var(--space-1); display:flex; align-items:center; justify-content:center;">🛡️</div>
+                            <div class="card-subtitle">Entregas exitosas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="heading-sm" style="margin-bottom: var(--space-1);">Misión actual</h2>
+                    <div style="margin: var(--space-3) 0;">
+                        <div class="flex items-center justify-between" style="font-size: var(--text-sm); margin-bottom: var(--space-1);">
+                            <span>Racha</span><span>4 / 7 días</span>
+                        </div>
+                        <div class="progress-track"><div class="progress-fill" style="width:57%;"></div></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="heading-sm" style="margin-bottom: var(--space-1);">Alcanza tu próximo objetivo</h2>
+                    <div class="progress-track"><div class="progress-fill" style="width:35%;"></div></div>
+                    <div class="flex items-center justify-between" style="margin-top: var(--space-2); font-size: var(--text-xs);">
+                        <span>35%</span><span class="card-subtitle">Progreso</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="flex items-center justify-between" style="margin-bottom: var(--space-3);">
+                        <h2 class="heading-sm" style="margin:0;">Notificaciones</h2>
+                        <button class="btn btn-ghost btn-sm">Todas leídas</button>
+                    </div>
+                    <ul class="flex flex-col gap-3">
+                        <li class="flex gap-2">
+                            <span class="avatar" style="width:32px;height:32px;font-size:var(--text-xs);">MF</span>
+                            <div style="flex:1;">
+                                <p style="margin:0; font-size: var(--text-sm);"><strong>En depósito:</strong> Alimentos no perecederos.</p>
+                                <p class="card-subtitle" style="margin:0;">Tu donación fue ingresada y está esperando ser asignada · Hace 1h</p>
+                            </div>
+                            <button class="btn btn-ghost btn-sm">Marcar</button>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="icon-btn" style="background: var(--color-success-bg); color: var(--color-success); pointer-events:none; min-width:32px;min-height:32px;">✓</span>
+                            <div style="flex:1;">
+                                <p style="margin:0; font-size: var(--text-sm);"><strong>Entregada:</strong> Donación de mobiliario</p>
+                                <p class="card-subtitle" style="margin:0;">Entregada a la entidad · Hace 10 días</p>
+                            </div>
+                            <button class="btn btn-ghost btn-sm">Ver</button>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Modal: nueva donación (versión simplificada, mockeada) -->
+<!-- <div class="modal-overlay" id="new-donation-modal" role="dialog" aria-modal="true" aria-labelledby="new-donation-title">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3 id="new-donation-title" style="margin:0;">New Donation</h3>
+        <p class="modal-desc">Tell us what you'd like to donate — we'll suggest the best-matching entity.</p>
+      </div>
+      <button class="modal-close" data-close-modal aria-label="Close dialog">✕</button>
+    </div>
+    <div class="field">
+      <label for="modal-category">Category</label>
+      <select id="modal-category" data-autofocus>
+        <option>Food</option>
+        <option>Clothing</option>
+        <option>Furniture</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="modal-desc-field">Description</label>
+      <textarea id="modal-desc-field" placeholder="E.g. 12 boxes of canned goods, unopened"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal>Cancel</button>
+      <button class="btn btn-primary" data-close-modal data-toast-success="Donation registered — awaiting pickup">Submit Donation</button>
+    </div>
+  </div>
+</div> -->
+
+<!-- Modal: notificaciones -->
+<div class="modal-overlay" id="notif-modal" role="dialog" aria-modal="true" aria-labelledby="notif-title">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="notif-title" style="margin:0;">Notificaciones</h3>
+            <button class="modal-close" data-close-modal aria-label="Close dialog">✕</button>
+        </div>
+        <p style="font-size: var(--text-sm);">Tenés 3 notificaciones sin leer. Mira el panel de la derecha en tu dashbord para más detalles.</p>
+        <div class="modal-footer">
+            <button class="btn btn-primary" data-close-modal>Got it</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>

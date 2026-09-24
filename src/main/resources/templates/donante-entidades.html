@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DonaTrack — Beneficiary Entities</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Signika:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="navbar">
+    <a href="donante-dashboard.html" class="navbar-brand">
+    <span class="logo-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2.3 4 6.2 4c2.2 0 3.9 1.3 4.8 2.9C11.9 5.3 13.6 4 15.8 4c3.9 0 5.8 4.1 4.2 7.7C19.5 16.4 12 21 12 21z" fill="white"/></svg>
+    </span>
+        DonaTrack
+    </a>
+    <nav class="navbar-links" aria-label="Main navigation">
+        <a href="donante-dashboard.html">Dashboard</a>
+        <a href="donante-entidades.html" class="active" aria-current="page">Entidades beneficiarias</a>
+        <a href="donante-ranking.html">Ranking</a>
+    </nav>
+    <div class="navbar-actions">
+        <span class="badge badge-warning" title="Loyalty points">🏅 540 Puntos</span>
+        <button class="icon-btn" aria-label="Notifications">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        </button>
+        <span class="avatar">EM</span>
+        <a href="login.html" class="btn btn-ghost btn-sm" title="Sign out">Cerrar sesión</a>
+        <button class="navbar-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+    </div>
+</header>
+
+<div class="app-body">
+    <aside class="sidebar" aria-label="Search filters" style="width: 260px;">
+        <div>
+            <h2 class="heading-sm">Filtros de búsqueda</h2>
+            <p class="card-subtitle" style="margin-top:-4px;">Filtra entidades, según tu preferencia.</p>
+        </div>
+
+        <div class="field">
+            <label for="filter-name">Busca por nombre</label>
+            <input type="search" id="filter-name" placeholder="e.g. Escuela Rural...">
+        </div>
+
+        <fieldset style="border:none; padding:0; margin:0;">
+            <legend style="font-weight:700; font-size: var(--text-sm); margin-bottom: var(--space-2);">Tipo de entidad</legend>
+            <div class="flex flex-col gap-1">
+                <label class="checkbox-option"><input type="checkbox"> Escuela</label>
+                <label class="checkbox-option"><input type="checkbox"> Comedor</label>
+                <label class="checkbox-option"><input type="checkbox"> Hogar de niños</label>
+            </div>
+        </fieldset>
+
+        <fieldset style="border:none; padding:0; margin:0;">
+            <legend style="font-weight:700; font-size: var(--text-sm); margin-bottom: var(--space-2);">Nivel de urgencia</legend>
+            <div class="flex flex-col gap-1">
+                <label class="checkbox-option"><input type="checkbox" checked> Necesidades recurrentes</label>
+                <label class="checkbox-option"><input type="checkbox"> Necesidades extraordinarias</label>
+            </div>
+        </fieldset>
+
+        <fieldset style="border:none; padding:0; margin:0;">
+            <legend style="font-weight:700; font-size: var(--text-sm); margin-bottom: var(--space-2);"> Provincia</legend>
+            <div class="flex flex-col gap-1">
+                <label class="checkbox-option"><input type="checkbox"> Buenos Aires</label>
+                <label class="checkbox-option"><input type="checkbox"> Rosario</label>
+                <label class="checkbox-option"><input type="checkbox"> Mendoza</label>
+                <label class="checkbox-option"><input type="checkbox"> Córdoba</label>
+            </div>
+        </fieldset>
+
+        <button class="btn btn-secondary btn-sm btn-block">Eliminar filtros</button>
+
+        <div class="card" style="background: var(--color-primary-light); border:none;">
+            <p style="margin:0; font-size: var(--text-sm);"><strong>Need help finding?</strong><br>Our team can help you find an entity based on your donation capacity.</p>
+            <a href="#" style="font-size: var(--text-sm);">Contact Support</a>
+        </div>
+    </aside>
+
+    <main id="main" class="main-content">
+        <h1>Entidades beneficiarias</h1>
+        <p>Busca las entidades que necesitan tu ayuda. Usa los filtros para encontrar las que se alínean con tus valores.</p>
+
+        <div class="grid grid-cols-4" style="margin-bottom: var(--space-5);">
+            <div class="stat-card"><div class="label">Total de entidades</div><div class="value">1,284</div></div>
+            <div class="stat-card"><div class="label">Necesidades urgentes</div><div class="value">42</div></div>
+            <div class="stat-card"><div class="label">Donaciones recientes</div><div class="value">156</div></div>
+            <div class="stat-card"><div class="label">Voluntarios activos</div><div class="value">890</div></div>
+        </div>
+
+        <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+            <span class="card-subtitle">Showing 1–6 of 1,284 entities</span>
+            <label class="flex items-center gap-2" style="font-size: var(--text-sm);">
+                Filtrar por:
+                <select style="min-height:40px;">
+                    <option>Más reciente</option>
+                    <option>Más urgente</option>
+                    <option>Más cercana</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="grid grid-cols-3">
+            <article class="entity-card">
+                <div class="entity-card-media">
+                    <img src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&q=80" alt="Rural school building">
+                    <span class="entity-card-tag">Escuela</span>
+                </div>
+                <div class="entity-card-body">
+                    <span class="entity-card-eyebrow">Asociación Civil</span>
+                    <h2 class="heading-sm" style="margin:0;">Escuela Rural N°10</h2>
+                    <p class="card-subtitle" style="margin:0;">Ruta 14, Km 22, Mercedes</p>
+                    <p class="card-subtitle" style="margin:0;"><strong>Necesidades recurrentes:</strong> Sillas, mesas</p>
+                    <div class="entity-card-needs"><span class="badge badge-warning">Necesidades extraordinarias</span></div>
+                    <a href="#" class="btn btn-primary btn-sm" style="margin-top:auto;">Perfil completo</a>
+                </div>
+            </article>
+
+            <article class="entity-card">
+                <div class="entity-card-media">
+                    <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?w=400&q=80" alt="Community kitchen building">
+                    <span class="entity-card-tag">Comedor</span>
+                </div>
+                <div class="entity-card-body">
+                    <span class="entity-card-eyebrow">Fundación</span>
+                    <h2 class="heading-sm" style="margin:0;">Comedor Corazones Felices</h2>
+                    <p class="card-subtitle" style="margin:0;">Calle 45 e/ 12 y 14, La Plata</p>
+                    <p class="card-subtitle" style="margin:0;"><strong>Necesidades recurrentes:</strong> Aceite, harina, fideos</p>
+                    <div class="entity-card-needs"><span class="badge badge-neutral">Necesidades extraordinarias</span></div>
+                    <a href="#" class="btn btn-primary btn-sm" style="margin-top:auto;">Perfil completo</a>
+                </div>
+            </article>
+
+            <article class="entity-card">
+                <div class="entity-card-media">
+                    <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&q=80" alt="Children's center facade">
+                    <span class="entity-card-tag">Hogar de niños</span>
+                </div>
+                <div class="entity-card-body">
+                    <span class="entity-card-eyebrow">Razón Social</span>
+                    <h2 class="heading-sm" style="margin:0;">Centro Infantil Rayito de Sol</h2>
+                    <p class="card-subtitle" style="margin:0;">Av. Liberador 4500, CABA</p>
+                    <p class="card-subtitle" style="margin:0;"><strong>Necesidades recurrentes:</strong> Pañales, ropa, pepel higiénico</p>
+                    <div class="entity-card-needs"><span class="badge badge-warning">Necesidades extraordinarias</span></div>
+                    <a href="#" class="btn btn-primary btn-sm" style="margin-top:auto;">Perfil completo</a>
+                </div>
+            </article>
+
+            <article class="entity-card">
+                <div class="entity-card-media">
+                    <img src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&q=80" alt="School in a rural border area">
+                    <span class="entity-card-tag">Escuela</span>
+                </div>
+                <div class="entity-card-body">
+                    <span class="entity-card-eyebrow">Escuela de Frontera</span>
+                    <h2 class="heading-sm" style="margin:0;">Escuela de Frontera N°120</h2>
+                    <p class="card-subtitle" style="margin:0;">Camino al Monte s/n, Iguazú</p>
+                    <p class="card-subtitle" style="margin:0;"><strong>Necesidades recurrentes:</strong> Ropa, zapatillas, abrigo</p>
+                    <div class="entity-card-needs"><span class="badge badge-neutral">Necesidades extraordinarias</span></div>
+                    <a href="#" class="btn btn-primary btn-sm" style="margin-top:auto;">Perfil completo</a>
+                </div>
+            </article>
+
+            <article class="entity-card">
+                <div class="entity-card-media">
+                    <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?w=400&q=80" alt="Community soup kitchen">
+                    <span class="entity-card-tag">Soup Kitchen</span>
+                </div>
+                <div class="entity-card-body">
+                    <span class="entity-card-eyebrow">Comedor Comunitario</span>
+                    <h2 class="heading-sm" style="margin:0;">Comedor Comunitario El Lucero</h2>
+                    <p class="card-subtitle" style="margin:0;">Barrio Las Flores, Rosario</p>
+                    <p class="card-subtitle" style="margin:0;"><strong>Necesidades recurrentes:</strong> Arroz, papas, detergente</p>
+                    <div class="entity-card-needs"><span class="badge badge-neutral">Necesidades extraordinarias</span></div>
+                    <a href="#" class="btn btn-primary btn-sm" style="margin-top:auto;">Perfil completo</a>
+                </div>
+            </article>
+
+            <article class="entity-card">
+                <div class="entity-card-media">
+                    <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&q=80" alt="Home for children">
+                    <span class="entity-card-tag">Hogar de niños</span>
+                </div>
+                <div class="entity-card-body">
+                    <span class="entity-card-eyebrow">Hogar</span>
+                    <h2 class="heading-sm" style="margin:0;">Hogar Santa Teresa de Calcuta</h2>
+                    <p class="card-subtitle" style="margin:0;">Calle San Martín 120, Mendoza</p>
+                    <p class="card-subtitle" style="margin:0;"><strong>Necesidades recurrentes:</strong> Leche, harina, alcohol</p>
+                    <div class="entity-card-needs"><span class="badge badge-warning">Necesidades extraordinarias</span></div>
+                    <a href="#" class="btn btn-primary btn-sm" style="margin-top:auto;">Perfil completo</a>
+                </div>
+            </article>
+        </div>
+
+        <nav class="flex items-center justify-center gap-2" aria-label="Pagination" style="margin-top: var(--space-6);">
+            <button class="btn btn-secondary btn-sm" disabled>Previous</button>
+            <button class="btn btn-primary btn-sm" aria-current="page">1</button>
+            <button class="btn btn-secondary btn-sm">2</button>
+            <button class="btn btn-secondary btn-sm">3</button>
+            <span class="card-subtitle">…</span>
+            <button class="btn btn-secondary btn-sm">12</button>
+            <button class="btn btn-secondary btn-sm">Next</button>
+        </nav>
+    </main>
+</div>
+
+<footer class="site-footer">
+    <span>© 2026 DonaTrack Platform. Conectando corazones, cambiando vidas.</span>
+    <div class="flex gap-4">
+        <a href="informacion-legal-y-privacidad.html">Políticas de privacidad</a>
+        <a href="informacion-legal-y-privacidad.html">Términos de servicio</a>
+    </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

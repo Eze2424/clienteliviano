@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DonaTrack — Incoming Donations Tracking</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Signika:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="navbar">
+    <a href="staff-dashboard.html" class="navbar-brand">
+    <span class="logo-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2.3 4 6.2 4c2.2 0 3.9 1.3 4.8 2.9C11.9 5.3 13.6 4 15.8 4c3.9 0 5.8 4.1 4.2 7.7C19.5 16.4 12 21 12 21z" fill="white"/></svg>
+    </span>
+        DonaTrack
+    </a>
+    <nav class="navbar-links" aria-label="Main navigation">
+        <a href="staff-dashboard.html" class="active" aria-current="page">Dashboard</a>
+        <a href="staff-nueva-donacion.html">Donaciones</a>
+        <a href="#" aria-disabled="true" title="Vista no incluida en esta entrega">Entidades</a>
+        <a href="#">Reportes</a>
+    </nav>
+    <div class="navbar-actions">
+        <span class="badge badge-neutral">Depósito</span>
+        <div class="user-chip">
+            <span class="avatar">MR</span>
+            <span class="user-chip-meta">
+        <span class="name">Maria Rodriguez</span>
+        <span class="role">Administradora</span>
+      </span>
+        </div>
+        <a href="login.html" class="btn btn-ghost btn-sm" title="Sign out">Cerrar sesión</a>
+        <button class="navbar-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+    </div>
+</header>
+
+<main id="main" class="main-content">
+
+    <div class="flex items-center justify-between" style="margin-bottom: var(--space-5); flex-wrap: wrap; gap: var(--space-3);">
+        <div>
+            <h1 style="margin-bottom: var(--space-1);">
+                Incoming donations tracking
+                <span class="badge badge-danger"><span class="dot" aria-hidden="true"></span> Live</span>
+            </h1>
+            <p class="card-subtitle" style="margin:0;">Comedor #4 — Depósito</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <label class="visually-hidden" for="fleet-search">Buscar por patente o cargamento</label>
+            <input id="fleet-search" type="search" placeholder="Search plate or cargo…" style="width: 240px;">
+            <button class="icon-btn" aria-label="Notifications, 2 unread" data-open-modal="staff-notif-modal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+                <span class="notif-dot" aria-hidden="true"></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="split-view" style="grid-template-columns: 320px 1fr;">
+
+        <!-- Lista de camiones entrantes -->
+        <section aria-labelledby="fleet-heading">
+            <div class="flex items-center justify-between" style="margin-bottom: var(--space-3);">
+                <h2 id="fleet-heading" style="font-size: var(--text-md); margin:0;">
+                    Flotas en recorrido <span class="badge badge-neutral">4</span>
+                </h2>
+                <button class="btn btn-ghost btn-sm" data-toast-success="Fleet list refreshed">Recargar</button>
+            </div>
+
+            <button class="fleet-item" aria-pressed="true">
+                <div class="flex items-center justify-between">
+                    <span class="fleet-item-id">AB-123-CD</span>
+                    <span class="badge badge-warning">Cerca de destino</span>
+                </div>
+                <span class="fleet-item-meta">TRK-0922 · ETA 12 min</span>
+                <span class="fleet-item-meta">50 kg arroz, 10 kg lentejas</span>
+            </button>
+
+            <button class="fleet-item" aria-pressed="false">
+                <div class="flex items-center justify-between">
+                    <span class="fleet-item-id">XY-987-ZZ</span>
+                    <span class="badge badge-info">En recorrido</span>
+                </div>
+                <span class="fleet-item-meta">TRK-0845 · ETA 45 min</span>
+                <span class="fleet-item-meta">30 sillas, 10 mesas</span>
+            </button>
+
+            <button class="fleet-item" aria-pressed="false">
+                <div class="flex items-center justify-between">
+                    <span class="fleet-item-id">LK-442-PO</span>
+                    <span class="badge badge-info">En recorrido</span>
+                </div>
+                <span class="fleet-item-meta">TRK-1102 · ETA 1 h 15 min</span>
+                <span class="fleet-item-meta">Kits medicinales, mantas</span>
+            </button>
+
+            <button class="fleet-item" aria-pressed="false">
+                <div class="flex items-center justify-between">
+                    <span class="fleet-item-id">RE-221-QT</span>
+                    <span class="badge badge-danger">Retrasado</span>
+                </div>
+                <span class="fleet-item-meta">TRK-0771 · ETA 3 h 20 min</span>
+                <span class="fleet-item-meta">Elementos de limpieza</span>
+            </button>
+        </section>
+
+        <div class="flex flex-col gap-4">
+
+            <!-- Mapa -->
+            <section class="map-canvas" style="min-height: 340px;" aria-label="Incoming fleet map">
+                <div class="map-legend">
+                    <span class="legend-key"><span class="legend-swatch" style="background: var(--color-text-muted);"></span> Entidad beneficiaria</span>
+                    <span class="legend-key"><span class="legend-swatch" style="background: var(--color-primary);"></span> Camiones</span>
+                    <span class="legend-key"><span class="legend-swatch" style="background: #7CC5D8;"></span> Ruta</span>
+                </div>
+
+                <div class="map-controls">
+                    <button class="icon-btn" aria-label="Zoom in">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                    <button class="icon-btn" aria-label="Zoom out">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                </div>
+
+                <svg width="100%" height="100%" style="position:absolute; inset:0;" aria-hidden="true">
+                    <path d="M 120 250 Q 300 200 460 170 T 780 90" fill="none" stroke="#7CC5D8" stroke-width="3" stroke-dasharray="8 8"/>
+                </svg>
+
+                <span class="map-pin" style="left: 14%; top: 60%;">Central Hub</span>
+                <span class="map-pin map-pin-active" style="left: 46%; top: 42%;">AB-123-CD</span>
+                <span class="map-pin" style="left: 32%; top: 62%;">XY-987-ZZ</span>
+                <span class="map-pin" style="left: 74%; top: 30%;">LK-442-PO</span>
+                <span class="map-pin" style="left: 86%; top: 58%;">RE-221-QT</span>
+
+                <p class="map-note">Mockup: static map placeholder. Positions are sample data.</p>
+            </section>
+
+            <!-- Estado logístico del camión seleccionado, con carga simulada -->
+            <section class="card" id="logistic-status" data-simulate-loading="800" aria-labelledby="logistic-heading">
+                <div class="flex items-center justify-between" style="margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-2);">
+                    <div>
+                        <h2 id="logistic-heading" style="font-size: var(--text-md); margin:0;">Estado de logística: AB-123-CD</h2>
+                        <p class="card-subtitle" style="margin:0;">Datos de TRK-0922</p>
+                    </div>
+                    <span class="badge badge-success">Cerca de destino</span>
+                </div>
+
+                <div data-skeleton aria-hidden="true">
+                    <div class="grid grid-cols-4 gap-3" style="margin-bottom: var(--space-4);">
+                        <div class="skeleton" style="height:64px;"></div>
+                        <div class="skeleton" style="height:64px;"></div>
+                        <div class="skeleton" style="height:64px;"></div>
+                        <div class="skeleton" style="height:64px;"></div>
+                    </div>
+                    <div class="skeleton" style="height:56px;"></div>
+                </div>
+
+                <div data-content>
+                    <div class="grid grid-cols-4 gap-3" style="margin-bottom: var(--space-4);">
+                        <div class="data-tile">
+                            <span class="data-tile-label">Estado</span>
+                            <span class="data-tile-value">Cerca del destino</span>
+                        </div>
+                        <div class="data-tile">
+                            <span class="data-tile-label">Velocidad actual</span>
+                            <span class="data-tile-value">25 km/h</span>
+                        </div>
+                        <div class="data-tile">
+                            <span class="data-tile-label">Última actualización</span>
+                            <span class="data-tile-value">Hace 2 min</span>
+                        </div>
+                        <div class="data-tile">
+                            <span class="data-tile-label">Restante</span>
+                            <span class="data-tile-value">1,2 km</span>
+                        </div>
+                    </div>
+
+                    <div class="banner banner-brand" style="margin-bottom: var(--space-4);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex:none;"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14l-3-3"/></svg>
+                        <div>
+                            <strong>Verificación de contenido</strong>
+                            <p>Cargamento: 50 kg de arroz y 10 kg de lentejas de Central Logistics Hub. Conductor: Carlos Gomez (certificado).</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2" style="flex-wrap: wrap;">
+                        <button class="btn btn-primary" data-open-modal="confirm-receipt-modal">Confirmar recepción</button>
+                        <a class="btn btn-secondary" href="staff-nueva-donacion.html">Registrar como nueva donación</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Resumen del día -->
+            <div class="grid grid-cols-4 gap-3">
+                <div class="stat-card" style="background: var(--color-primary); border-color: var(--color-primary); color: #fff;">
+                    <span class="card-subtitle" style="color: rgba(255,255,255,0.9);">Total del día</span>
+                    <strong style="display:block; font-family: var(--font-heading); font-size: var(--text-xl);">1,240 kg</strong>
+                    <span style="font-size: var(--text-xs);">8 de 12 donaciones recibidas</span>
+                </div>
+                <div class="stat-card">
+                    <span class="card-subtitle">Último ingreso</span>
+                    <strong style="display:block;">TRK-0192</strong>
+                    <span class="card-subtitle">Hace 42 min</span>
+                </div>
+                <div class="stat-card">
+                    <span class="card-subtitle">Reportes pendientes</span>
+                    <strong style="display:block;">2 remitos</strong>
+                    <span class="card-subtitle">Necesita firma digital</span>
+                </div>
+                <div class="stat-card">
+                    <span class="card-subtitle">Optimización de ruta</span>
+                    <strong style="display:block;">Alertas de tráfico</strong>
+                    <a class="btn btn-ghost btn-sm" href="#" style="padding-left:0;">Ver alertas</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+</div>
+
+<!-- Modal: confirmar recepción -->
+<div class="modal-overlay" id="confirm-receipt-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-receipt-title">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <h3 id="confirm-receipt-title" style="margin:0;">Confirmar recepción de AB-123-CD</h3>
+                <p class="modal-desc">Esto registra el ingreso y desbloquea el formulario.</p>
+            </div>
+            <button class="modal-close" data-close-modal aria-label="Close dialog">✕</button>
+        </div>
+
+        <div class="banner banner-warning" style="margin-bottom: var(--space-4);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex:none;"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <p>Controla el cargamento con el remito antes de confirmar.</p>
+        </div>
+
+        <div class="field">
+            <label for="receipt-notes">Notas de entrega <span class="field-optional">(optional)</span></label>
+            <textarea id="receipt-notes" data-autofocus placeholder="Ej: una Caja dañada en tránsito, foto de la entrega"></textarea>
+        </div>
+
+        <label class="radio-option" style="margin-bottom: var(--space-4);">
+            <input type="checkbox" id="manifest-check">
+            <span>El cargamento coincide con el remito</span>
+        </label>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close-modal>Cancel</button>
+            <button class="btn btn-primary" data-close-modal data-toast-success="Recepción confirmada para AB-123-CD">Confirm receipt</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: notificaciones -->
+<div class="modal-overlay" id="staff-notif-modal" role="dialog" aria-modal="true" aria-labelledby="staff-notif-title">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="staff-notif-title" style="margin:0;">Notificaciones</h3>
+            <button class="modal-close" data-close-modal aria-label="cerrar diálogo">✕</button>
+        </div>
+        <ul class="list-reset" style="font-size: var(--text-sm);">
+            <li style="padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-3);">
+                <strong>RE-221-QT retrasado</strong><br>
+                <span class="card-subtitle">Nuevo ETA está a 3 h 20 min — tráfico en acceso norte. Hace 8 min</span>
+            </li>
+            <li>
+                <strong>2 remitos necesitan firma</strong><br>
+                <span class="card-subtitle">TRK-0192 y TRK-0847 esperan firma digital. Hace 1 h </span>
+            </li>
+        </ul>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close-modal>Cerrar</button>
+            <button class="btn btn-primary" data-close-modal data-toast-success="Todas las notificaciones marcadas como leídas">Marcar como leídas</button>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
