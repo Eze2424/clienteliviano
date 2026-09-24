@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Login - DonaTrack</title>
+</head>
+<body>
+<h2>Iniciar Sesión</h2>
+
+<!-- Mensajes de error o éxito -->
+<div th:if="${error}" th:text="${error}" style="color: red;"></div>
+<div th:if="${param.registroExitoso}" style="color: green;">Registro exitoso. Por favor, iniciá sesión.</div>
+
+<form th:action="@{/login}" method="post">
+    <label>Email:</label>
+    <input type="email" name="username" required/>
+    <br/><br/>
+    <label>Contraseña:</label>
+    <input type="password" name="password" required/>
+    <br/><br/>
+    <button type="submit">Ingresar</button>
+</form>
+</body>
+</html>

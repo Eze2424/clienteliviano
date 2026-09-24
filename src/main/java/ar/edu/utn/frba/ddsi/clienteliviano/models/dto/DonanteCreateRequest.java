@@ -7,7 +7,7 @@ import java.util.List;
 
 
 @Data
-public class DonanteRequest {
+public class DonanteCreateRequest {
 
   private String nombre;
   private String apellido;
@@ -15,6 +15,7 @@ public class DonanteRequest {
   private  String documento;
   private  String genero;
   private  String direccion;
+  private String password;
 
   private  String email;
   private  String telefono;

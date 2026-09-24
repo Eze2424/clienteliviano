@@ -10,5 +10,6 @@ public class EntidadCreateRequest {
   private double latitud;
   private double longitud;
   private String email;
+  private String password;
   private String medioPredeterminado;
 }
