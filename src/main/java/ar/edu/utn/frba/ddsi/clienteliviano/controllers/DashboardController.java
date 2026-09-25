@@ -2,7 +2,7 @@ package ar.edu.utn.frba.ddsi.clienteliviano.controllers;
 
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DashboardDonanteResponse;
 import jakarta.servlet.http.HttpSession;
-import lombok.Value;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,7 +13,7 @@ import org.springframework.web.client.RestTemplate;
 public class DashboardController {
 
   private final RestTemplate restTemplate;
-  //@Value("${backend.api.url.donaciones}")
+  @Value("${backend.api.url.donaciones}")
   private String backendApiUrl;
   public DashboardController(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;

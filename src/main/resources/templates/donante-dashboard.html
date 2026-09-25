@@ -31,10 +31,14 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
             <span class="notif-dot" aria-hidden="true"></span>
         </button>
-        <div class="user-chip">
-            <span class="avatar" th:text="${dashboard.iniciales}">EM</span>
+        <div class="user-chip" th:if="${dashboard.nombre != null}">
+            <!-- Extrae la 1ra letra del nombre y apellido -->
+            <span class="avatar"
+                  th:text="${#strings.toUpperCase(#strings.substring(dashboard.nombre, 0, 1) + #strings.substring(dashboard.apellido, 0, 1))}">
+        EM
+    </span>
             <span class="user-chip-meta">
-        <span class="name" th:text="${dashboard.nombreCompleto}">Elena Martinez</span>
+        <span class="name" th:text="${dashboard.nombre + ' ' + dashboard.apellido}">Elena Martinez</span>
         <span class="role">Donante</span>
     </span>
         </div>
@@ -113,61 +117,32 @@
                     </div>
 
                     <ul class="flex flex-col gap-4">
-                        <li class="flex gap-3" style="border-bottom:1px solid var(--color-border); padding-bottom: var(--space-4);">
-                            <img src="https://images.unsplash.com/photo-1595246140625-573b715d11dc?w=150&q=80" alt="" style="width:64px;height:64px;border-radius:var(--radius-md); object-fit:cover; flex-shrink:0;">
+                        <li class="flex gap-3" style="border-bottom:1px solid var(--color-border); padding-bottom: var(--space-4);"
+                            th:each="donacion : ${dashboard.donacionesRecientes}">
+
+                            <img th:src="${donacion.imagenUrl ?: 'https://images.unsplash.com/photo-1595246140625-573b715d11dc?w=150&q=80'}"
+                                 alt="Imagen donación" style="width:64px;height:64px;border-radius:var(--radius-md); object-fit:cover; flex-shrink:0;">
+
                             <div style="flex:1;">
-                                <strong>March Food Drive — No perecedero</strong>
-                                <p class="card-subtitle" style="margin:2px 0;">ONG: Community Harvest · 29-03-2026 </p>
+                                <strong th:text="${donacion.titulo}">Título de Donación</strong>
+                                <p class="card-subtitle" style="margin:2px 0;"
+                                   th:text="'ONG: ' + ${donacion.entidadNombre} + ' • ' + ${donacion.fecha}">Detalle ONG</p>
+
                                 <div class="flex items-center gap-2">
-                                    <span class="badge badge-warning">Esperando asignación</span>
-                                    <span class="card-subtitle">48 items · Recibido hace 2 días</span>
+                                    <!-- Asignación dinámica de colores según el estado -->
+                                    <span class="badge"
+                                          th:classappend="${donacion.estado == 'ENTREGADO' ? 'badge-success' :
+                                       (donacion.estado == 'ASIGNADO' ? 'badge-info' :
+                                       (donacion.estado == 'PENDIENTE' ? 'badge-warning' : 'badge-neutral'))}"
+                                          th:text="${donacion.estado}">
+                    Estado
+                </span>
+
+                                    <span class="card-subtitle" th:text="${donacion.descripcionBreve}">Resumen</span>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-2">
-                                <a href="donante-donacion.html" class="btn btn-outline btn-sm">Seguir</a>
-                            </div>
-                        </li>
-                        <li class="flex gap-3" style="border-bottom:1px solid var(--color-border); padding-bottom: var(--space-4);">
-                            <img src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=150&q=80" alt="" style="width:64px;height:64px;border-radius:var(--radius-md); object-fit:cover; flex-shrink:0;">
-                            <div style="flex:1;">
-                                <strong>Abrigos de invierno</strong>
-                                <p class="card-subtitle" style="margin:2px 0;">ONG: Warm Hands Foundation · 21-03-2026 </p>
-                                <div class="flex items-center gap-2">
-                                    <span class="badge badge-info">Asignado · Hope Transit</span>
-                                    <span class="card-subtitle">62 items · Asignado hace 5 días</span>
-                                </div>
-                            </div>
-                            <div class="flex flex-col gap-2">
-                                <a href="donante-donacion.html" class="btn btn-outline btn-sm">Seguir</a>
-                            </div>
-                        </li>
-                        <li class="flex gap-3" style="border-bottom:1px solid var(--color-border); padding-bottom: var(--space-4);">
-                            <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=150&q=80" alt="" style="width:64px;height:64px;border-radius:var(--radius-md); object-fit:cover; flex-shrink:0;">
-                            <div style="flex:1;">
-                                <strong>Mobiliario — Veldor</strong>
-                                <p class="card-subtitle" style="margin:2px 0;">ONG: Homes for All · 10-03-2026 </p>
-                                <div class="flex items-center gap-2">
-                                    <span class="badge badge-success">Entregado</span>
-                                    <span class="card-subtitle">3 items · Entregado hace 20 días</span>
-                                </div>
-                            </div>
-                            <div class="flex flex-col gap-2">
-                                <a href="#" class="btn btn-outline btn-sm">Seguir</a>
-                            </div>
-                        </li>
-                        <li class="flex gap-3">
-                            <img src="https://images.unsplash.com/photo-1602529550560-7c1d1bd7f6f4?w=150&q=80" alt="" style="width:64px;height:64px;border-radius:var(--radius-md); object-fit:cover; flex-shrink:0;">
-                            <div style="flex:1;">
-                                <strong>Household Goods — Outreach Run</strong>
-                                <p class="card-subtitle" style="margin:2px 0;">NGO: BrightPath · 2026-02-28 · North Logistics Hub</p>
-                                <div class="flex items-center gap-2">
-                                    <span class="badge badge-neutral">Pending Scheduling</span>
-                                    <span class="card-subtitle">16 items · Received 14 days ago</span>
-                                </div>
-                            </div>
-                            <div class="flex flex-col gap-2">
-                                <a href="#" class="btn btn-secondary btn-sm">View Receipt</a>
-                                <a href="#" class="btn btn-outline btn-sm">Assign</a>
+                                <a th:href="@{/donacion/{id}(id=${donacion.id})}" class="btn btn-outline btn-sm">Seguir</a>
                             </div>
                         </li>
                     </ul>
