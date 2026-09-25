@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Signika:wght@300..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="../static/fotos%20base/styles.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
@@ -32,11 +32,11 @@
             <span class="notif-dot" aria-hidden="true"></span>
         </button>
         <div class="user-chip">
-            <span class="avatar">EM</span>
+            <span class="avatar" th:text="${dashboard.iniciales}">EM</span>
             <span class="user-chip-meta">
-        <span class="name">Elena Martinez</span>
-        <span class="role">Sostenedor</span>
-      </span>
+        <span class="name" th:text="${dashboard.nombreCompleto}">Elena Martinez</span>
+        <span class="role">Donante</span>
+    </span>
         </div>
         <a href="login.html" class="btn btn-ghost btn-sm" title="Sign out">Cerrar sesión</a>
         <button class="navbar-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
@@ -308,6 +308,6 @@
     </div>
 </div>
 
-<script src="js/main.js"></script>
+<script src="../static/fotos%20base/main.js"></script>
 </body>
 </html>

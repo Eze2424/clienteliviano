@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,13 +8,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Signika:wght@300..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Enlace dinámico de Thymeleaf a tu CSS -->
+    <link rel="stylesheet" th:href="@{'/fotos base/styles.css'}">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
 
 <header class="navbar">
-    <a href="index.html" class="navbar-brand">
+    <a th:href="@{/}" class="navbar-brand">
     <span class="logo-mark" aria-hidden="true">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2.3 4 6.2 4c2.2 0 3.9 1.3 4.8 2.9C11.9 5.3 13.6 4 15.8 4c3.9 0 5.8 4.1 4.2 7.7C19.5 16.4 12 21 12 21z" fill="white"/></svg>
     </span>
@@ -55,25 +57,27 @@
             </div>
 
             <h1 style="font-size: var(--text-lg);">Bienvenido a DonaTrack</h1>
-            <p class="donante-only"> Ingresa para mirar el estado de las donaciones,
-                ver imagenes y conocer el progreso de tus misiones.</p>
-
-            <p class="entidad-only"> Ingresa para seguir tus entregas,
-                cargar imagenes y necesidades.</p>
-
+            <p class="donante-only"> Ingresa para mirar el estado de las donaciones, ver imagenes y conocer el progreso de tus misiones.</p>
+            <p class="entidad-only"> Ingresa para seguir tus entregas, cargar imagenes y necesidades.</p>
             <p class="admin-only" style="display:none;"></p>
 
-            <form id="login-form" novalidate style="margin-top: var(--space-4);">
+            <!-- Mensajes de feedback dinámicos de Spring -->
+            <div th:if="${error}" th:text="${error}" class="banner banner-warning" style="margin-bottom: var(--space-4);"></div>
+            <div th:if="${param.registroExitoso}" class="banner banner-info" style="margin-bottom: var(--space-4);">
+                <strong>¡Registro exitoso!</strong> Por favor, iniciá sesión con tus nuevas credenciales.
+            </div>
+
+            <!-- Formulario conectado a Thymeleaf -->
+            <form id="login-form" th:action="@{/login}" method="post" novalidate style="margin-top: var(--space-4);">
                 <div class="field">
                     <label for="login-email">Email</label>
-                    <input type="text" id="login-email" name="email" placeholder="tu@ejemplo.org" autocomplete="username" required>
+                    <input type="text" id="login-email" name="username" placeholder="tu@ejemplo.org" autocomplete="username" required>
                 </div>
                 <div class="field">
                     <label for="login-password">Contraseña</label>
                     <input type="password" id="login-password" name="password" placeholder="Ingresá tu contraseña" autocomplete="current-password" required aria-describedby="pw-hint">
                     <span class="hint" id="pw-hint">Usa la contraseña asociada a tu cuenta de DonaTrack.</span>
                 </div>
-
                 <div class="flex items-center justify-between" style="margin-bottom: var(--space-5);">
                     <label class="checkbox-option" style="min-height:auto;">
                         <input type="checkbox" id="remember-me" name="remember">
@@ -81,12 +85,12 @@
                     </label>
                     <a href="#" style="font-size: var(--text-sm);">Olvidé mi contraseña</a>
                 </div>
-
+                <!-- El botón viaja directo a tu controlador ahora -->
                 <button type="submit" class="btn btn-primary btn-block">Iniciar sesión</button>
             </form>
 
             <p style="text-align:center; margin-top: var(--space-4); font-size: var(--text-sm);">
-                Sos nuevo? <a href="registro.html"><strong>Registrarme</strong></a>
+                Sos nuevo? <a th:href="@{/register/donante}"><strong>Registrarme</strong></a>
             </p>
             <p style="text-align:center; font-size: var(--text-xs); color:var(--color-text-faint);">🔒 Secure connection · 256-bit encryption</p>
 
@@ -104,7 +108,8 @@
     </div>
 </main>
 
-<script src="js/main.js"></script>
+<!-- Enlace dinámico de Thymeleaf a tu JS -->
+<script th:src="@{'/fotos base/main.js'}"></script>
 <script>
     // Función para actualizar los párrafos según la pestaña activa
     function updateRoleDescription() {
@@ -135,34 +140,6 @@
 
     // Ejecutar al cargar la página
     updateRoleDescription();
-
-    // Al iniciar sesion se navega al panel del rol elegido.
-    // Es una maqueta: no hay validacion de credenciales contra un backend.
-    var destinos = {
-        'tab-donor': 'donante-dashboard.html',
-        'tab-admin': 'staff-dashboard.html'
-    };
-
-    document.getElementById('login-form').addEventListener('submit', function (e) {
-        e.preventDefault();
-        var elegido = document.querySelector('#role-tabs .tab[aria-checked="true"]');
-        var destino = destinos[elegido.id];
-
-        if (!destino) {
-            showToast({
-                message: 'El panel de Entidad Beneficiaria no forma parte de esta entrega',
-                type: 'error'
-            });
-            return;
-        }
-
-        var btn = e.target.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        btn.setAttribute('aria-busy', 'true');
-        btn.textContent = 'Signing in…';
-        showToast({ message: 'Signed in successfully', type: 'success' });
-        setTimeout(function () { window.location.href = destino; }, 600);
-    });
 </script>
 </body>
 </html>

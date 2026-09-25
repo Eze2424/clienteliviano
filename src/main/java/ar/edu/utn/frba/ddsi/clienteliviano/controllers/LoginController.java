@@ -51,13 +51,31 @@ public class LoginController {
       ResponseEntity<Map> response = restTemplate.postForEntity(tokenEndpoint, request, Map.class);
 
       if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-        // Obtenemos el access_token enorme
         String accessToken = (String) response.getBody().get("access_token");
-
-        // Lo guardamos en la sesión local del cliente liviano
         session.setAttribute("JWT_TOKEN", accessToken);
 
-        return "redirect:/home"; // Login exitoso, va a la home
+        // Decodificamos el Payload del JWT (es la segunda parte del string separada por puntos)
+        String[] chunks = accessToken.split("\\.");
+        if (chunks.length > 1) {
+          String payload = new String(java.util.Base64.getUrlDecoder().decode(chunks[1]));
+          java.util.Map<String, Object> payloadMap = new com.fasterxml.jackson.databind.ObjectMapper().readValue(payload, java.util.Map.class);
+
+          // Buscamos los roles inyectados por Keycloak
+          java.util.Map<String, Object> realmAccess = (java.util.Map<String, Object>) payloadMap.get("realm_access");
+          if (realmAccess != null && realmAccess.containsKey("roles")) {
+            java.util.List<String> roles = (java.util.List<String>) realmAccess.get("roles");
+
+            // Redirigimos según el rol
+            if (roles.contains("ADMIN")) {
+              return "redirect:/dashboard/staff";
+            } else if (roles.contains("ENTIDAD")) {
+              return "redirect:/dashboard/entidad";
+            }
+          }
+        }
+
+        // Si no es admin ni entidad, asumimos que es el Donante
+        return "redirect:/dashboard/donante";
       }
     } catch (org.springframework.web.client.HttpClientErrorException e) {
       System.err.println("Rechazo de Keycloak: " + e.getResponseBodyAsString());

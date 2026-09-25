@@ -39,7 +39,6 @@ public class RegisterController {
   @PostMapping("/donante")
   public String registrarDonante(@ModelAttribute("donante") DonanteCreateRequest donanteRequest, Model model) {
     try {
-      // PASO 1: Registrar la identidad en Keycloak
       boolean keycloakCreado = registrarYAsignarRolEnKeycloak(donanteRequest.getEmail(), donanteRequest.getPassword(), "DONANTE",donanteRequest.getNombre(),donanteRequest.getApellido());
 
       if (!keycloakCreado) {
@@ -67,7 +66,6 @@ public class RegisterController {
     }
   }
 
-  // Método auxiliar para crear el usuario en Keycloak y asignarle su rol
   private boolean registrarYAsignarRolEnKeycloak(String email, String password, String rolName, String nombre, String apellido) {
     try {
       // ==========================================
