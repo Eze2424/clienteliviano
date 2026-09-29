@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Donaciones asignadas',
+        'Estado de las donaciones asignadas a tu entidad y tus avisos.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: entidad('dashboard')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <div style="margin-bottom: var(--space-5);">
+        <h1 style="margin-bottom: var(--space-1);">Donaciones asignadas</h1>
+        <p class="card-subtitle" style="margin:0;">
+            Seguí en qué estado está cada donación que viene para tu entidad y confirmá
+            la recepción cuando llegue.
+        </p>
+    </div>
+
+    <!-- ============ Resumen ============ -->
+    <div class="grid grid-cols-3" style="margin-bottom: var(--space-5);">
+        <div class="stat-card">
+            <div class="label">Donaciones asignadas</div>
+            <div class="value" th:text="${#lists.size(donaciones)}">3</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Entregas en camino</div>
+            <div class="value" th:text="${entregasActivas}">1</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Necesidades publicadas</div>
+            <div class="value" th:text="${necesidadesActivas}">3</div>
+        </div>
+    </div>
+
+    <div class="split-view">
+
+        <!-- ============ Lista de donaciones ============ -->
+        <section aria-labelledby="titulo-donaciones">
+            <div class="card-title-row" style="margin-bottom: var(--space-3);">
+                <h2 id="titulo-donaciones" class="heading-md" style="margin:0;">Tus donaciones</h2>
+                <a th:href="@{/entidad/entregas}" class="btn btn-secondary btn-sm">Ver el mapa de entregas</a>
+            </div>
+
+            <!-- Estado vacío: qué pasa y qué hacer -->
+            <div th:if="${#lists.isEmpty(donaciones)}">
+                <div th:replace="~{fragments/componentes :: estado-vacio(
+                    'Todavía no te asignaron donaciones',
+                    'Cuando publiques tus necesidades, el sistema empieza a buscar donaciones que encajen y te avisa acá.',
+                    'Publicar una necesidad', @{/entidad/necesidades})}"></div>
+            </div>
+
+            <div class="flex flex-col gap-3" th:unless="${#lists.isEmpty(donaciones)}">
+                <article class="card" th:each="d : ${donaciones}">
+                    <div class="card-title-row">
+                        <div style="min-width:0;">
+                            <p class="entity-card-eyebrow" style="margin:0;">
+                                Donación #<span th:text="${d.id}">1041</span>
+                            </p>
+                            <h3 class="heading-sm" style="margin: var(--space-1) 0;"
+                                th:text="${d.descripcion}">Alimentos no perecederos</h3>
+                        </div>
+                        <span class="badge" th:classappend="${d.claseBadge()}"
+                              th:text="${d.etiquetaEstado()}">En traslado</span>
+                    </div>
+
+                    <div class="flex gap-4" style="flex-wrap: wrap; margin: var(--space-3) 0;">
+                        <div class="data-tile">
+                            <span class="data-tile-label">Donante</span>
+                            <span class="data-tile-value" th:text="${d.donante}">Elena Martínez</span>
+                        </div>
+                        <div class="data-tile">
+                            <span class="data-tile-label">Registrada</span>
+                            <span class="data-tile-value"
+                                  th:text="${#temporals.format(d.fecha, 'dd/MM/yyyy')}">24/09/2026</span>
+                        </div>
+                        <div class="data-tile">
+                            <span class="data-tile-label">Bienes</span>
+                            <span class="data-tile-value" th:text="${d.cantidadBienes}">12</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2" style="flex-wrap: wrap;">
+                        <a class="btn btn-primary btn-sm"
+                           th:href="@{/entidad/donaciones/{id}(id=${d.id})}"
+                           th:text="${d.estado == 'ENTREGADA'} ? 'Ver detalle' : 'Ver y confirmar recepción'">
+                            Ver y confirmar recepción
+                        </a>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- ============ Notificaciones (CU4) ============ -->
+        <aside class="sidebar" id="notificaciones" aria-labelledby="titulo-avisos">
+            <h2 id="titulo-avisos" class="heading-sm" style="margin-bottom: var(--space-3);">Tus avisos</h2>
+
+            <div th:if="${#lists.isEmpty(notificaciones)}">
+                <div th:replace="~{fragments/componentes :: estado-vacio(
+                    'Sin avisos por ahora',
+                    'Te vamos a avisar cuando te asignen una donación o cuando una entrega salga del depósito.',
+                    null, null)}"></div>
+            </div>
+
+            <ul class="list-reset flex flex-col gap-3" th:unless="${#lists.isEmpty(notificaciones)}">
+                <li th:each="n : ${notificaciones}" class="card"
+                    th:style="${n.leida} ? '' : 'border-left: 3px solid var(--color-primary);'"
+                    style="padding: var(--space-3);">
+                    <div class="flex gap-2" style="align-items: flex-start;">
+                        <span aria-hidden="true" th:text="${n.icono()}">📦</span>
+                        <div style="min-width:0;">
+                            <strong style="font-size: var(--text-sm);" th:text="${n.titulo}">Te asignaron una donación</strong>
+                            <span class="visually-hidden" th:if="${!n.leida}">Sin leer.</span>
+                            <p class="card-subtitle" style="margin: var(--space-1) 0 0; font-size: var(--text-sm);"
+                               th:text="${n.detalle}">Donación #1041.</p>
+                            <p class="card-subtitle" style="margin: var(--space-1) 0 0; font-size: var(--text-xs);"
+                               th:text="${#temporals.format(n.fecha, 'dd/MM/yyyy HH:mm')}">28/09/2026 16:10</p>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </aside>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

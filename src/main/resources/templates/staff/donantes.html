@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Donantes',
+        'Alta de donantes e importación masiva desde archivo CSV.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: staff('donantes')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <div class="card-title-row" style="margin-bottom: var(--space-5);">
+        <div style="min-width:0;">
+            <h1 style="margin-bottom: var(--space-1);">Donantes</h1>
+            <p class="card-subtitle" style="margin:0;">
+                Quiénes están registrados, y alta de quien se acerca por primera vez.
+            </p>
+        </div>
+        <div class="flex gap-2" style="flex-wrap: wrap;">
+            <button class="btn btn-secondary" data-open-modal="modal-importar">Importar CSV</button>
+            <button class="btn btn-primary" data-open-modal="modal-alta">Dar de alta un donante</button>
+        </div>
+    </div>
+
+    <div class="banner banner-warning" role="alert" th:if="${error != null}"
+         style="margin-bottom: var(--space-5);">
+        <span aria-hidden="true">⚠</span>
+        <p><span th:text="${error}">Falta un dato.</span></p>
+    </div>
+
+    <!-- ============ Listado ============ -->
+    <section aria-labelledby="titulo-donantes">
+        <h2 id="titulo-donantes" class="visually-hidden">Donantes registrados</h2>
+
+        <div th:if="${#lists.isEmpty(donantes)}">
+            <div th:replace="~{fragments/componentes :: estado-vacio(
+                'Todavía no hay donantes registrados',
+                'Dalos de alta de a uno, o importá un padrón existente desde un archivo CSV.',
+                null, null)}"></div>
+        </div>
+
+        <div class="card table-wrap" th:unless="${#lists.isEmpty(donantes)}">
+            <table>
+                <caption class="visually-hidden">Personas y organizaciones donantes registradas</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Donante</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Documento</th>
+                    <th scope="col">Rubro</th>
+                    <th scope="col">Dirección</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="d : ${donantes}">
+                    <th scope="row" th:text="${d.nombreVisible()}">Elena Martínez</th>
+                    <td>
+                        <span class="badge badge-neutral" th:text="${d.tipo()}">Persona</span>
+                    </td>
+                    <td th:text="${d.dni()}">28456789</td>
+                    <td th:text="${d.rubro() != null} ? ${d.rubro()} : '—'">—</td>
+                    <td th:text="${d.direccion()}">Av. Rivadavia 4820, CABA</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============ Modal: alta manual (CU1) ============ -->
+    <div class="modal-overlay" id="modal-alta" role="dialog" aria-modal="true"
+         aria-labelledby="titulo-modal-alta">
+        <div class="modal">
+            <form th:action="@{/staff/donantes}" th:object="${form}" method="post" novalidate>
+                <div class="modal-header">
+                    <div>
+                        <h2 id="titulo-modal-alta" style="margin:0;">Dar de alta un donante</h2>
+                        <p class="modal-desc">
+                            Con estos datos ya podés registrarle donaciones. El usuario para
+                            que entre al sistema se otorga después.
+                        </p>
+                    </div>
+                    <button type="button" class="modal-close" data-close-modal
+                            aria-label="Cerrar el diálogo">✕</button>
+                </div>
+
+                <div class="field">
+                    <label class="checkbox-option">
+                        <input type="checkbox" th:field="*{esJuridico}" id="es-juridico">
+                        <span>Es una organización, no una persona</span>
+                    </label>
+                </div>
+
+                <div data-bloque="juridico" hidden>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="razonSocial">Razón social</label>
+                            <input type="text" id="razonSocial" th:field="*{razonSocial}"
+                                   placeholder="Fundación Caminos de Esperanza">
+                        </div>
+                        <div class="field">
+                            <label for="tipoOrganizacion">Tipo</label>
+                            <select id="tipoOrganizacion" th:field="*{tipoOrganizacion}">
+                                <option value="">Elegí una opción</option>
+                                <option th:each="t : ${tiposOrganizacion}"
+                                        th:value="${t}" th:text="${t.name()}">ONG</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="rubro">Rubro</label>
+                            <input type="text" id="rubro" th:field="*{rubro}" placeholder="Alimentación">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="nombre">Nombre</label>
+                        <input type="text" id="nombre" th:field="*{nombre}" placeholder="Ana" data-autofocus>
+                    </div>
+                    <div class="field">
+                        <label for="apellido">Apellido</label>
+                        <input type="text" id="apellido" th:field="*{apellido}" placeholder="Gutiérrez">
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="documento">Documento</label>
+                        <input type="text" id="documento" th:field="*{documento}" placeholder="30123456"
+                               required aria-describedby="hint-doc">
+                        <span class="hint" id="hint-doc">Es con lo que identificamos al donante.</span>
+                    </div>
+                    <div class="field">
+                        <label for="edad">Edad</label>
+                        <input type="number" id="edad" min="18" max="120" th:field="*{edad}" placeholder="34">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="direccion">Dirección</label>
+                    <input type="text" id="direccion" th:field="*{direccion}"
+                           placeholder="Av. Mitre 2210, Avellaneda">
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" th:field="*{email}" placeholder="ana@ejemplo.org">
+                    </div>
+                    <div class="field">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" th:field="*{telefono}" placeholder="+54 11 4555-0112">
+                    </div>
+                    <div class="field">
+                        <label for="medioPredeterminado">Avisos por</label>
+                        <select id="medioPredeterminado" th:field="*{medioPredeterminado}">
+                            <option value="EMAIL">Email</option>
+                            <option value="SMS">SMS</option>
+                            <option value="WHATSAPP">WhatsApp</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                    <button type="submit" class="btn btn-primary"
+                            data-loading-on-submit data-loading-texto="Dando de alta…">Dar de alta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ Modal: importación CSV (CU6) ============ -->
+    <div class="modal-overlay" id="modal-importar" role="dialog" aria-modal="true"
+         aria-labelledby="titulo-modal-importar">
+        <div class="modal">
+            <form th:action="@{/staff/donantes/importar}" method="post"
+                  enctype="multipart/form-data" novalidate>
+                <div class="modal-header">
+                    <div>
+                        <h2 id="titulo-modal-importar" style="margin:0;">Importar donantes desde CSV</h2>
+                        <p class="modal-desc">
+                            Para dar de alta un padrón completo y otorgarle usuario a gente
+                            que ya venía donando.
+                        </p>
+                    </div>
+                    <button type="button" class="modal-close" data-close-modal
+                            aria-label="Cerrar el diálogo">✕</button>
+                </div>
+
+                <div class="banner banner-info" role="note" style="margin-bottom: var(--space-4);">
+                    <span aria-hidden="true">⏱</span>
+                    <p>
+                        <strong>Los archivos grandes se procesan en segundo plano</strong>
+                        Podés cerrar esta pantalla: te avisamos cuando termine. Un archivo de
+                        10.000 filas puede tardar varios minutos.
+                    </p>
+                </div>
+
+                <div class="field">
+                    <label for="archivo">Archivo CSV</label>
+                    <input type="file" id="archivo" name="archivo" accept=".csv,text/csv"
+                           required data-autofocus aria-describedby="hint-csv">
+                    <span class="hint" id="hint-csv">
+                        Una fila por donante. Columnas esperadas:
+                        <code>nombre, apellido, documento, edad, genero, direccion, email, telefono</code>.
+                    </span>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                    <button type="submit" class="btn btn-primary"
+                            data-loading-on-submit data-loading-texto="Subiendo…">Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+
+<script th:inline="none">
+    /* Los campos de organización solo aparecen si el donante es jurídico. */
+    (function () {
+        const check = document.getElementById('es-juridico');
+        const bloques = document.querySelectorAll('[data-bloque=juridico]');
+        function alternar() {
+            bloques.forEach((b) => { b.hidden = !check.checked; });
+        }
+        check.addEventListener('change', alternar);
+        alternar();
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Registrar donación',
+        'Registrá una donación recibida en el depósito a nombre de quien la trajo.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: staff('dashboard')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <nav th:replace="~{fragments/componentes :: breadcrumb(
+            'Depósito', @{/staff/dashboard}, 'Registrar donación')}"></nav>
+
+    <div style="margin: var(--space-4) 0 var(--space-5);">
+        <h1 style="margin-bottom: var(--space-1);">Registrar donación</h1>
+        <p class="card-subtitle" style="margin:0;">
+            Cargá lo que acaba de entrar al depósito y asocialo a quien lo trajo.
+        </p>
+    </div>
+
+    <div class="banner banner-warning" role="alert" th:if="${error != null}"
+         style="margin-bottom: var(--space-5);">
+        <span aria-hidden="true">⚠</span>
+        <p><span th:text="${error}">Falta un dato.</span></p>
+    </div>
+
+    <form th:action="@{/staff/donaciones/nueva}" th:object="${form}" method="post" novalidate>
+        <div class="split-view">
+
+            <div>
+                <!-- ---------- Quién dona ---------- -->
+                <fieldset class="card" style="border:0; margin-bottom: var(--space-5);">
+                    <legend class="heading-md" style="margin-bottom: var(--space-3);">Quién dona</legend>
+
+                    <div class="field">
+                        <label for="donanteId">Donante</label>
+                        <select id="donanteId" th:field="*{donanteId}" required
+                                aria-describedby="hint-donante">
+                            <option value="">Elegí a quién pertenece</option>
+                            <option th:each="d : ${donantes}"
+                                    th:value="${d.donanteId()}"
+                                    th:text="${d.nombreVisible()} + ' · ' + ${d.tipo()} + ' · DNI ' + ${d.dni()}">
+                                Elena Martínez
+                            </option>
+                        </select>
+                        <span class="hint" id="hint-donante">
+                            ¿No está en la lista?
+                            <a th:href="@{/staff/donantes}">Dalo de alta primero</a>.
+                        </span>
+                    </div>
+                </fieldset>
+
+                <!-- ---------- Qué se donó ---------- -->
+                <fieldset class="card" style="border:0; margin-bottom: var(--space-5);">
+                    <legend class="heading-md" style="margin-bottom: var(--space-3);">Qué se donó</legend>
+
+                    <div class="field">
+                        <label for="descripcion">Descripción de la donación</label>
+                        <input type="text" id="descripcion" th:field="*{descripcion}"
+                               placeholder="Alimentos no perecederos: 100 kg de arroz, 50 kg de fideos"
+                               aria-describedby="hint-descripcion">
+                        <span class="hint" id="hint-descripcion">
+                            Un resumen de todo el lote. Los bienes se detallan abajo.
+                        </span>
+                    </div>
+
+                    <h2 class="heading-sm" style="margin: var(--space-5) 0 var(--space-3);">
+                        Bienes del lote
+                    </h2>
+
+                    <!--
+                      Un bloque por bien. La lista arranca con uno y el botón
+                      agrega más clonando el bloque, con los índices renumerados
+                      para que Spring los ligue a form.bienes[i].
+                    -->
+                    <div id="lista-bienes">
+                        <div class="card" data-bloque="bien" th:each="bien, it : *{bienes}"
+                             style="background: var(--color-bg); margin-bottom: var(--space-3);">
+                            <div class="field-row">
+                                <div class="field">
+                                    <label th:for="'bien-desc-' + ${it.index}">Bien</label>
+                                    <input type="text" th:id="'bien-desc-' + ${it.index}"
+                                           th:field="*{bienes[__${it.index}__].descripcion}"
+                                           placeholder="Arroz largo fino 1 kg">
+                                </div>
+                                <div class="field">
+                                    <label th:for="'bien-sub-' + ${it.index}">Categoría</label>
+                                    <input type="text" th:id="'bien-sub-' + ${it.index}"
+                                           th:field="*{bienes[__${it.index}__].subcategoria}"
+                                           list="subcategorias" placeholder="Alimentos">
+                                </div>
+                            </div>
+                            <div class="field-row">
+                                <div class="field">
+                                    <label th:for="'bien-cant-' + ${it.index}">Cantidad</label>
+                                    <input type="number" min="1" step="1" th:id="'bien-cant-' + ${it.index}"
+                                           th:field="*{bienes[__${it.index}__].cantidad}" placeholder="100">
+                                </div>
+                                <div class="field">
+                                    <label th:for="'bien-peso-' + ${it.index}">Peso (kg)</label>
+                                    <input type="number" min="0" step="0.1" th:id="'bien-peso-' + ${it.index}"
+                                           th:field="*{bienes[__${it.index}__].peso}" placeholder="100">
+                                </div>
+                                <div class="field">
+                                    <label th:for="'bien-vol-' + ${it.index}">Volumen (m³)</label>
+                                    <input type="number" min="0" step="0.01" th:id="'bien-vol-' + ${it.index}"
+                                           th:field="*{bienes[__${it.index}__].volumen}" placeholder="0.5">
+                                </div>
+                            </div>
+                            <div class="field-row">
+                                <div class="field">
+                                    <label th:for="'bien-venc-' + ${it.index}">
+                                        Vencimiento <span class="field-optional">(si corresponde)</span>
+                                    </label>
+                                    <input type="date" th:id="'bien-venc-' + ${it.index}"
+                                           th:field="*{bienes[__${it.index}__].fechaDeVencimiento}">
+                                </div>
+                                <div class="field">
+                                    <label class="checkbox-option">
+                                        <input type="checkbox" th:field="*{bienes[__${it.index}__].esUsado}">
+                                        <span>Es usado</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <datalist id="subcategorias">
+                        <option value="Alimentos"></option>
+                        <option value="Higiene"></option>
+                        <option value="Limpieza"></option>
+                        <option value="Mobiliario"></option>
+                        <option value="Vestimenta"></option>
+                        <option value="Útiles escolares"></option>
+                    </datalist>
+
+                    <button type="button" class="btn btn-secondary btn-sm" id="agregar-bien">
+                        + Agregar otro bien
+                    </button>
+                </fieldset>
+            </div>
+
+            <!-- ---------- Panel lateral ---------- -->
+            <aside class="sidebar" style="align-self: start;">
+                <div class="card">
+                    <h2 class="heading-sm" style="margin-bottom: var(--space-2);">Qué pasa después</h2>
+                    <ol class="flex flex-col gap-2" style="padding-left: var(--space-5); margin:0;">
+                        <li class="card-subtitle" style="font-size: var(--text-sm);">
+                            La donación queda <strong>en depósito</strong> a nombre del donante.
+                        </li>
+                        <li class="card-subtitle" style="font-size: var(--text-sm);">
+                            Los algoritmos buscan entidades con necesidades que encajen.
+                        </li>
+                        <li class="card-subtitle" style="font-size: var(--text-sm);">
+                            Desde el depósito elegís el destino final entre las propuestas.
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="card">
+                    <p class="hint" style="margin:0;">
+                        Cargá la fecha de vencimiento siempre que el bien la tenga: es lo que
+                        permite avisarte antes de que se venza en el depósito.
+                    </p>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block"
+                        data-loading-on-submit data-loading-texto="Registrando…">
+                    Registrar donación
+                </button>
+                <a th:href="@{/staff/dashboard}" class="btn btn-secondary btn-block">Cancelar</a>
+            </aside>
+        </div>
+    </form>
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+
+<script th:inline="none">
+    /* Agrega otro bien clonando el último bloque y renumerando name/id/for,
+       para que Spring los ligue a form.bienes[i]. */
+    document.getElementById('agregar-bien').addEventListener('click', () => {
+        const lista = document.getElementById('lista-bienes');
+        const bloques = lista.querySelectorAll('[data-bloque=bien]');
+        const copia = bloques[bloques.length - 1].cloneNode(true);
+        const nuevo = bloques.length;
+
+        copia.querySelectorAll('input').forEach((campo) => {
+            if (campo.name) campo.name = campo.name.replace(/bienes\[\d+\]/, 'bienes[' + nuevo + ']');
+            if (campo.id) campo.id = campo.id.replace(/-\d+$/, '-' + nuevo);
+            if (campo.type === 'checkbox') campo.checked = false;
+            else campo.value = '';
+        });
+        copia.querySelectorAll('label[for]').forEach((etiqueta) => {
+            etiqueta.htmlFor = etiqueta.htmlFor.replace(/-\d+$/, '-' + nuevo);
+        });
+        // Spring agrega un input oculto _campo por cada checkbox; hay que renumerarlo igual
+        copia.querySelectorAll('input[type=hidden]').forEach((oculto) => {
+            if (oculto.name) oculto.name = oculto.name.replace(/bienes\[\d+\]/, 'bienes[' + nuevo + ']');
+        });
+
+        lista.appendChild(copia);
+        const primero = copia.querySelector('input');
+        if (primero) primero.focus();
+    });
+</script>
+</body>
+</html>

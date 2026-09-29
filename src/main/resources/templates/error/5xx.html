@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Algo falló de nuestro lado', 'Estamos al tanto y trabajando en eso. Probá de nuevo en unos minutos.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: publica('')}"></header>
+
+<main id="main" class="main-content">
+    <div class="card" style="max-width: 560px; margin: var(--space-7) auto; text-align: center;">
+        <p class="card-subtitle" style="font-family: var(--font-heading); font-size: var(--text-2xl); margin-bottom: var(--space-2);">5xx</p>
+        <h1 style="font-size: var(--text-lg);">Algo falló de nuestro lado</h1>
+        <p style="color: var(--color-text-muted);">Estamos al tanto y trabajando en eso. Probá de nuevo en unos minutos.</p>
+        <div class="flex gap-3 justify-center" style="margin-top: var(--space-5); flex-wrap: wrap;">
+            <a th:href="@{/}" class="btn btn-primary">Ir al inicio</a>
+            <a th:href="@{/login}" class="btn btn-secondary">Iniciar sesión</a>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

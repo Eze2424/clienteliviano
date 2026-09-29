@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Un navbar por rol. Ninguna vista enlaza a la interfaz de otro rol.
+  El parámetro `activo` marca el enlace de la sección actual:
+    <header th:replace="~{fragments/navbar :: donante('dashboard')}"></header>
+
+  th:aria-current con un ternario sin rama falsa evalúa a null y Thymeleaf
+  omite el atributo: queda solo en el enlace activo, como exige el patrón.
+-->
+
+<!-- Marca. href variable porque cada rol vuelve a su propio inicio. -->
+<a th:fragment="marca(destino)" th:href="${destino}" class="navbar-brand">
+    <span class="logo-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2.3 4 6.2 4c2.2 0 3.9 1.3 4.8 2.9C11.9 5.3 13.6 4 15.8 4c3.9 0 5.8 4.1 4.2 7.7C19.5 16.4 12 21 12 21z" fill="white"/></svg>
+    </span>
+    DonaTrack
+</a>
+
+<!-- Botón hamburguesa: aparece por CSS a partir de 860px -->
+<button th:fragment="toggle" class="navbar-toggle" data-nav-toggle
+        aria-label="Abrir menú" aria-expanded="false">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+
+<!--
+  Cerrar sesión es un POST, no un enlace: /logout de Spring Security exige POST
+  y token CSRF. th:action inyecta el token. Las maquetas lo tenían como <a>.
+-->
+<form th:fragment="logout" th:action="@{/logout}" method="post" style="margin:0;">
+    <button type="submit" class="btn btn-ghost btn-sm">Cerrar sesión</button>
+</form>
+
+<!-- Identidad del usuario. usuarioActual lo expone SesionControllerAdvice. -->
+<div th:fragment="usuario" class="user-chip">
+    <span class="avatar" th:text="${usuarioActual.iniciales}">EM</span>
+    <span class="user-chip-meta">
+        <span class="name" th:text="${usuarioActual.nombre}">Elena Martínez</span>
+        <span class="role" th:text="${usuarioActual.etiquetaRol}">Donante</span>
+    </span>
+</div>
+
+<!-- Campana de notificaciones. Botón de solo ícono: requiere aria-label. -->
+<a th:fragment="notificaciones(destino, sinLeer)" th:href="${destino}"
+   class="icon-btn"
+   th:aria-label="${sinLeer > 0}
+        ? 'Notificaciones, ' + ${sinLeer} + ' sin leer'
+        : 'Notificaciones, ninguna sin leer'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    <span class="notif-dot" aria-hidden="true" th:if="${sinLeer > 0}"></span>
+</a>
+
+
+<!-- ======================= PÚBLICA ======================= -->
+<header th:fragment="publica(activo)" class="navbar">
+    <a th:replace="~{fragments/navbar :: marca(@{/})}"></a>
+    <nav class="navbar-links" aria-label="Navegación principal">
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#impacto">Impacto</a>
+    </nav>
+    <div class="navbar-actions">
+        <a th:href="@{/registro}" class="btn btn-secondary btn-sm"
+           th:classappend="${activo == 'registro'} ? 'active'">Registrarme</a>
+        <a th:href="@{/login}" class="btn btn-primary btn-sm"
+           th:classappend="${activo == 'login'} ? 'active'">Iniciar sesión</a>
+        <button th:replace="~{fragments/navbar :: toggle}"></button>
+    </div>
+</header>
+
+
+<!-- ======================= DONANTE ======================= -->
+<header th:fragment="donante(activo)" class="navbar">
+    <a th:replace="~{fragments/navbar :: marca(@{/donante/dashboard})}"></a>
+    <nav class="navbar-links" aria-label="Navegación principal">
+        <a th:href="@{/donante/dashboard}"
+           th:classappend="${activo == 'dashboard'} ? 'active'"
+           th:aria-current="${activo == 'dashboard'} ? 'page'">Mis donaciones</a>
+        <a th:href="@{/donante/entidades}"
+           th:classappend="${activo == 'entidades'} ? 'active'"
+           th:aria-current="${activo == 'entidades'} ? 'page'">Entidades beneficiarias</a>
+        <a th:href="@{/donante/ranking}"
+           th:classappend="${activo == 'ranking'} ? 'active'"
+           th:aria-current="${activo == 'ranking'} ? 'page'">Ranking</a>
+    </nav>
+    <div class="navbar-actions">
+        <a th:replace="~{fragments/navbar :: notificaciones(@{/donante/dashboard} + '#notificaciones', ${sinLeer})}"></a>
+        <div th:replace="~{fragments/navbar :: usuario}"></div>
+        <form th:replace="~{fragments/navbar :: logout}"></form>
+        <button th:replace="~{fragments/navbar :: toggle}"></button>
+    </div>
+</header>
+
+
+<!-- ======================= ENTIDAD BENEFICIARIA ======================= -->
+<header th:fragment="entidad(activo)" class="navbar">
+    <a th:replace="~{fragments/navbar :: marca(@{/entidad/dashboard})}"></a>
+    <nav class="navbar-links" aria-label="Navegación principal">
+        <a th:href="@{/entidad/dashboard}"
+           th:classappend="${activo == 'dashboard'} ? 'active'"
+           th:aria-current="${activo == 'dashboard'} ? 'page'">Donaciones asignadas</a>
+        <a th:href="@{/entidad/necesidades}"
+           th:classappend="${activo == 'necesidades'} ? 'active'"
+           th:aria-current="${activo == 'necesidades'} ? 'page'">Mis necesidades</a>
+        <a th:href="@{/entidad/entregas}"
+           th:classappend="${activo == 'entregas'} ? 'active'"
+           th:aria-current="${activo == 'entregas'} ? 'page'">Entregas en curso</a>
+    </nav>
+    <div class="navbar-actions">
+        <a th:replace="~{fragments/navbar :: notificaciones(@{/entidad/dashboard} + '#notificaciones', ${sinLeer})}"></a>
+        <div th:replace="~{fragments/navbar :: usuario}"></div>
+        <form th:replace="~{fragments/navbar :: logout}"></form>
+        <button th:replace="~{fragments/navbar :: toggle}"></button>
+    </div>
+</header>
+
+
+<!-- ======================= ADMINISTRACIÓN (rol ADMIN) ======================= -->
+<header th:fragment="staff(activo)" class="navbar">
+    <a th:replace="~{fragments/navbar :: marca(@{/staff/dashboard})}"></a>
+    <nav class="navbar-links" aria-label="Navegación principal">
+        <a th:href="@{/staff/dashboard}"
+           th:classappend="${activo == 'dashboard'} ? 'active'"
+           th:aria-current="${activo == 'dashboard'} ? 'page'">Depósito</a>
+        <a th:href="@{/staff/donantes}"
+           th:classappend="${activo == 'donantes'} ? 'active'"
+           th:aria-current="${activo == 'donantes'} ? 'page'">Donantes</a>
+        <a th:href="@{/staff/camiones}"
+           th:classappend="${activo == 'camiones'} ? 'active'"
+           th:aria-current="${activo == 'camiones'} ? 'page'">Camiones</a>
+        <a th:href="@{/staff/ranking}"
+           th:classappend="${activo == 'ranking'} ? 'active'"
+           th:aria-current="${activo == 'ranking'} ? 'page'">Ranking</a>
+    </nav>
+    <div class="navbar-actions">
+        <a th:href="@{/staff/donaciones/nueva}" class="btn btn-primary btn-sm">Registrar donación</a>
+        <div th:replace="~{fragments/navbar :: usuario}"></div>
+        <form th:replace="~{fragments/navbar :: logout}"></form>
+        <button th:replace="~{fragments/navbar :: toggle}"></button>
+    </div>
+</header>
+
+</body>
+</html>

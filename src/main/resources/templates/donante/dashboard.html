@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Mis donaciones',
+        'Seguí tus donaciones, su impacto y las misiones que tenés en curso.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: donante('dashboard')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <div style="margin-bottom: var(--space-5);">
+        <h1 style="margin-bottom: var(--space-1);">Mis donaciones</h1>
+        <p class="card-subtitle" style="margin:0;">
+            Seguí el camino de lo que donaste, a dónde fue y el impacto que tuvo.
+        </p>
+    </div>
+
+    <!-- ============ Métricas de actividad (incentivos-service) ============ -->
+    <div class="grid grid-cols-4" style="margin-bottom: var(--space-5);">
+        <div class="stat-card">
+            <div class="label">Donaciones históricas</div>
+            <div class="value" th:text="${actividad.totalHistoricoDonaciones()}">132</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Este mes</div>
+            <div class="value" th:text="${actividad.donacionesEnPeriodo()}">13</div>
+            <div class="delta" th:text="'Tu récord es ' + ${actividad.recordDonaciones()}">Tu récord es 13</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Misiones completadas</div>
+            <div class="value" th:text="${actividad.misionesCompletadas()}">18</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Entidades ayudadas</div>
+            <div class="value" th:text="${actividad.organizacionesAyudadas()}">9</div>
+        </div>
+    </div>
+
+    <div class="split-view">
+
+        <!-- ============ Donaciones ============ -->
+        <section aria-labelledby="titulo-donaciones">
+            <div class="card-title-row" style="margin-bottom: var(--space-3);">
+                <h2 id="titulo-donaciones" class="heading-md" style="margin:0;">Donaciones recientes</h2>
+            </div>
+
+            <!-- BRECHA G1: no existe endpoint que liste las donaciones de un donante.
+                 Cuando exista, esta lista se llena desde la API sin cambiar la vista. -->
+            <div th:if="${#lists.isEmpty(donaciones)}">
+                <div th:replace="~{fragments/componentes :: estado-vacio(
+                    'Todavía no registraste donaciones',
+                    'Acercate al depósito con lo que quieras donar: el equipo lo registra a tu nombre y desde acá vas a poder seguirlo.',
+                    'Ver entidades que necesitan ayuda', @{/donante/entidades})}"></div>
+            </div>
+
+            <div class="flex flex-col gap-3" th:unless="${#lists.isEmpty(donaciones)}">
+                <article class="card" th:each="d : ${donaciones}">
+                    <div class="card-title-row">
+                        <div style="min-width:0;">
+                            <p class="entity-card-eyebrow" style="margin:0;">
+                                Donación #<span th:text="${d.id}">1041</span>
+                            </p>
+                            <h3 class="heading-sm" style="margin: var(--space-1) 0;"
+                                th:text="${d.descripcion}">Alimentos no perecederos</h3>
+                        </div>
+                        <span class="badge" th:classappend="${d.claseBadge()}"
+                              th:text="${d.etiquetaEstado()}">En traslado</span>
+                    </div>
+
+                    <div class="flex gap-4" style="flex-wrap: wrap; margin: var(--space-3) 0;">
+                        <div class="data-tile">
+                            <span class="data-tile-label">Destino</span>
+                            <span class="data-tile-value"
+                                  th:text="${d.asignada()} ? ${d.entidad} : 'Todavía sin asignar'">
+                                Comedor Los Hornos
+                            </span>
+                        </div>
+                        <div class="data-tile">
+                            <span class="data-tile-label">Registrada</span>
+                            <span class="data-tile-value"
+                                  th:text="${#temporals.format(d.fecha, 'dd/MM/yyyy')}">24/09/2026</span>
+                        </div>
+                        <div class="data-tile">
+                            <span class="data-tile-label">Bienes</span>
+                            <span class="data-tile-value" th:text="${d.cantidadBienes}">12</span>
+                        </div>
+                    </div>
+
+                    <a class="btn btn-secondary btn-sm"
+                       th:href="@{/donante/donaciones/{id}(id=${d.id})}">Seguir esta donación</a>
+                </article>
+            </div>
+        </section>
+
+        <!-- ============ Barra lateral ============ -->
+        <aside class="sidebar">
+
+            <!-- Misión en curso -->
+            <div class="card" th:if="${mision != null}">
+                <h2 class="heading-sm" style="margin-bottom: var(--space-1);">Misión actual</h2>
+                <p class="card-subtitle" style="margin: 0 0 var(--space-3);"
+                   th:text="${mision.nombreMision()}">Cinco entregas en septiembre</p>
+                <div class="progress-track"
+                     role="progressbar" th:aria-valuenow="${mision.progresoActual()}"
+                     aria-valuemin="0" th:aria-valuemax="${mision.objetivo()}"
+                     th:aria-label="'Progreso: ' + ${mision.progresoActual()} + ' de ' + ${mision.objetivo()}">
+                    <div class="progress-fill" th:style="'width:' + ${mision.porcentaje()} + '%'"></div>
+                </div>
+                <p class="card-subtitle" style="margin: var(--space-2) 0 0; font-size: var(--text-sm);"
+                   th:text="${#numbers.formatInteger(mision.progresoActual(), 1)} + ' de ' +
+                            ${#numbers.formatInteger(mision.objetivo(), 1)} + ' completadas'">
+                    3 de 5 completadas
+                </p>
+            </div>
+
+            <!-- Insignias -->
+            <div class="card">
+                <h2 class="heading-sm" style="margin-bottom: var(--space-3);">Insignias</h2>
+
+                <div th:if="${#lists.isEmpty(insignias)}">
+                    <div th:replace="~{fragments/componentes :: estado-vacio(
+                        'Sin insignias todavía',
+                        'Se desbloquean al completar misiones.', null, null)}"></div>
+                </div>
+
+                <ul class="list-reset flex flex-col gap-3" th:unless="${#lists.isEmpty(insignias)}">
+                    <li th:each="i : ${insignias}" class="flex gap-3 items-center">
+                        <span class="avatar" aria-hidden="true">🏅</span>
+                        <span style="min-width:0;">
+                            <strong style="display:block; font-size: var(--text-sm);"
+                                    th:text="${i.nombre()}">Constancia</strong>
+                            <span class="card-subtitle" style="font-size: var(--text-xs);"
+                                  th:text="${i.descripcion()}">Tres meses seguidos donando</span>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Notificaciones -->
+            <div class="card" id="notificaciones">
+                <h2 class="heading-sm" style="margin-bottom: var(--space-3);">Notificaciones</h2>
+
+                <div th:if="${#lists.isEmpty(notificaciones)}">
+                    <div th:replace="~{fragments/componentes :: estado-vacio(
+                        'Sin avisos nuevos',
+                        'Te avisamos cuando una donación tuya cambie de estado.', null, null)}"></div>
+                </div>
+
+                <ul class="list-reset flex flex-col gap-3" th:unless="${#lists.isEmpty(notificaciones)}">
+                    <li th:each="n : ${notificaciones}" class="flex gap-2" style="align-items: flex-start;">
+                        <span aria-hidden="true" th:text="${n.icono()}">📦</span>
+                        <span style="min-width:0;">
+                            <strong style="display:block; font-size: var(--text-sm);"
+                                    th:text="${n.titulo}">Tu donación encontró destino</strong>
+                            <span class="visually-hidden" th:if="${!n.leida}">Sin leer.</span>
+                            <span class="card-subtitle" style="font-size: var(--text-xs);"
+                                  th:text="${n.detalle}">La donación #1052 fue asignada.</span>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Asignar donación',
+        'Elegí la entidad beneficiaria a partir del resultado de los algoritmos.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: staff('dashboard')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <nav th:replace="~{fragments/componentes :: breadcrumb(
+            'Depósito', @{/staff/dashboard},
+            'Asignar la donación #' + ${donacion.id})}"></nav>
+
+    <div style="margin: var(--space-4) 0 var(--space-5);">
+        <h1 style="font-size: var(--text-lg); margin-bottom: var(--space-1);"
+            th:text="'Asignar la donación #' + ${donacion.id}">Asignar la donación #1055</h1>
+        <p class="card-subtitle" style="margin:0;" th:text="${donacion.descripcion}">
+            Leche en polvo x 40 latas
+        </p>
+    </div>
+
+    <!--
+      Los tres grupos los calcula donaciones-service con sus algoritmos de
+      selección (GET /{id}/propuestas). El cliente NO los ordena ni los puntúa:
+      los muestra y deja que la persona administradora decida.
+    -->
+    <div class="banner banner-info" role="note" style="margin-bottom: var(--space-5);">
+        <span aria-hidden="true">🧮</span>
+        <p>
+            <strong>Estas propuestas las calculó el sistema</strong>
+            Están agrupadas según con qué criterio coincidieron. Elegí una y confirmá:
+            la decisión final es tuya.
+        </p>
+    </div>
+
+    <!-- Sin coincidencias: estado vacío con salida -->
+    <div th:unless="${propuestas.hayCoincidencias()}">
+        <div th:replace="~{fragments/componentes :: estado-vacio(
+            'Los algoritmos no encontraron destino',
+            'Ninguna entidad tiene hoy una necesidad que encaje con esta donación. Va a volver a evaluarse cuando se publiquen necesidades nuevas.',
+            'Volver al depósito', @{/staff/dashboard})}"></div>
+    </div>
+
+    <form th:if="${propuestas.hayCoincidencias()}" method="post"
+          th:action="@{/staff/donaciones/{id}/asignar(id=${donacion.id})}">
+
+        <fieldset style="border:none; padding:0; margin:0;">
+            <legend class="visually-hidden">Elegí la necesidad a la que se asigna la donación</legend>
+
+            <!-- Grupo 1 -->
+            <section style="margin-bottom: var(--space-6);"
+                     th:unless="${#lists.isEmpty(propuestas.interseccion())}">
+                <h2 class="heading-md" style="margin-bottom: var(--space-1);">Coincidencia exacta</h2>
+                <p class="card-subtitle" style="margin-bottom: var(--space-3);">
+                    La entidad pidió exactamente esta categoría de bien.
+                </p>
+                <div class="flex flex-col gap-2">
+                    <label class="card radio-option" th:each="p : ${propuestas.interseccion()}"
+                           style="align-items: flex-start; padding: var(--space-4);">
+                        <input type="radio" name="necesidadId" th:value="${p.necesidadId()}" required>
+                        <span style="min-width:0;">
+                            <strong th:text="${p.entidad()}">Comedor Los Hornos</strong>
+                            <span class="chip" style="margin-left: var(--space-2);"
+                                  th:text="${p.subcategoria()}">Alimentos</span>
+                            <span class="card-subtitle" style="display:block; margin-top: var(--space-1);"
+                                  th:text="${p.descripcion()} + ' · pidió ' +
+                                           ${#numbers.formatInteger(p.cantidadSolicitada(), 1)} + ' unidades'">
+                                Aceite, harina y fideos
+                            </span>
+                        </span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- Grupo 2 -->
+            <section style="margin-bottom: var(--space-6);"
+                     th:unless="${#lists.isEmpty(propuestas.subatendidos())}">
+                <h2 class="heading-md" style="margin-bottom: var(--space-1);">Entidades subatendidas</h2>
+                <p class="card-subtitle" style="margin-bottom: var(--space-3);">
+                    Vienen recibiendo menos de lo que necesitan.
+                </p>
+                <div class="flex flex-col gap-2">
+                    <label class="card radio-option" th:each="p : ${propuestas.subatendidos()}"
+                           style="align-items: flex-start; padding: var(--space-4);">
+                        <input type="radio" name="necesidadId" th:value="${p.necesidadId()}" required>
+                        <span style="min-width:0;">
+                            <strong th:text="${p.entidad()}">Merendero El Alba</strong>
+                            <span class="chip" style="margin-left: var(--space-2);"
+                                  th:text="${p.subcategoria()}">Alimentos</span>
+                            <span class="card-subtitle" style="display:block; margin-top: var(--space-1);"
+                                  th:text="${p.descripcion()}">Cacao y azúcar</span>
+                        </span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- Grupo 3 -->
+            <section style="margin-bottom: var(--space-6);"
+                     th:unless="${#lists.isEmpty(propuestas.semantico())}">
+                <h2 class="heading-md" style="margin-bottom: var(--space-1);">Coincidencia por similitud</h2>
+                <p class="card-subtitle" style="margin-bottom: var(--space-3);">
+                    Lo que pidieron se parece a lo donado, aunque no sea idéntico.
+                </p>
+                <div class="flex flex-col gap-2">
+                    <label class="card radio-option" th:each="p : ${propuestas.semantico()}"
+                           style="align-items: flex-start; padding: var(--space-4);">
+                        <input type="radio" name="necesidadId" th:value="${p.necesidadId()}" required>
+                        <span style="min-width:0;">
+                            <strong th:text="${p.entidad()}">Comedor Los Hornos</strong>
+                            <span class="chip" style="margin-left: var(--space-2);"
+                                  th:text="${p.subcategoria()}">Alimentos</span>
+                            <span class="card-subtitle" style="display:block; margin-top: var(--space-1);"
+                                  th:text="${p.descripcion()}">Leche en polvo</span>
+                        </span>
+                    </label>
+                </div>
+            </section>
+        </fieldset>
+
+        <!-- Nombre de la entidad para el mensaje de confirmación -->
+        <input type="hidden" name="entidad"
+               th:value="${propuestas.interseccion()[0] != null}
+                       ? ${propuestas.interseccion()[0].entidad()} : 'la entidad elegida'">
+
+        <div class="flex gap-3" style="flex-wrap: wrap;">
+            <a th:href="@{/staff/dashboard}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary"
+                    data-loading-on-submit data-loading-texto="Asignando…">Confirmar asignación</button>
+        </div>
+    </form>
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

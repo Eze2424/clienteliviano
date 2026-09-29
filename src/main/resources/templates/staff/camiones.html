@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Camiones',
+        'Administrá la flota: altas, bajas y dónde está cada camión.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: staff('camiones')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <div class="card-title-row" style="margin-bottom: var(--space-5);">
+        <div style="min-width:0;">
+            <h1 style="margin-bottom: var(--space-1);">Camiones</h1>
+            <p class="card-subtitle" style="margin:0;">
+                La flota disponible para repartir, con su capacidad y su última posición.
+            </p>
+        </div>
+        <button class="btn btn-primary" data-open-modal="modal-camion">Agregar camión</button>
+    </div>
+
+    <div class="banner banner-warning" role="alert" th:if="${error != null}"
+         style="margin-bottom: var(--space-5);">
+        <span aria-hidden="true">⚠</span>
+        <p><span th:text="${error}">Falta un dato.</span></p>
+    </div>
+
+    <div th:if="${#lists.isEmpty(camiones)}">
+        <div th:replace="~{fragments/componentes :: estado-vacio(
+            'No hay camiones cargados',
+            'Sin flota no se pueden planificar entregas. Agregá el primero.',
+            null, null)}"></div>
+    </div>
+
+    <div class="split-view" th:unless="${#lists.isEmpty(camiones)}">
+
+        <!-- ============ Mapa de la flota ============ -->
+        <section class="map-canvas" aria-labelledby="titulo-mapa">
+            <h2 id="titulo-mapa" class="visually-hidden">Ubicación de los camiones</h2>
+            <div class="map-legend">
+                <span class="legend-key">
+                    <span class="legend-swatch" style="background: var(--color-primary);"></span> Camión
+                </span>
+            </div>
+            <span class="map-pin" th:each="c : ${camiones}"
+                  th:style="'left:' + ${c.posX()} + '%; top:' + ${c.posY()} + '%;'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                <span th:text="${c.patente()}">AB-123-CD</span>
+            </span>
+            <p class="map-note">Vista esquemática con la última posición informada de cada camión.</p>
+        </section>
+
+        <!-- ============ Tabla, equivalente accesible del mapa ============ -->
+        <aside class="sidebar">
+            <div class="card table-wrap">
+                <table>
+                    <caption class="visually-hidden">Camiones de la flota y su capacidad</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Patente</th>
+                        <th scope="col">Carga (kg)</th>
+                        <th scope="col">Volumen (m³)</th>
+                        <th scope="col">Alto (m)</th>
+                        <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="c : ${camiones}">
+                        <th scope="row" th:text="${c.patente()}">AB-123-CD</th>
+                        <td th:text="${#numbers.formatDecimal(c.capacidadDeCarga(), 1, 'POINT', 0, 'COMMA')}">4.500</td>
+                        <td th:text="${#numbers.formatDecimal(c.volumen(), 1, 1)}">32,0</td>
+                        <td th:text="${#numbers.formatDecimal(c.altura(), 1, 1)}">2,6</td>
+                        <td>
+                            <form method="post" style="margin:0;"
+                                  th:action="@{/staff/camiones/{id}/eliminar(id=${c.id()})}">
+                                <button type="submit" class="btn btn-ghost btn-sm"
+                                        th:aria-label="'Dar de baja el camión ' + ${c.patente()}"
+                                        data-loading-on-submit data-loading-texto="Dando de baja…">
+                                    Dar de baja
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ============ Modal: alta de camión ============ -->
+    <div class="modal-overlay" id="modal-camion" role="dialog" aria-modal="true"
+         aria-labelledby="titulo-modal-camion">
+        <div class="modal">
+            <form th:action="@{/staff/camiones}" th:object="${form}" method="post" novalidate>
+                <div class="modal-header">
+                    <div>
+                        <h2 id="titulo-modal-camion" style="margin:0;">Agregar un camión</h2>
+                        <p class="modal-desc">
+                            La capacidad es lo que usa el planificador para armar las rutas.
+                        </p>
+                    </div>
+                    <button type="button" class="modal-close" data-close-modal
+                            aria-label="Cerrar el diálogo">✕</button>
+                </div>
+
+                <div class="field">
+                    <label for="patente">Patente</label>
+                    <input type="text" id="patente" th:field="*{patente}"
+                           placeholder="AB-123-CD" required data-autofocus>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="capacidadDeCarga">Capacidad de carga (kg)</label>
+                        <input type="number" min="0" step="1" id="capacidadDeCarga"
+                               th:field="*{capacidadDeCarga}" placeholder="4500">
+                    </div>
+                    <div class="field">
+                        <label for="volumen">Volumen (m³)</label>
+                        <input type="number" min="0" step="0.1" id="volumen"
+                               th:field="*{volumen}" placeholder="32">
+                    </div>
+                    <div class="field">
+                        <label for="altura">Altura (m)</label>
+                        <input type="number" min="0" step="0.1" id="altura"
+                               th:field="*{altura}" placeholder="2.6">
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="latitud">Latitud inicial</label>
+                        <input type="number" step="0.000001" id="latitud"
+                               th:field="*{latitud}" placeholder="-34.6037" aria-describedby="hint-coord">
+                    </div>
+                    <div class="field">
+                        <label for="longitud">Longitud inicial</label>
+                        <input type="number" step="0.000001" id="longitud"
+                               th:field="*{longitud}" placeholder="-58.3816">
+                    </div>
+                </div>
+                <span class="hint" id="hint-coord">Dónde está estacionado hoy. Después se actualiza sola.</span>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                    <button type="submit" class="btn btn-primary"
+                            data-loading-on-submit data-loading-texto="Agregando…">Agregar camión</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

@@ -21,12 +21,15 @@ public class LoginController {
   private final RestTemplate restTemplate = new RestTemplate();
 
   // La URL de tu Keycloak (ajustar puerto 8085 si lo cambiaste)
-  @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri:http://localhost:8085/realms/DonaTrack}")
+  @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri}")
   private String keycloakIssuerUri;
+
+  @Value("${keycloak.client-id}")
+  private String clientId;
 
   @GetMapping("/login")
   public String mostrarLogin() {
-    return "login"; //ACA VA EL NOMBRE DEL HTML Q USEMOS PARA LOGIN
+    return "publico/login"; //ACA VA EL NOMBRE DEL HTML Q USEMOS PARA LOGIN
   }
 
   @PostMapping("/login")
@@ -39,7 +42,7 @@ public class LoginController {
 
     // Armamos el body idéntico a lo que mandabas en Postman
     MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-    map.add("client_id", "donatrack-client");
+    map.add("client_id", clientId);
     map.add("grant_type", "password");
     map.add("username", loginRequest.username());
     map.add("password", loginRequest.password());
@@ -57,19 +60,19 @@ public class LoginController {
         // Lo guardamos en la sesión local del cliente liviano
         session.setAttribute("JWT_TOKEN", accessToken);
 
-        return "redirect:/home"; // Login exitoso, va a la home
+        return "redirect:/"; // Login exitoso, va a la home
       }
     } catch (org.springframework.web.client.HttpClientErrorException e) {
       System.err.println("Rechazo de Keycloak: " + e.getResponseBodyAsString());
       model.addAttribute("error", "Credenciales inválidas");
-      return "login";
+      return "publico/login";
     } catch (Exception e) {
       System.err.println("Error de conexión: " + e.getMessage());
       model.addAttribute("error", "Ocurrió un error al contactar al servidor");
-      return "login";
+      return "publico/login";
     }
 
     model.addAttribute("error", "Ocurrió un error al contactar al servidor de autenticación");
-    return "login";
+    return "publico/login";
   }
 }

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Detalle de la donación',
+        'Detalle de una donación asignada y confirmación de recepción.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: entidad('dashboard')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <!-- Nivel 3 de navegación: las migas hacen visible dónde estás -->
+    <nav th:replace="~{fragments/componentes :: breadcrumb(
+            'Donaciones asignadas', @{/entidad/dashboard},
+            'Donación #' + ${donacion.id})}"></nav>
+
+    <div class="card-title-row" style="margin: var(--space-4) 0 var(--space-5);">
+        <div style="min-width:0;">
+            <h1 style="font-size: var(--text-lg); margin:0;"
+                th:text="'Donación #' + ${donacion.id}">Donación #1041</h1>
+            <p class="card-subtitle" style="margin: var(--space-1) 0 0;"
+               th:text="${donacion.descripcion}">Alimentos no perecederos</p>
+        </div>
+        <span class="badge" th:classappend="${donacion.claseBadge()}"
+              th:text="${donacion.etiquetaEstado()}">En traslado</span>
+    </div>
+
+    <div class="split-view">
+
+        <!-- ============ Datos y seguimiento ============ -->
+        <section class="detail-panel" aria-labelledby="titulo-datos">
+            <h2 id="titulo-datos" class="heading-md" style="margin-bottom: var(--space-4);">Qué te llega</h2>
+
+            <div class="grid grid-cols-2" style="gap: var(--space-3); margin-bottom: var(--space-5);">
+                <div class="data-tile">
+                    <span class="data-tile-label">Donante</span>
+                    <span class="data-tile-value" th:text="${donacion.donante}">Elena Martínez</span>
+                </div>
+                <div class="data-tile">
+                    <span class="data-tile-label">Cantidad de bienes</span>
+                    <span class="data-tile-value" th:text="${donacion.cantidadBienes}">12</span>
+                </div>
+                <div class="data-tile">
+                    <span class="data-tile-label">Registrada</span>
+                    <span class="data-tile-value"
+                          th:text="${#temporals.format(donacion.fecha, 'dd/MM/yyyy')}">24/09/2026</span>
+                </div>
+                <div class="data-tile" th:if="${donacion.vencimiento != null}">
+                    <span class="data-tile-label">Vence</span>
+                    <span class="data-tile-value"
+                          th:text="${#temporals.format(donacion.vencimiento, 'dd/MM/yyyy')}">01/03/2027</span>
+                </div>
+            </div>
+
+            <!-- Seguimiento: los hitos vienen del estado que informa la API -->
+            <h2 class="heading-md" style="margin-bottom: var(--space-3);">Seguimiento</h2>
+            <ol class="timeline list-reset">
+                <li th:class="${donacion.estado != 'EN_DEPOSITO'} ? 'timeline-done' : 'timeline-current'">
+                    <span class="timeline-marker" aria-hidden="true"></span>
+                    <span class="timeline-step-title">En depósito</span>
+                    <span class="timeline-step-meta">La donación entró y quedó registrada.</span>
+                </li>
+                <li th:class="${donacion.estado == 'ASIGNADA'} ? 'timeline-current'
+                             : (${donacion.estado == 'EN_DEPOSITO'} ? '' : 'timeline-done')">
+                    <span class="timeline-marker" aria-hidden="true"></span>
+                    <span class="timeline-step-title">Asignada a tu entidad</span>
+                    <span class="timeline-step-meta">Los algoritmos la derivaron a una de tus necesidades.</span>
+                </li>
+                <li th:class="${donacion.estado == 'EN_TRASLADO'} ? 'timeline-current'
+                             : (${donacion.estado == 'ENTREGADA'} ? 'timeline-done' : '')">
+                    <span class="timeline-marker" aria-hidden="true"></span>
+                    <span class="timeline-step-title">En traslado</span>
+                    <span class="timeline-step-meta" th:if="${entrega != null}"
+                          th:text="'Camión ' + ${entrega.patenteCamion} + ' · última posición ' +
+                                   ${#temporals.format(entrega.ultimaActualizacion, 'HH:mm')} + ' hs'">
+                        Camión AB-123-CD
+                    </span>
+                    <span class="timeline-step-meta" th:if="${entrega == null}">Todavía no salió del depósito.</span>
+                </li>
+                <li th:class="${donacion.estado == 'ENTREGADA'} ? 'timeline-done' : ''">
+                    <span class="timeline-marker" aria-hidden="true"></span>
+                    <span class="timeline-step-title">Recibida</span>
+                    <span class="timeline-step-meta"
+                          th:text="${donacion.estado == 'ENTREGADA'}
+                                 ? 'Confirmaste la recepción.'
+                                 : 'Pendiente de que confirmes la recepción.'">Pendiente</span>
+                </li>
+            </ol>
+
+            <p style="margin-top: var(--space-4);" th:if="${entrega != null}">
+                <a th:href="@{/entidad/entregas}" class="btn btn-secondary btn-sm">Seguir el camión en el mapa</a>
+            </p>
+        </section>
+
+        <!-- ============ Confirmación de recepción (CU3) ============ -->
+        <aside class="sidebar" aria-labelledby="titulo-recepcion">
+            <h2 id="titulo-recepcion" class="heading-sm" style="margin-bottom: var(--space-3);">Recepción</h2>
+
+            <div class="banner banner-info" role="status" th:if="${donacion.estado == 'ENTREGADA'}">
+                <span aria-hidden="true">✓</span>
+                <p><strong>Recepción confirmada</strong>Ya registraste que recibiste esta donación.</p>
+            </div>
+
+            <div th:unless="${donacion.estado == 'ENTREGADA'}">
+                <p class="card-subtitle" style="margin-bottom: var(--space-4);">
+                    Cuando la donación llegue, confirmá la recepción y subí fotos de lo que
+                    recibiste. Quien donó recibe el aviso automáticamente.
+                </p>
+                <button class="btn btn-primary btn-block" data-open-modal="modal-recepcion">
+                    Confirmar recepción
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ============ Modal de confirmación ============ -->
+    <div class="modal-overlay" id="modal-recepcion" role="dialog" aria-modal="true"
+         aria-labelledby="titulo-modal-recepcion">
+        <div class="modal">
+            <form th:action="@{/entidad/donaciones/{id}/confirmar(id=${donacion.id})}"
+                  th:object="${form}" method="post" enctype="multipart/form-data" novalidate>
+
+                <div class="modal-header">
+                    <div>
+                        <h2 id="titulo-modal-recepcion" style="margin:0;"
+                            th:text="'Confirmar recepción de la donación #' + ${donacion.id}">
+                            Confirmar recepción
+                        </h2>
+                        <p class="modal-desc">
+                            Esto cierra el circuito de la donación y no se puede deshacer.
+                        </p>
+                    </div>
+                    <button type="button" class="modal-close" data-close-modal
+                            aria-label="Cerrar el diálogo">✕</button>
+                </div>
+
+                <div class="field">
+                    <label for="fotos">Fotos de lo recibido</label>
+                    <input type="file" id="fotos" name="fotos" multiple accept="image/*"
+                           required data-autofocus aria-describedby="hint-fotos">
+                    <span class="hint" id="hint-fotos">
+                        Al menos una. Sirve como comprobante para quien donó.
+                    </span>
+                </div>
+
+                <fieldset class="field" style="border:none; padding:0;">
+                    <legend class="field-label">¿Llegó completo?</legend>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" th:field="*{completa}" value="true">
+                            <span>Sí, recibí todo</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" th:field="*{completa}" value="false">
+                            <span>Hubo faltantes o daños</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <div class="field">
+                    <label for="observaciones">
+                        Observaciones <span class="field-optional">(opcional)</span>
+                    </label>
+                    <textarea id="observaciones" th:field="*{observaciones}" rows="3"
+                              placeholder="Ej: una caja llegó mojada, la fotografiamos al recibirla"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                    <button type="submit" class="btn btn-primary"
+                            data-loading-on-submit data-loading-texto="Confirmando…">
+                        Confirmar recepción
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

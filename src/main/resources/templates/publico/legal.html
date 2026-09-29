@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Términos y privacidad',
+        'Términos de servicio y política de privacidad de DonaTrack.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: publica('')}"></header>
+
+<main id="main" class="container" style="padding: var(--space-7) var(--space-5);">
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+
+        <header style="border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-4); margin-bottom: var(--space-5);">
+            <h1 style="font-size: var(--text-lg); margin-bottom: var(--space-1);">Términos de servicio y política de privacidad</h1>
+            <p style="color: var(--color-text-muted); font-size: var(--text-sm);">Última actualización: septiembre de 2026</p>
+        </header>
+
+        <section style="margin-bottom: var(--space-6);">
+            <h2 class="heading-sm">1. Qué es DonaTrack</h2>
+            <p>DonaTrack es una plataforma de registro y trazabilidad de donaciones de bienes
+                materiales. Vincula a las personas y organizaciones que donan con las entidades
+                beneficiarias que reciben, y deja registro de cada paso: ingreso al depósito,
+                asignación, traslado y confirmación de recepción.</p>
+            <p>El uso de la plataforma es gratuito. DonaTrack no interviene en la titularidad
+                de los bienes donados ni actúa como intermediario comercial.</p>
+        </section>
+
+        <section style="margin-bottom: var(--space-6);">
+            <h2 class="heading-sm">2. Cuentas y responsabilidades</h2>
+            <ul class="flex flex-col gap-2" style="padding-left: var(--space-5);">
+                <li>Los datos que cargues deben ser veraces y estar actualizados.</li>
+                <li>Sos responsable de la confidencialidad de tu contraseña y de la actividad de tu cuenta.</li>
+                <li>Las entidades beneficiarias se comprometen a confirmar la recepción de las
+                    donaciones que reciben y a cargar la evidencia correspondiente.</li>
+                <li>Podemos suspender una cuenta que registre información falsa o que use la
+                    plataforma para fines ajenos a la donación de bienes.</li>
+            </ul>
+        </section>
+
+        <section style="margin-bottom: var(--space-6);">
+            <h2 class="heading-sm">3. Qué datos tratamos</h2>
+            <p>Recogemos únicamente los datos necesarios para operar el servicio:</p>
+            <ul class="flex flex-col gap-2" style="padding-left: var(--space-5);">
+                <li><strong>De identificación:</strong> nombre, documento, razón social y rubro cuando corresponde.</li>
+                <li><strong>De contacto:</strong> dirección, correo electrónico, teléfono y medio preferido de aviso.</li>
+                <li><strong>De actividad:</strong> donaciones registradas, estados por los que pasan,
+                    entidades destinatarias y fotos de recepción.</li>
+            </ul>
+            <p>No tratamos datos sensibles ni datos de menores de edad.</p>
+        </section>
+
+        <section style="margin-bottom: var(--space-6);">
+            <h2 class="heading-sm">4. Para qué los usamos</h2>
+            <p>Para operar el circuito de la donación, para avisarte cuando cambia el estado de
+                algo que te involucra, y para producir estadísticas agregadas de impacto.
+                <strong>No vendemos ni cedemos tus datos a terceros con fines publicitarios.</strong>
+                Solo compartimos con la entidad beneficiaria los datos necesarios para concretar
+                la entrega.</p>
+        </section>
+
+        <section style="margin-bottom: var(--space-6);">
+            <h2 class="heading-sm">5. Notificaciones</h2>
+            <p>Te enviamos avisos por el medio que elegiste al registrarte: correo electrónico,
+                SMS o WhatsApp. Podés cambiarlo en cualquier momento desde tu perfil. Los avisos
+                son operativos: asignación de una donación, inicio de traslado, confirmación de
+                recepción y logros obtenidos.</p>
+        </section>
+
+        <section style="margin-bottom: var(--space-6);">
+            <h2 class="heading-sm">6. Tus derechos</h2>
+            <p>Podés acceder a tus datos, rectificarlos y solicitar su supresión escribiendo a
+                <a href="mailto:privacidad@donatrack.org">privacidad@donatrack.org</a>.
+                Conservamos el historial de donaciones entregadas por razones de trazabilidad,
+                de forma disociada de tus datos personales cuando pedís la baja.</p>
+        </section>
+
+        <section>
+            <h2 class="heading-sm">7. Cambios</h2>
+            <p>Si modificamos estos términos te avisamos por el medio de contacto que hayas
+                elegido, con al menos 15 días de anticipación.</p>
+        </section>
+
+        <div class="flex gap-3" style="margin-top: var(--space-6); flex-wrap: wrap;">
+            <a th:href="@{/}" class="btn btn-secondary">Volver al inicio</a>
+            <a th:href="@{/registro}" class="btn btn-primary">Crear cuenta</a>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Depósito',
+        'Estado de las donaciones en el depósito y su asignación a entidades.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: staff('dashboard')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <div style="margin-bottom: var(--space-5);">
+        <h1 style="margin-bottom: var(--space-1);">Depósito</h1>
+        <p class="card-subtitle" style="margin:0;">
+            Todo lo que está registrado, en qué estado, y qué falta asignar.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-4" style="margin-bottom: var(--space-5);">
+        <div class="stat-card">
+            <div class="label">Donaciones registradas</div>
+            <div class="value" th:text="${#lists.size(donaciones)}">7</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Sin asignar</div>
+            <div class="value" th:text="${#lists.size(pendientes)}">2</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Vencidas</div>
+            <div class="value"
+                 th:text="${#lists.size(donaciones.?[vencida])}">1</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Camiones en flota</div>
+            <div class="value" th:text="${#lists.size(camiones)}">3</div>
+        </div>
+    </div>
+
+    <!-- ============ Aviso de vencidas (CU2) ============ -->
+    <div class="banner banner-warning" role="alert" style="margin-bottom: var(--space-5);"
+         th:if="${!#lists.isEmpty(donaciones.?[vencida])}">
+        <span aria-hidden="true">⚠</span>
+        <p>
+            <strong>Hay donaciones vencidas en el depósito</strong>
+            Revisá la lista y dalas de baja del circuito: el sistema no puede asignar
+            bienes que ya pasaron su fecha de vencimiento.
+        </p>
+    </div>
+
+    <!-- ============ Listado ============ -->
+    <section aria-labelledby="titulo-listado">
+        <h2 id="titulo-listado" class="heading-md" style="margin-bottom: var(--space-3);">
+            Donaciones en el depósito
+        </h2>
+
+        <div th:if="${#lists.isEmpty(donaciones)}">
+            <div th:replace="~{fragments/componentes :: estado-vacio(
+                'El depósito está vacío',
+                'Registrá la primera donación que recibas y va a aparecer acá.',
+                'Registrar donación', @{/staff/donaciones/nueva})}"></div>
+        </div>
+
+        <div class="card table-wrap" th:unless="${#lists.isEmpty(donaciones)}">
+            <table>
+                <caption class="visually-hidden">Donaciones registradas, su estado y su destino</caption>
+                <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Descripción</th>
+                    <th scope="col">Donante</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Vence</th>
+                    <th scope="col">Destino</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="d : ${donaciones}">
+                    <th scope="row" th:text="${d.id}">1041</th>
+                    <td th:text="${d.descripcion}">Alimentos no perecederos</td>
+                    <td th:text="${d.donante}">Elena Martínez</td>
+                    <td>
+                        <span class="badge" th:classappend="${d.claseBadge()}"
+                              th:text="${d.etiquetaEstado()}">En traslado</span>
+                    </td>
+                    <td>
+                        <span th:if="${d.vencimiento == null}" class="card-subtitle">No vence</span>
+                        <span th:if="${d.vencimiento != null}"
+                              th:classappend="${d.vencida} ? 'badge badge-danger' : ''"
+                              th:text="${#temporals.format(d.vencimiento, 'dd/MM/yyyy')}">01/03/2027</span>
+                        <span class="visually-hidden" th:if="${d.vencida}">Vencida.</span>
+                    </td>
+                    <td>
+                        <span th:if="${d.asignada()}" th:text="${d.entidad}">Comedor Los Hornos</span>
+                        <span th:unless="${d.asignada()}" class="card-subtitle">Sin asignar</span>
+                    </td>
+                    <td>
+                        <div class="flex gap-2" style="flex-wrap: wrap;">
+                            <!-- CU3: elegir la entidad destino con el resultado de los algoritmos -->
+                            <a th:if="${!d.asignada() and !d.vencida}"
+                               th:href="@{/staff/donaciones/{id}/asignar(id=${d.id})}"
+                               class="btn btn-primary btn-sm">Asignar</a>
+
+                            <!-- CU2: dar de baja lo vencido. POST porque cambia estado. -->
+                            <form th:if="${d.vencida}" method="post"
+                                  th:action="@{/staff/donaciones/{id}/vencida(id=${d.id})}"
+                                  style="margin:0;">
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        th:aria-label="'Marcar como vencida la donación ' + ${d.id}"
+                                        data-loading-on-submit data-loading-texto="Dando de baja…">
+                                    Marcar vencida
+                                </button>
+                            </form>
+
+                            <span th:if="${d.asignada() and !d.vencida}" class="card-subtitle"
+                                  style="font-size: var(--text-sm);">—</span>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
