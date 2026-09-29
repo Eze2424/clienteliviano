@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<!--
+  Armazón de página. Toda vista lo usa así:
+    <head th:replace="~{fragments/layout :: head('Título', 'Descripción')}"></head>
+    <a th:replace="~{fragments/layout :: skip-link}"></a>
+    ...
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+-->
+<head th:fragment="head(titulo, descripcion)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${titulo} + ' — DonaTrack'">DonaTrack</title>
+    <meta name="description" th:attr="content=${descripcion}"
+          content="DonaTrack: registro y trazabilidad de donaciones de bienes materiales.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Signika:wght@300..700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<!-- WCAG 2.4.1: primer elemento focalizable, saltea la navegación repetida -->
+<a th:fragment="skip-link" class="skip-link" href="#main">Saltar al contenido principal</a>
+
+<!--
+  Región donde main.js inserta los toasts.
+  role="status" + aria-live="polite": el lector de pantalla los anuncia sin interrumpir.
+-->
+<div th:fragment="toast-region" class="toast-region" role="status" aria-live="polite"></div>
+
+<div th:fragment="scripts">
+    <div th:replace="~{fragments/componentes :: flash-toast}"></div>
+    <script th:src="@{/js/main.js}"></script>
+</div>
+
+<footer th:fragment="footer" class="site-footer">
+    <span>© 2026 DonaTrack. Conectando corazones, cambiando vidas.</span>
+    <div class="flex gap-4">
+        <a th:href="@{/legal}">Políticas de privacidad</a>
+        <a th:href="@{/legal}">Términos de servicio</a>
+    </div>
+</footer>
+
+</body>
+</html>

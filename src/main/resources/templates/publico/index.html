@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Seguí cada donación',
+        'DonaTrack conecta donantes y entidades beneficiarias con seguimiento transparente de cada entrega.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: publica('')}"></header>
+
+<main id="main">
+
+    <!-- ============ Portada ============ -->
+    <section class="container" style="padding-top: var(--space-6); padding-bottom: var(--space-6);">
+        <div class="grid grid-cols-2" style="align-items: stretch;">
+            <div class="card" style="display:flex; flex-direction:column; justify-content:center; border:none; box-shadow:none; padding: var(--space-4) 0;">
+                <h1>Seguí cada donación. Mirá el impacto en tiempo real.</h1>
+                <p style="font-size: var(--text-md);">
+                    DonaTrack conecta donantes con entidades beneficiarias y sigue el recorrido
+                    de cada bien material: desde que entra al depósito hasta que la entidad
+                    confirma que lo recibió, con fotos y ubicación.
+                </p>
+                <div class="flex gap-3" style="margin: var(--space-4) 0 var(--space-6); flex-wrap: wrap;">
+                    <a th:href="@{/registro}" class="btn btn-primary">Quiero donar</a>
+                    <a href="#como-funciona" class="btn btn-secondary">Cómo funciona</a>
+                </div>
+            </div>
+
+            <!-- Panel ilustrativo armado con los mismos componentes del sistema.
+                 Cuando haya fotografía propia va acá; no usamos capturas ni stock. -->
+            <div class="card" style="display:flex; flex-direction:column; justify-content:center; gap: var(--space-3);">
+                <p class="card-subtitle" style="margin:0;">Así se ve una donación en curso</p>
+                <div class="card" style="background: var(--color-bg);">
+                    <div class="card-title-row">
+                        <strong>Donación #1041</strong>
+                        <span class="badge badge-info">En traslado</span>
+                    </div>
+                    <p class="card-subtitle" style="margin: var(--space-2) 0 0;">
+                        100 kg de arroz y 50 kg de fideos → Comedor Los Hornos
+                    </p>
+                </div>
+                <ol class="timeline list-reset">
+                    <li class="timeline-done">
+                        <span class="timeline-marker" aria-hidden="true"></span>
+                        <span class="timeline-step-title">Registrada en el depósito</span>
+                    </li>
+                    <li class="timeline-done">
+                        <span class="timeline-marker" aria-hidden="true"></span>
+                        <span class="timeline-step-title">Asignada a una entidad</span>
+                    </li>
+                    <li class="timeline-current">
+                        <span class="timeline-marker" aria-hidden="true"></span>
+                        <span class="timeline-step-title">En traslado</span>
+                        <span class="timeline-step-meta">Llegada estimada: hoy 14:20</span>
+                    </li>
+                    <li>
+                        <span class="timeline-marker" aria-hidden="true"></span>
+                        <span class="timeline-step-title">Recibida, con fotos</span>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ Cómo funciona ============
+         La navbar apuntaba a #how-it-works y ese ancla no existía en la página. -->
+    <section id="como-funciona" class="container" style="padding-bottom: var(--space-7);">
+        <h2 style="margin-bottom: var(--space-2);">Cómo funciona</h2>
+        <p class="card-subtitle" style="margin-bottom: var(--space-5);">Tres pasos, sin trámites.</p>
+
+        <div class="grid grid-cols-3">
+            <article class="card">
+                <span class="chip" aria-hidden="true">1</span>
+                <h3 class="heading-sm" style="margin-top: var(--space-3);">Registrás tu donación</h3>
+                <p class="card-subtitle" style="margin:0;">
+                    Llevás los bienes al depósito y el equipo los registra a tu nombre,
+                    con su descripción, cantidad y fecha de vencimiento si corresponde.
+                </p>
+            </article>
+            <article class="card">
+                <span class="chip" aria-hidden="true">2</span>
+                <h3 class="heading-sm" style="margin-top: var(--space-3);">Buscamos a quién le sirve</h3>
+                <p class="card-subtitle" style="margin:0;">
+                    El sistema cruza lo donado con las necesidades que cargaron las entidades
+                    beneficiarias y propone los destinos que mejor encajan.
+                </p>
+            </article>
+            <article class="card">
+                <span class="chip" aria-hidden="true">3</span>
+                <h3 class="heading-sm" style="margin-top: var(--space-3);">Seguís la entrega</h3>
+                <p class="card-subtitle" style="margin:0;">
+                    Ves en qué estado está tu donación y, cuando llega, la entidad confirma
+                    la recepción con fotos. Vos recibís el aviso.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <!-- ============ Llamado a la acción ============ -->
+    <section id="impacto" class="container" style="padding-bottom: var(--space-7);">
+        <div class="card banner-brand" style="display:flex; align-items:center; justify-content:space-between; gap: var(--space-4); flex-wrap: wrap;">
+            <div style="min-width: 0;">
+                <h2 class="heading-md" style="margin-bottom: var(--space-1);">¿Donás o recibís donaciones?</h2>
+                <p style="margin:0;">
+                    Creá tu cuenta para seguir el recorrido de cada donación
+                    y recibir avisos cuando cambie de estado.
+                </p>
+            </div>
+            <div class="flex gap-3" style="flex-wrap: wrap;">
+                <a th:href="@{/registro}" class="btn btn-secondary">Crear cuenta</a>
+                <a th:href="@{/login}" class="btn btn-primary">Iniciar sesión</a>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Ranking de donantes',
+        'Ranking mensual de donantes e histórico de meses anteriores.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: staff('ranking')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<!-- Rail del histórico a la izquierda + contenido, como en la maqueta.
+     .split-view no sirve acá: su primera columna es la ancha. -->
+<div class="app-body">
+
+    <!-- ============ Histórico ============ -->
+    <aside class="sidebar" aria-labelledby="titulo-historico">
+            <h2 id="titulo-historico" class="heading-sm" style="margin-bottom: var(--space-3);">
+                Meses anteriores
+            </h2>
+            <nav class="sidebar-nav" aria-label="Rankings de meses anteriores">
+                <a th:each="p : ${periodos}"
+                   th:href="@{/staff/ranking(periodo=${p})}"
+                   th:text="${p}"
+                   class="sidebar-link"
+                   th:classappend="${p == periodoActual} ? 'active'"
+                   th:aria-current="${p == periodoActual} ? 'page'">2026-09</a>
+            </nav>
+    </aside>
+
+    <!-- ============ Tabla ============ -->
+    <main id="main" class="main-content">
+        <div style="margin-bottom: var(--space-5);">
+            <h1 style="margin-bottom: var(--space-1);">Ranking de donantes</h1>
+            <p class="card-subtitle" style="margin:0;">
+                Quiénes más aportaron en
+                <span th:text="${periodoActual}">2026-09</span>. El orden y el puntaje
+                los calcula el servicio de incentivos.
+            </p>
+        </div>
+
+            <!-- BRECHA G4: incentivos-service define RankingMensualResponse y la
+                 interfaz RankingService, pero no hay endpoint que los exponga. -->
+            <div th:if="${#lists.isEmpty(ranking)}">
+                <div th:replace="~{fragments/componentes :: estado-vacio(
+                    'Todavía no hay ranking de este mes',
+                    'Se arma con las misiones que se completen. Volvé a mirar en unos días.',
+                    null, null)}"></div>
+            </div>
+
+            <div class="card table-wrap" th:unless="${#lists.isEmpty(ranking)}">
+                <table>
+                    <caption class="visually-hidden">
+                        Donantes ordenados por puntaje de impacto del período
+                        <span th:text="${periodoActual}">2026-09</span>
+                    </caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Puesto</th>
+                        <th scope="col">Donante</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Categoría</th>
+                        <th scope="col">Misiones</th>
+                        <th scope="col">Insignias</th>
+                        <th scope="col">Impacto</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="f : ${ranking}">
+                        <th scope="row" th:text="${f.posicion()}">1</th>
+                        <td th:text="${f.nombre()}">Fundación Caminos</td>
+                        <td th:text="${f.tipoDonante()}">Organización</td>
+                        <td>
+                            <span class="badge badge-neutral" th:text="${f.categoria()}">Guardián</span>
+                        </td>
+                        <td th:text="${f.misionesCumplidas()}">142</td>
+                        <td th:text="${f.insignias()}">9</td>
+                        <td th:text="${#numbers.formatInteger(f.puntajeImpacto(), 1, 'POINT')}">9.850</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+    </main>
+</div>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

@@ -6,7 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.Toast;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,27 +25,48 @@ public class RegisterController {
   @Value("${backend.api.url.donaciones}")
   private String backendApiUrl;
 
+  // Configuracion de Keycloak. Antes estaba escrita a mano en cada llamada,
+  // credenciales incluidas. Ahora sale de application.properties y se puede
+  // sobreescribir por variable de entorno.
+  @Value("${keycloak.base-url}")
+  private String keycloakBaseUrl;
+
+  @Value("${keycloak.realm}")
+  private String keycloakRealm;
+
+  @Value("${keycloak.admin.realm}")
+  private String adminRealm;
+
+  @Value("${keycloak.admin.client-id}")
+  private String adminClientId;
+
+  @Value("${keycloak.admin.username}")
+  private String adminUsername;
+
+  @Value("${keycloak.admin.password}")
+  private String adminPassword;
+
+  // El formulario de alta es uno solo: publico/registro, con sus tres variantes
+  // (persona, organizacion, entidad). Estos GET quedan como atajos.
   @GetMapping("/donante")
-  public String mostrarFormularioRegistro(Model model) {
-    model.addAttribute("donante", new DonanteCreateRequest());
-    return "registro-donante"; // vistas
+  public String mostrarFormularioRegistro() {
+    return "redirect:/registro";
   }
   @GetMapping("/entidad")
-  public String mostrarFormularioEntidad(Model model) {
-
-    model.addAttribute("entidad", new EntidadCreateRequest());
-    return "registro-entidad";
+  public String mostrarFormularioEntidad() {
+    return "redirect:/registro";
   }
 
   @PostMapping("/donante")
-  public String registrarDonante(@ModelAttribute("donante") DonanteCreateRequest donanteRequest, Model model) {
+  public String registrarDonante(@ModelAttribute("donante") DonanteCreateRequest donanteRequest,
+                                 RedirectAttributes redirect) {
     try {
       // PASO 1: Registrar la identidad en Keycloak
       boolean keycloakCreado = registrarYAsignarRolEnKeycloak(donanteRequest.getEmail(), donanteRequest.getPassword(), "DONANTE",donanteRequest.getNombre(),donanteRequest.getApellido());
 
       if (!keycloakCreado) {
-        model.addAttribute("error", "No se pudo crear el usuario en el sistema de autenticación.");
-        return "registro-donante";
+        redirect.addFlashAttribute("toast", Toast.error("No se pudo crear el usuario en el sistema de autenticación."));
+        return "redirect:/registro";
       }
 
       // PASO 2: Registrar en el Backend de Donaciones (MySQL)
@@ -55,15 +77,15 @@ public class RegisterController {
       if (response.getStatusCode().is2xxSuccessful()) {
         return "redirect:/login?registroExitoso=true";
       } else {
-        model.addAttribute("error", "Error inesperado al intentar registrar el usuario en el backend.");
-        return "registro-donante";
+        redirect.addFlashAttribute("toast", Toast.error("Error inesperado al intentar registrar el usuario en el backend."));
+        return "redirect:/registro";
       }
     } catch (HttpClientErrorException e) {
-      model.addAttribute("error", "Datos inválidos: " + e.getResponseBodyAsString());
-      return "registro-donante";
+      redirect.addFlashAttribute("toast", Toast.error("Datos inválidos: " + e.getResponseBodyAsString()));
+      return "redirect:/registro";
     } catch (Exception e) {
-      model.addAttribute("error", "No se pudo conectar con el servidor: " + e.getMessage());
-      return "registro-donante";
+      redirect.addFlashAttribute("toast", Toast.error("No se pudo conectar con el servidor: " + e.getMessage()));
+      return "redirect:/registro";
     }
   }
 
@@ -73,15 +95,15 @@ public class RegisterController {
       // ==========================================
       // PASO 1: Obtener el Token de Administrador
       // ==========================================
-      String tokenEndpoint = "http://localhost:8085/realms/master/protocol/openid-connect/token";
+      String tokenEndpoint = keycloakBaseUrl + "/realms/" + adminRealm + "/protocol/openid-connect/token";
 
       org.springframework.http.HttpHeaders tokenHeaders = new org.springframework.http.HttpHeaders();
       tokenHeaders.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
 
       org.springframework.util.MultiValueMap<String, String> tokenBody = new org.springframework.util.LinkedMultiValueMap<>();
-      tokenBody.add("client_id", "admin-cli");
-      tokenBody.add("username", "admin");
-      tokenBody.add("password", "admin");
+      tokenBody.add("client_id", adminClientId);
+      tokenBody.add("username", adminUsername);
+      tokenBody.add("password", adminPassword);
       tokenBody.add("grant_type", "password");
 
       org.springframework.http.HttpEntity<org.springframework.util.MultiValueMap<String, String>> tokenRequest =
@@ -95,7 +117,7 @@ public class RegisterController {
       // ==========================================
       // PASO 2: Crear el usuario en tu realm
       // ==========================================
-      String usersEndpoint = "http://localhost:8085/admin/realms/DonaTrack/users";
+      String usersEndpoint = keycloakBaseUrl + "/admin/realms/" + keycloakRealm + "/users";
 
       org.springframework.http.HttpHeaders userHeaders = new org.springframework.http.HttpHeaders();
       userHeaders.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
@@ -138,7 +160,7 @@ public class RegisterController {
       // ==========================================
       // PASO 4: Buscar el Rol en Keycloak
       // ==========================================
-      String roleEndpoint = "http://localhost:8085/admin/realms/DonaTrack/roles/" + rolName;
+      String roleEndpoint = keycloakBaseUrl + "/admin/realms/" + keycloakRealm + "/roles/" + rolName;
 
       org.springframework.http.HttpHeaders getHeaders = new org.springframework.http.HttpHeaders();
       getHeaders.setBearerAuth(adminToken);
@@ -152,7 +174,8 @@ public class RegisterController {
       // ==========================================
       // PASO 5: Mapear el Rol al Usuario
       // ==========================================
-      String mappingEndpoint = "http://localhost:8085/admin/realms/DonaTrack/users/" + userId + "/role-mappings/realm";
+      String mappingEndpoint = keycloakBaseUrl + "/admin/realms/" + keycloakRealm
+          + "/users/" + userId + "/role-mappings/realm";
 
       org.springframework.http.HttpHeaders mappingHeaders = new org.springframework.http.HttpHeaders();
       mappingHeaders.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
@@ -174,13 +197,14 @@ public class RegisterController {
   }
 
   @PostMapping("/entidad")
-  public String registrarEntidad(@ModelAttribute("entidad") EntidadCreateRequest entidadRequest, Model model) {
+  public String registrarEntidad(@ModelAttribute("entidad") EntidadCreateRequest entidadRequest,
+                                 RedirectAttributes redirect) {
     try {
       boolean keycloakCreado = registrarYAsignarRolEnKeycloak(entidadRequest.getEmail(), entidadRequest.getPassword(), "ENTIDAD",entidadRequest.getRazonSocial(),entidadRequest.getDireccion());
 
       if (!keycloakCreado) {
-        model.addAttribute("error", "No se pudo crear el usuario en el sistema de autenticación.");
-        return "registro-donante";
+        redirect.addFlashAttribute("toast", Toast.error("No se pudo crear el usuario en el sistema de autenticación."));
+        return "redirect:/registro";
       }
 
       String url = backendApiUrl + "/entidades";
@@ -194,16 +218,16 @@ public class RegisterController {
       if (response.getStatusCode().is2xxSuccessful()) {
         return "redirect:/login?registroExitoso=true";
       } else {
-        model.addAttribute("error", "Error inesperado al registrar la entidad.");
-        return "registro-entidad";
+        redirect.addFlashAttribute("toast", Toast.error("Error inesperado al registrar la entidad."));
+        return "redirect:/registro";
       }
 
     } catch (HttpClientErrorException e) {
-      model.addAttribute("error", "Datos inválidos: " + e.getResponseBodyAsString());
-      return "registro-entidad";
+      redirect.addFlashAttribute("toast", Toast.error("Datos inválidos: " + e.getResponseBodyAsString()));
+      return "redirect:/registro";
     } catch (Exception e) {
-      model.addAttribute("error", "Error de conexión con el servidor: " + e.getMessage());
-      return "registro-entidad";
+      redirect.addFlashAttribute("toast", Toast.error("Error de conexión con el servidor: " + e.getMessage()));
+      return "redirect:/registro";
     }
   }
 }

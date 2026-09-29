@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Entidades beneficiarias',
+        'Conocé las entidades que necesitan ayuda y qué están pidiendo.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: donante('entidades')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<!-- Rail de filtros a la izquierda + contenido: el mismo patrón de la maqueta.
+     .split-view no sirve acá: su primera columna es la ancha. -->
+<div class="app-body">
+
+    <!-- ============ Filtros ============ -->
+    <aside class="sidebar" aria-labelledby="titulo-filtros">
+            <div class="card" style="border:none; box-shadow:none; padding:0;">
+                <h2 id="titulo-filtros" class="heading-sm">Filtros</h2>
+                <p class="card-subtitle" style="margin-top:-4px;">Encontrá la entidad que buscás.</p>
+
+                <!--
+                  Filtro por GET: la búsqueda queda en la URL y se puede compartir
+                  y volver atrás. El filtrado lo resuelve la API, no el cliente.
+                -->
+                <form th:action="@{/donante/entidades}" method="get">
+                    <div class="field">
+                        <label for="nombre">Buscar por nombre</label>
+                        <input type="search" id="nombre" name="nombre" th:value="${nombre}"
+                               placeholder="Ej: Escuela Rural…">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm btn-block"
+                            data-loading-on-submit data-loading-texto="Buscando…">Buscar</button>
+                    <a th:href="@{/donante/entidades}" class="btn btn-secondary btn-sm btn-block"
+                       style="margin-top: var(--space-2);">Limpiar</a>
+                </form>
+
+                <!--
+                  BRECHA G6: EntidadResponse no trae tipo de entidad ni nivel de
+                  urgencia, que son los dos filtros que pide la maqueta. Quedan
+                  deshabilitados y anunciados como tales hasta que la API los exponga.
+                -->
+                <fieldset disabled style="border:none; padding:0; margin-top: var(--space-5);"
+                          aria-describedby="filtros-pendientes">
+                    <legend class="field-label">Tipo de entidad</legend>
+                    <div class="flex flex-col">
+                        <label class="checkbox-option"><input type="checkbox"> Escuela</label>
+                        <label class="checkbox-option"><input type="checkbox"> Comedor</label>
+                        <label class="checkbox-option"><input type="checkbox"> Hogar de niños</label>
+                    </div>
+                    <legend class="field-label" style="margin-top: var(--space-4);">Nivel de urgencia</legend>
+                    <div class="flex flex-col">
+                        <label class="checkbox-option"><input type="checkbox"> Recurrentes</label>
+                        <label class="checkbox-option"><input type="checkbox"> Extraordinarias</label>
+                    </div>
+                </fieldset>
+                <p class="hint" id="filtros-pendientes">
+                    Estos filtros se habilitan cuando el servicio de donaciones exponga
+                    el tipo y la urgencia de cada entidad.
+                </p>
+            </div>
+    </aside>
+
+    <!-- ============ Catálogo ============ -->
+    <main id="main" class="main-content">
+        <div style="margin-bottom: var(--space-5);">
+            <h1 style="margin-bottom: var(--space-1);">Entidades beneficiarias</h1>
+            <p class="card-subtitle" style="margin:0;">
+                Mirá qué está necesitando cada entidad. Lo que dones se asigna automáticamente
+                a quien mejor lo aproveche.
+            </p>
+        </div>
+
+            <div th:if="${#lists.isEmpty(entidades)}">
+                <div th:replace="~{fragments/componentes :: estado-vacio(
+                    'No encontramos entidades',
+                    'Probá con otro nombre o limpiá la búsqueda para ver todas.',
+                    'Ver todas', @{/donante/entidades})}"></div>
+            </div>
+
+            <div class="grid grid-cols-3" th:unless="${#lists.isEmpty(entidades)}">
+                <article class="entity-card" th:each="e : ${entidades}">
+                    <!-- BRECHA G6: EntidadResponse no trae foto. Hasta que la traiga,
+                         un bloque de marca con la inicial: no inventamos imágenes. -->
+                    <div class="entity-card-media">
+                        <img th:if="${e.foto() != null}" th:src="@{${e.foto()}}" th:alt="${e.fotoAlt()}">
+                        <span th:if="${e.foto() == null}" aria-hidden="true"
+                              style="position:absolute; inset:0; display:flex; align-items:center;
+                                     justify-content:center; font-family: var(--font-heading);
+                                     font-size: var(--text-2xl); font-weight:700;
+                                     color: var(--color-primary-ink);"
+                              th:text="${#strings.substring(e.razonSocial(), 0, 1)}">C</span>
+                        <span class="entity-card-tag" th:text="${e.tipo()}">Comedor</span>
+                    </div>
+                    <div class="entity-card-body">
+                        <h3 class="heading-sm" style="margin:0;" th:text="${e.razonSocial()}">
+                            Comedor Los Hornos
+                        </h3>
+                        <p class="card-subtitle" style="margin: var(--space-1) 0 0;"
+                           th:text="${e.direccion()}">Calle 137 y 66, La Plata</p>
+
+                        <p class="card-subtitle" style="margin: var(--space-3) 0 0;">
+                            <strong>Está necesitando:</strong>
+                            <span th:text="${#strings.listJoin(
+                                    #sets.toSet(e.necesidades().![subcategoria()]), ', ')}">Alimentos</span>
+                        </p>
+
+                        <div class="entity-card-needs">
+                            <span class="badge" th:classappend="${e.claseUrgencia()}"
+                                  th:text="${e.etiquetaUrgencia()}">Necesidades recurrentes</span>
+                        </div>
+
+                        <ul class="list-reset flex flex-col gap-1" style="margin-top: var(--space-2);">
+                            <li th:each="n : ${e.necesidades()}" class="card-subtitle"
+                                style="font-size: var(--text-sm);" th:text="'· ' + ${n.descripcion()}">
+                                · Aceite, harina y fideos
+                            </li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+    </main>
+</div>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

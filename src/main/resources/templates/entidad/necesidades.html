@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Mis necesidades',
+        'Publicá qué bienes materiales necesita tu entidad.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: entidad('necesidades')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <div style="margin-bottom: var(--space-5);">
+        <h1 style="margin-bottom: var(--space-1);">Mis necesidades</h1>
+        <p class="card-subtitle" style="margin:0;">
+            Contá qué bienes materiales necesitás. El sistema los cruza con las donaciones
+            que entran al depósito y te asigna las que encajan.
+        </p>
+    </div>
+
+    <div class="split-view">
+
+        <!-- ============ Alta de necesidad (CU1) ============ -->
+        <section class="card" aria-labelledby="titulo-alta" style="align-self: start;">
+            <h2 id="titulo-alta" class="heading-md" style="margin-bottom: var(--space-2);">Publicar una necesidad</h2>
+            <p class="card-subtitle" style="margin-bottom: var(--space-4);">
+                Cuanto más concreta, mejor encaja con lo que se dona.
+            </p>
+
+            <div class="banner banner-warning" role="alert" th:if="${error != null}"
+                 style="margin-bottom: var(--space-4);">
+                <span aria-hidden="true">⚠</span>
+                <p><span th:text="${error}">Falta completar un dato.</span></p>
+            </div>
+
+            <form th:action="@{/entidad/necesidades}" th:object="${form}" method="post" novalidate>
+
+                <div class="field">
+                    <label for="subcategoria">Categoría del bien</label>
+                    <input type="text" id="subcategoria" th:field="*{subcategoria}"
+                           placeholder="Alimentos" aria-describedby="hint-subcategoria" list="subcategorias">
+                    <!-- BRECHA G7: donaciones-service pide subcategoriaId pero no expone
+                         ningún endpoint que liste las subcategorías. Hasta que exista,
+                         el campo es texto con sugerencias. -->
+                    <datalist id="subcategorias">
+                        <option value="Alimentos"></option>
+                        <option value="Higiene"></option>
+                        <option value="Limpieza"></option>
+                        <option value="Mobiliario"></option>
+                        <option value="Vestimenta"></option>
+                        <option value="Útiles escolares"></option>
+                    </datalist>
+                    <span class="hint" id="hint-subcategoria">Elegí una de la lista o escribí la tuya.</span>
+                </div>
+
+                <div class="field">
+                    <label for="descripcion">Qué necesitás</label>
+                    <textarea id="descripcion" th:field="*{descripcion}" rows="3"
+                              placeholder="Aceite, harina y fideos para el comedor de los martes"
+                              aria-describedby="hint-descripcion"></textarea>
+                    <span class="hint" id="hint-descripcion">Detallá el bien concreto, no la necesidad general.</span>
+                </div>
+
+                <div class="field">
+                    <label for="cantidadSolicitada">Cantidad</label>
+                    <input type="number" id="cantidadSolicitada" min="1" step="1"
+                           th:field="*{cantidadSolicitada}" placeholder="40">
+                </div>
+
+                <fieldset class="field" style="border:none; padding:0;">
+                    <legend class="field-label">Tipo de necesidad</legend>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" th:field="*{esExtraordinaria}" value="false">
+                            <span>Recurrente — la necesito todos los meses</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" th:field="*{esExtraordinaria}" value="true">
+                            <span>Extraordinaria — es puntual y urgente</span>
+                        </label>
+                    </div>
+                    <span class="hint">Las extraordinarias tienen prioridad en la asignación.</span>
+                </fieldset>
+
+                <button type="submit" class="btn btn-primary btn-block"
+                        data-loading-on-submit data-loading-texto="Publicando…">Publicar necesidad</button>
+            </form>
+        </section>
+
+        <!-- ============ Necesidades ya publicadas ============ -->
+        <section aria-labelledby="titulo-listado">
+            <h2 id="titulo-listado" class="heading-md" style="margin-bottom: var(--space-3);">Publicadas</h2>
+
+            <div th:if="${#lists.isEmpty(necesidades)}">
+                <div th:replace="~{fragments/componentes :: estado-vacio(
+                    'Todavía no publicaste ninguna necesidad',
+                    'Mientras no haya necesidades cargadas, el sistema no puede asignarte donaciones. Empezá por la más urgente.',
+                    null, null)}"></div>
+            </div>
+
+            <div class="flex flex-col gap-3" th:unless="${#lists.isEmpty(necesidades)}">
+                <article class="card" th:each="n : ${necesidades}" style="padding: var(--space-4);">
+                    <div class="card-title-row">
+                        <div style="min-width:0;">
+                            <span class="chip" th:text="${n.subcategoria}">Alimentos</span>
+                            <p style="margin: var(--space-2) 0 0;" th:text="${n.descripcion}">
+                                Aceite, harina y fideos
+                            </p>
+                        </div>
+                        <!-- Baja por POST: cambia estado en el servidor, no puede ser un enlace -->
+                        <form th:action="@{/entidad/necesidades/{id}/eliminar(id=${n.id})}" method="post"
+                              style="margin:0;">
+                            <button type="submit" class="btn btn-ghost btn-sm"
+                                    th:aria-label="'Dar de baja la necesidad: ' + ${n.descripcion}"
+                                    data-loading-on-submit data-loading-texto="Dando de baja…">Dar de baja</button>
+                        </form>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

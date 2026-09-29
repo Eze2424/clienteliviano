@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Crear cuenta',
+        'Registrate en DonaTrack para donar, seguir tus donaciones o recibirlas.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: publica('registro')}"></header>
+
+<main id="main" class="container" style="padding: var(--space-7) var(--space-5);">
+    <div class="grid grid-cols-2" style="align-items:start; gap: var(--space-6);">
+
+        <!-- ============ Columna informativa ============ -->
+        <div class="flex flex-col gap-4">
+            <div class="card" style="border:none; box-shadow:none; padding:0;">
+                <h1 style="font-size: var(--text-lg);">Bienvenido a DonaTrack</h1>
+                <p>Creá tu cuenta para donar, seguir el recorrido de tus donaciones y ver su impacto.</p>
+            </div>
+
+            <div class="card">
+                <h2 class="heading-sm" style="margin-bottom: var(--space-2);">¿Qué podés hacer con tu cuenta?</h2>
+                <ul class="flex flex-col gap-2 list-reset">
+                    <li style="font-size: var(--text-sm);">✓ Ver las entidades beneficiarias y sus necesidades</li>
+                    <li style="font-size: var(--text-sm);">✓ Seguir en tiempo real cada donación y su historial</li>
+                    <li style="font-size: var(--text-sm);">✓ Completar misiones y sumar insignias</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2 class="heading-sm" style="margin-bottom: var(--space-2);">Privacidad y seguridad</h2>
+                <p style="margin:0; font-size: var(--text-sm);">
+                    Tus datos viajan cifrados y los usamos solo para concretar las entregas y
+                    avisarte. Leé los <a th:href="@{/legal}">términos y la política de privacidad</a>.
+                </p>
+            </div>
+        </div>
+
+        <!-- ============ Formulario ============ -->
+        <div class="card" style="width:100%;">
+
+            <div class="banner banner-warning" role="alert" th:if="${error != null}"
+                 style="margin-bottom: var(--space-4);">
+                <span aria-hidden="true">⚠</span>
+                <p><span th:text="${error}">No pudimos crear la cuenta.</span></p>
+            </div>
+
+            <!--
+              th:object liga el formulario a RegistroForm; th:field genera name,
+              id y value de cada control. th:action inyecta el token CSRF.
+            -->
+            <form th:action="@{/registro}" th:object="${form}" method="post" novalidate>
+
+                <!-- ---------- Tipo de cuenta ---------- -->
+                <fieldset style="border:none; padding:0; margin:0 0 var(--space-5);">
+                    <legend class="heading-sm" style="margin-bottom: var(--space-2);">Elegí el tipo de cuenta</legend>
+                    <p class="hint" style="margin-bottom: var(--space-3);">
+                        Definí si donás a título personal, en nombre de una organización,
+                        o si tu institución va a <strong>recibir</strong> donaciones.
+                    </p>
+                    <div class="radio-group" id="tipo-cuenta">
+                        <label class="radio-option">
+                            <input type="radio" th:field="*{tipoCuenta}" value="PERSONA" data-tipo-cuenta>
+                            <span>Persona</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" th:field="*{tipoCuenta}" value="ORGANIZACION" data-tipo-cuenta>
+                            <span>Organización donante</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" th:field="*{tipoCuenta}" value="ENTIDAD" data-tipo-cuenta>
+                            <span>Entidad beneficiaria</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <!-- ---------- Paso 1 ---------- -->
+                <fieldset class="reg-step" id="reg-step-1" style="border:none; padding:0; margin:0;">
+                    <legend id="step-1-title" class="heading-sm" style="margin-bottom: var(--space-4);">Paso 1 — Datos personales</legend>
+
+                    <!-- Datos de la organización o de la entidad -->
+                    <div data-bloque="organizacion" hidden style="margin-bottom: var(--space-4);">
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="razonSocial">Razón social</label>
+                                <input type="text" id="razonSocial" th:field="*{razonSocial}"
+                                       placeholder="Fundación Caminos de Esperanza">
+                            </div>
+                            <div class="field" data-bloque="solo-organizacion">
+                                <label for="tipoOrganizacion">Tipo de organización</label>
+                                <select id="tipoOrganizacion" th:field="*{tipoOrganizacion}">
+                                    <option value="">Elegí una opción</option>
+                                    <option th:each="t : ${tiposOrganizacion}"
+                                            th:value="${t}" th:text="${t.name()}">ONG</option>
+                                </select>
+                            </div>
+                            <div class="field" data-bloque="solo-organizacion">
+                                <label for="rubro">Rubro</label>
+                                <input type="text" id="rubro" th:field="*{rubro}"
+                                       placeholder="Educación / Salud / Alimentación">
+                            </div>
+                        </div>
+                        <div class="field-row" data-bloque="solo-entidad" hidden>
+                            <div class="field">
+                                <label for="latitud">Latitud</label>
+                                <input type="number" step="0.000001" id="latitud" th:field="*{latitud}"
+                                       placeholder="-34.9611" aria-describedby="coord-hint">
+                            </div>
+                            <div class="field">
+                                <label for="longitud">Longitud</label>
+                                <input type="number" step="0.000001" id="longitud" th:field="*{longitud}"
+                                       placeholder="-57.9877" aria-describedby="coord-hint">
+                            </div>
+                        </div>
+                        <span class="hint" data-bloque="solo-entidad" id="coord-hint" hidden>
+                            Las usamos para planificar la ruta del camión hasta tu puerta.
+                        </span>
+                    </div>
+
+                    <!-- Datos de la persona (o del representante) -->
+                    <div data-bloque="persona">
+                        <h3 class="heading-sm" data-bloque="solo-organizacion" hidden
+                            style="margin-bottom: var(--space-3);">Datos del representante</h3>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="nombre">Nombre</label>
+                                <input type="text" id="nombre" th:field="*{nombre}" placeholder="Ana">
+                            </div>
+                            <div class="field">
+                                <label for="apellido">Apellido</label>
+                                <input type="text" id="apellido" th:field="*{apellido}" placeholder="Gutiérrez">
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="documento">Número de documento</label>
+                                <input type="text" id="documento" th:field="*{documento}" placeholder="30123456">
+                            </div>
+                            <div class="field">
+                                <label for="edad">Edad</label>
+                                <input type="number" id="edad" min="18" max="120" th:field="*{edad}" placeholder="34">
+                            </div>
+                        </div>
+
+                        <fieldset class="field" style="border:none; padding:0;">
+                            <legend class="field-label">Género</legend>
+                            <div class="radio-group">
+                                <label class="radio-option"><input type="radio" th:field="*{genero}" value="FEMENINO"> Femenino</label>
+                                <label class="radio-option"><input type="radio" th:field="*{genero}" value="MASCULINO"> Masculino</label>
+                                <label class="radio-option"><input type="radio" th:field="*{genero}" value="OTRO"> Otro / Prefiero no decir</label>
+                            </div>
+                        </fieldset>
+                    </div>
+                </fieldset>
+
+                <!-- ---------- Paso 2 ---------- -->
+                <fieldset class="reg-step" id="reg-step-2" hidden style="border:none; padding:0; margin:0;">
+                    <legend class="heading-sm" style="margin-bottom: var(--space-4);">Paso 2 — Información de contacto</legend>
+
+                    <div class="field">
+                        <label for="direccion">Dirección</label>
+                        <input type="text" id="direccion" th:field="*{direccion}"
+                               placeholder="Av. Mitre 2210, Avellaneda">
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="email">Email <span class="field-optional">(obligatorio)</span></label>
+                            <input type="email" id="email" th:field="*{email}" placeholder="ana@ejemplo.org"
+                                   autocomplete="email">
+                        </div>
+                        <div class="field">
+                            <label for="telefono">Teléfono / WhatsApp <span class="field-optional">(opcional)</span></label>
+                            <input type="tel" id="telefono" th:field="*{telefono}" placeholder="+54 11 4555-0112">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="medioPredeterminado">Medio de contacto preferido</label>
+                        <select id="medioPredeterminado" th:field="*{medioPredeterminado}" aria-describedby="medio-hint">
+                            <option value="EMAIL">Email</option>
+                            <option value="SMS">SMS</option>
+                            <option value="WHATSAPP">WhatsApp</option>
+                        </select>
+                        <span class="hint" id="medio-hint">Por acá te avisamos cuando cambie el estado de una donación.</span>
+                    </div>
+                </fieldset>
+
+                <!-- ---------- Paso 3 ---------- -->
+                <fieldset class="reg-step" id="reg-step-3" hidden style="border:none; padding:0; margin:0;">
+                    <legend class="heading-sm" style="margin-bottom: var(--space-4);">Paso 3 — Seguridad de la cuenta</legend>
+
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="password">Contraseña</label>
+                            <input type="password" id="password" th:field="*{password}"
+                                   autocomplete="new-password" aria-describedby="pass-hint">
+                        </div>
+                        <div class="field">
+                            <label for="passwordConfirmacion">Repetir contraseña</label>
+                            <input type="password" id="passwordConfirmacion" th:field="*{passwordConfirmacion}"
+                                   autocomplete="new-password">
+                        </div>
+                    </div>
+                    <p class="hint" id="pass-hint">Mínimo 8 caracteres, con letras y números.</p>
+
+                    <label class="checkbox-option" style="margin-top: var(--space-3);">
+                        <input type="checkbox" th:field="*{aceptaTerminos}">
+                        <span style="font-size: var(--text-sm);">
+                            Acepto los <a th:href="@{/legal}">términos y la política de privacidad</a> de DonaTrack.
+                        </span>
+                    </label>
+                </fieldset>
+
+                <!-- ---------- Navegación del asistente ---------- -->
+                <div class="flex items-center justify-between" style="margin-top: var(--space-6); flex-wrap: wrap; gap: var(--space-3);">
+                    <a th:href="@{/login}" class="btn btn-secondary">Ya tengo cuenta</a>
+                    <div class="flex gap-2">
+                        <button type="button" class="btn btn-secondary" id="prev-step-btn" hidden>Volver</button>
+                        <button type="button" class="btn btn-primary" id="next-step-btn">Siguiente</button>
+                        <button type="submit" class="btn btn-primary" id="submit-btn" hidden
+                                data-loading-on-submit data-loading-texto="Creando cuenta…">Crear cuenta</button>
+                    </div>
+                </div>
+
+                <p class="hint" id="reg-progreso" aria-live="polite" style="margin-top: var(--space-3);">Paso 1 de 3</p>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+
+<script th:inline="none">
+    /* Asistente de 3 pasos y campos según el tipo de cuenta.
+       Es progressive disclosure del lado del cliente: el formulario completo
+       está en el DOM y se envía entero, así funciona igual sin JavaScript. */
+    (function () {
+        const pasos = ['reg-step-1', 'reg-step-2', 'reg-step-3'];
+        let actual = 0;
+
+        const btnPrev = document.getElementById('prev-step-btn');
+        const btnNext = document.getElementById('next-step-btn');
+        const btnSubmit = document.getElementById('submit-btn');
+        const progreso = document.getElementById('reg-progreso');
+
+        function mostrarPaso() {
+            pasos.forEach((id, i) => {
+                document.getElementById(id).hidden = i !== actual;
+            });
+            btnPrev.hidden = actual === 0;
+            btnNext.hidden = actual === pasos.length - 1;
+            btnSubmit.hidden = actual !== pasos.length - 1;
+            progreso.textContent = 'Paso ' + (actual + 1) + ' de ' + pasos.length;
+        }
+
+        btnNext.addEventListener('click', () => {
+            if (actual < pasos.length - 1) { actual++; mostrarPaso(); }
+        });
+        btnPrev.addEventListener('click', () => {
+            if (actual > 0) { actual--; mostrarPaso(); }
+        });
+
+        function alternar(selector, visible) {
+            document.querySelectorAll(selector).forEach((el) => { el.hidden = !visible; });
+        }
+
+        function actualizarTipoCuenta() {
+            const elegido = document.querySelector('[data-tipo-cuenta]:checked');
+            const tipo = elegido ? elegido.value : 'PERSONA';
+            const esOrg = tipo === 'ORGANIZACION';
+            const esEntidad = tipo === 'ENTIDAD';
+
+            alternar('[data-bloque=organizacion]', esOrg || esEntidad);
+            alternar('[data-bloque=solo-organizacion]', esOrg);
+            alternar('[data-bloque=solo-entidad]', esEntidad);
+            // La entidad beneficiaria no carga persona: se registra la institución.
+            alternar('[data-bloque=persona]', !esEntidad);
+
+            const titulo = document.getElementById('step-1-title');
+            if (esOrg) titulo.textContent = 'Paso 1 — Datos de la organización';
+            else if (esEntidad) titulo.textContent = 'Paso 1 — Datos de la entidad beneficiaria';
+            else titulo.textContent = 'Paso 1 — Datos personales';
+        }
+
+        document.querySelectorAll('[data-tipo-cuenta]').forEach((r) => {
+            r.addEventListener('change', actualizarTipoCuenta);
+        });
+
+        mostrarPaso();
+        actualizarTipoCuenta();
+    })();
+</script>
+</body>
+</html>

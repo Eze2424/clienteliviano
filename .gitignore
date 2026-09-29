@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Contexto de trabajo con Claude Code (no forma parte del entregable) ###
+CLAUDE.md
+PROMPT.md
+docs/
+tools/

@@ -15,6 +15,12 @@ public class DonanteCreateRequest {
   private  String documento;
   private  String genero;
   private  String direccion;
+
+  /**
+   * Solo para dar de alta la identidad en Keycloak. El DonanteCreateRequest del
+   * backend NO tiene este campo, asi que no debe viajar en el cuerpo que se le
+   * manda: al armar el request de la API hay que excluirlo.
+   */
   private String password;
 
   private  String email;

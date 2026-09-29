@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Flash toast (patrón Post/Redirect/Get).
+  El controller hace redirect.addFlashAttribute("toast", Toast.exito("...")) y
+  redirige; acá queda el dato en el DOM y main.js lo muestra al cargar.
+  Así cada acción informa su resultado o su error real, no uno simulado.
+-->
+<div th:fragment="flash-toast" th:if="${toast != null}" hidden data-flash-toast
+     th:data-tipo="${toast.tipo}" th:data-mensaje="${toast.mensaje}"></div>
+
+
+<!--
+  Estado vacío. Las maquetas nunca tuvieron listas vacías; con datos reales sí.
+  El microcopy dice qué pasa y qué hacer, no solo "sin resultados".
+  Uso: <div th:replace="~{fragments/componentes :: estado-vacio(
+            'Todavía no hay donaciones',
+            'Cuando registres tu primera donación la vas a ver acá.',
+            'Registrar donación', @{/staff/donaciones/nueva})}"></div>
+  Sin acción: pasar null en los dos últimos parámetros.
+-->
+<div th:fragment="estado-vacio(titulo, detalle, accionTexto, accionHref)" class="empty-state">
+    <span class="empty-state-icon" aria-hidden="true">📭</span>
+    <strong th:text="${titulo}">Todavía no hay nada acá</strong>
+    <p th:text="${detalle}">Cuando haya datos los vas a ver en esta sección.</p>
+    <a th:if="${accionHref != null}" th:href="${accionHref}" th:text="${accionTexto}"
+       class="btn btn-secondary btn-sm" style="margin-top: var(--space-2);">Empezar</a>
+</div>
+
+
+<!--
+  Banner de servicio caído. Lo usa el @ControllerAdvice cuando la API
+  responde 5xx o no responde: el usuario ve microcopy, nunca un stack trace.
+-->
+<div th:fragment="banner-error(mensaje)" th:if="${mensaje != null}"
+     class="banner banner-warning" role="alert">
+    <span aria-hidden="true">⚠</span>
+    <p>
+        <strong>No pudimos cargar todos los datos</strong>
+        <span th:text="${mensaje}">El servicio no está disponible en este momento.</span>
+    </p>
+</div>
+
+
+<!--
+  Migas de pan para la vista de nivel 3. Hace visible la profundidad
+  de navegación y da la vuelta atrás (WCAG 2.4.8).
+-->
+<nav th:fragment="breadcrumb(seccionTexto, seccionHref, actual)"
+     class="breadcrumb" aria-label="Ruta de navegación">
+    <a th:href="${seccionHref}" th:text="${seccionTexto}">Sección</a>
+    <span aria-hidden="true">/</span>
+    <span th:text="${actual}" aria-current="page">Detalle</span>
+</nav>
+
+
+<!--
+  Skeleton de sección diferida: la página se renderiza ya y main.js pide
+  el fragmento a `ruta`. El loader refleja una espera real, no un setTimeout.
+-->
+<div th:fragment="seccion-diferida(ruta, alto)" th:data-lazy-fragment="${ruta}"
+     class="loading-state" th:style="'min-height:' + ${alto}">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>Cargando…</span>
+</div>
+
+</body>
+</html>
