@@ -54,25 +54,25 @@ public class DatosDemo {
   private final List<DonacionVista> donaciones = new ArrayList<>(List.of(
       new DonacionVista(1041L, "Alimentos no perecederos: 100 kg de arroz, 50 kg de fideos",
           "EN_TRASLADO", LocalDate.of(2026, 9, 24), LocalDate.of(2027, 3, 1), false,
-          1L, "Elena Martínez", 7L, "Comedor Los Hornos", 12),
+          1L, "Elena Martínez", 7L, "Comedor Los Hornos", 12, null),
       new DonacionVista(1038L, "Frazadas y ropa de abrigo de invierno",
           "ENTREGADA", LocalDate.of(2026, 9, 12), null, false,
-          1L, "Elena Martínez", 7L, "Comedor Los Hornos", 28),
+          1L, "Elena Martínez", 7L, "Comedor Los Hornos", 28, null),
       new DonacionVista(1052L, "Cuadernos, lápices y útiles escolares",
           "ASIGNADA", LocalDate.of(2026, 9, 27), null, false,
-          1L, "Elena Martínez", 2L, "Escuela Rural N.º 12", 60),
+          1L, "Elena Martínez", 2L, "Escuela Rural N.º 12", 60, null),
       new DonacionVista(1055L, "Leche en polvo x 40 latas",
           "EN_DEPOSITO", LocalDate.of(2026, 9, 28), LocalDate.of(2026, 10, 5), false,
-          3L, "Fundación Caminos", null, null, 40),
+          3L, "Fundación Caminos", null, null, 40, null),
       new DonacionVista(1049L, "Conservas varias (lote donado por supermercado)",
           "EN_DEPOSITO", LocalDate.of(2026, 8, 30), LocalDate.of(2026, 9, 20), true,
-          3L, "Fundación Caminos", null, null, 85),
+          3L, "Fundación Caminos", null, null, 85, null),
       new DonacionVista(1044L, "Pañales y artículos de higiene infantil",
           "ENTREGA_FALLIDA", LocalDate.of(2026, 9, 18), null, false,
-          5L, "Supermercados del Sur", 7L, "Comedor Los Hornos", 30),
+          5L, "Supermercados del Sur", 7L, "Comedor Los Hornos", 30, null),
       new DonacionVista(1057L, "Frazadas polares x 50",
           "LISTA", LocalDate.of(2026, 9, 26), null, false,
-          3L, "Fundación Caminos", 7L, "Comedor Los Hornos", 50)
+          3L, "Fundación Caminos", 7L, "Comedor Los Hornos", 50, null)
   ));
 
   public List<DonacionVista> todasLasDonaciones() {
@@ -80,11 +80,31 @@ public class DatosDemo {
   }
 
   public List<DonacionVista> donacionesDelDonante(Long donanteId) {
-    return donaciones.stream().filter(d -> donanteId.equals(d.donanteId())).toList();
+    return donacionesDelDonante(donanteId, null);
+  }
+
+  /**
+   * Con `estado`, solo las que estan en ese estado. El filtro se hace aca
+   * porque esta clase hace de API: cuando exista el endpoint real, el estado
+   * viaja como query param y el filtrado lo resuelve el backend.
+   */
+  public List<DonacionVista> donacionesDelDonante(Long donanteId, String estado) {
+    return donaciones.stream()
+        .filter(d -> java.util.Objects.equals(donanteId, d.donanteId()))
+        .filter(d -> estado == null || estado.isBlank() || estado.equals(d.estado()))
+        .toList();
+  }
+
+  /** Metrica que el equipo definio en DashboardDonanteResponse. */
+  public int donacionesEntregadas(Long donanteId) {
+    return (int) donaciones.stream()
+        .filter(d -> java.util.Objects.equals(donanteId, d.donanteId()))
+        .filter(d -> "ENTREGADA".equals(d.estado()))
+        .count();
   }
 
   public List<DonacionVista> donacionesDeLaEntidad(Long entidadId) {
-    return donaciones.stream().filter(d -> entidadId.equals(d.entidadId())).toList();
+    return donaciones.stream().filter(d -> java.util.Objects.equals(entidadId, d.entidadId())).toList();
   }
 
   /** Pendientes de asignación: las que el algoritmo todavía no derivó a una entidad. */

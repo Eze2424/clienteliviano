@@ -22,7 +22,9 @@ public record DonacionVista(
     String donante,
     Long entidadId,
     String entidad,
-    int cantidadBienes
+    int cantidadBienes,
+    /** Miniatura de la donacion. Viene de la API; null si no hay. */
+    String imagenUrl
 ) {
   /** Traducción del enum TipoEstado del backend a texto para la persona. */
   public String etiquetaEstado() {

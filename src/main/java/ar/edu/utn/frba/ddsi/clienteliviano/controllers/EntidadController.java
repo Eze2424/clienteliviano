@@ -130,7 +130,7 @@ public class EntidadController {
     if (yo == null) {
       return "redirect:/login";
     }
-    var donacion = datos.donacion(id).filter(d -> yo.id().equals(d.entidadId()));
+    var donacion = datos.donacion(id).filter(d -> java.util.Objects.equals(yo.id(), d.entidadId()));
     if (donacion.isEmpty()) {
       // 404 de verdad: devolver la vista con estado 200 le miente al navegador,
       // a los buscadores y a las herramientas de verificación.

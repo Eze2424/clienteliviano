@@ -1,6 +1,9 @@
 package ar.edu.utn.frba.ddsi.clienteliviano.controllers;
 
 import ar.edu.utn.frba.ddsi.clienteliviano.demo.DatosDemo;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
+import ar.edu.utn.frba.ddsi.clienteliviano.services.DonanteApiService;
+import java.util.List;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
@@ -24,10 +27,12 @@ public class DonanteController {
 
   private final Sesion sesion;
   private final DatosDemo datos;
+  private final DonanteApiService api;
 
-  public DonanteController(Sesion sesion, DatosDemo datos) {
+  public DonanteController(Sesion sesion, DatosDemo datos, DonanteApiService api) {
     this.sesion = sesion;
     this.datos = datos;
+    this.api = api;
   }
 
   private UsuarioActual exigirDonante(HttpSession session) {
@@ -35,14 +40,31 @@ public class DonanteController {
   }
 
   @GetMapping("/dashboard")
-  public String dashboard(HttpSession session, Model model) {
+  public String dashboard(HttpSession session, Model model,
+                          @RequestParam(required = false) String estado) {
     UsuarioActual yo = exigirDonante(session);
     if (yo == null) {
       return "redirect:/login";
     }
-    // BRECHA G1: no hay endpoint que liste las donaciones de un donante.
-    // GET /donaciones es solo ADMIN y devuelve todas.
-    model.addAttribute("donaciones", datos.donacionesDelDonante(yo.id()));
+
+    // Endpoint agregado que propuso el equipo: resuelve G1 y G2 de una.
+    // Mientras no exista, el andamio ocupa su lugar y la vista no se entera.
+    var resumen = api.dashboard();
+    List<DonacionVista> donaciones;
+    if (resumen.isPresent()) {
+      donaciones = api.aVista(resumen.get().getDonacionesRecientes());
+      model.addAttribute("totalDonaciones", resumen.get().getTotalDonaciones());
+      model.addAttribute("donacionesEntregadas", resumen.get().getDonacionesEntregadas());
+      model.addAttribute("entidadesAyudadas", resumen.get().getOngsBeneficiadas());
+    } else {
+      donaciones = datos.donacionesDelDonante(yo.id(), estado);
+      model.addAttribute("totalDonaciones", datos.actividad().totalHistoricoDonaciones());
+      model.addAttribute("donacionesEntregadas", datos.donacionesEntregadas(yo.id()));
+      model.addAttribute("entidadesAyudadas", datos.actividad().organizacionesAyudadas());
+    }
+
+    model.addAttribute("donaciones", donaciones);
+    model.addAttribute("estadoFiltro", estado);
     model.addAttribute("actividad", datos.actividad());
     model.addAttribute("mision", datos.misionEnCurso());
     model.addAttribute("insignias", datos.insignias());
@@ -56,7 +78,7 @@ public class DonanteController {
     if (yo == null) {
       return "redirect:/login";
     }
-    var donacion = datos.donacion(id).filter(d -> yo.id().equals(d.donanteId()));
+    var donacion = datos.donacion(id).filter(d -> java.util.Objects.equals(yo.id(), d.donanteId()));
     if (donacion.isEmpty()) {
       // 404 de verdad: devolver la vista con estado 200 le miente al navegador,
       // a los buscadores y a las herramientas de verificación.
