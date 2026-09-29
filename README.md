@@ -35,6 +35,9 @@ MySQL, MongoDB, RabbitMQ y Keycloak.
 
 Andá a <http://localhost:8086/demo> y elegí un rol. O directo:
 
+> Con Keycloak levantado no hace falta: el login real ya redirige a cada rol
+> según `realm_access.roles` del JWT.
+
 | Rol | URL | Usuario de prueba |
 |---|---|---|
 | Donante | <http://localhost:8086/demo/donante> | Elena Martínez |
@@ -78,10 +81,11 @@ del servidor para poder recorrer las vistas.
 
 | Funciona de verdad | Todavía es andamio |
 |---|---|
-| Todas las rutas, controllers y plantillas | Los **datos**: salen de `DatosDemo`, no de la API |
-| Protección por rol y redirección a `/login` | La **autenticación**: `/demo/*` reemplaza al login |
-| Validación de formato y errores del servidor | Los **POST** no escriben nada: muestran el toast y redirigen |
-| Toasts, estados vacíos, estados de carga, 404 | |
+| Todas las rutas, controllers y plantillas | Los **datos** de la mayoría de las vistas |
+| **El login contra Keycloak**, con redirección según el rol del JWT | `/demo/*`, que existe para probar sin Keycloak |
+| **El dashboard del donante llama a la API**; si no responde, cae al andamio | El resto todavía lee de `DatosDemo` |
+| Protección por rol y redirección a `/login` | Los **POST** no escriben: muestran el toast y redirigen |
+| Validación de formato, toasts, estados vacíos, 404 | |
 
 ### Cómo se borra el andamio
 
@@ -153,14 +157,15 @@ POST /entidad/necesidades
 ```
 src/main/java/…/clienteliviano/
 ├── controllers/   una clase por área: Publico · Donante · Entidad · Staff
-│                  (+ Login y Register, que son la parte de Keycloak)
+│                  Login (Keycloak + rol del JWT), Register, Dashboard
+│                  (redirecciones de las rutas /dashboard/* anteriores)
 ├── models/
 │   ├── dto/       espejos EXACTOS de los DTOs del backend + objetos de formulario
 │   └── vista/     lo que la vista necesita y la API todavía no da.
 │                  Cada uno documenta en su Javadoc qué falta y dónde.
 ├── web/           Sesion · SesionControllerAdvice · ProyeccionMapa
 ├── demo/          ANDAMIO: datos en memoria
-└── services/      (vacío: acá van los servicios cliente HTTP)
+└── services/      DonanteApiService: el consumo HTTP vive acá, no en el controller
 
 src/main/resources/
 ├── static/        css/ js/ img/     ← archivos servidos al navegador
@@ -224,10 +229,12 @@ va por variable de entorno y no al archivo.
 
 ### Del cliente
 
-1. **Los servicios cliente HTTP.** Es lo único que separa las vistas de los datos
-   reales. `services/` está vacío y los controllers ya están escritos para recibirlos.
-2. **Login real.** `LoginController` obtiene el token de Keycloak y lo guarda en la
-   sesión, pero no lee los roles del JWT ni redirige según el rol.
+1. **Los servicios cliente HTTP del resto de las vistas.** `DonanteApiService` es el
+   primero y marca el patrón: llama a la API, traduce el DTO a lo que la vista
+   necesita y convierte cualquier falla en un `Optional.empty()`. Faltan los de
+   entidad y administración.
+2. **El endpoint `GET /donantes/me/dashboard`**, que el cliente ya consume. Todavía
+   no existe en `donaciones-service`: hay que confirmarlo con el equipo de backend.
 3. **Protección por rol en Spring Security.** Hoy la hace cada controller a mano
    contra la sesión. `SecurityConfig` tiene `anyRequest().permitAll()` y CSRF
    deshabilitado; al reactivarlo, los `th:action` ya emiten el token solos.

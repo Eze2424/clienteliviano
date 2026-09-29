@@ -20,7 +20,7 @@ class PresentacionTest {
 
   private DonacionVista conEstado(String estado, Long entidadId) {
     return new DonacionVista(1L, "Arroz", estado, LocalDate.now(), null, false,
-        1L, "Elena", entidadId, entidadId == null ? null : "Comedor", 10);
+        1L, "Elena", entidadId, entidadId == null ? null : "Comedor", 10, null);
   }
 
   @Test

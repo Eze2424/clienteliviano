@@ -21,12 +21,12 @@
     <div class="grid grid-cols-4" style="margin-bottom: var(--space-5);">
         <div class="stat-card">
             <div class="label">Donaciones históricas</div>
-            <div class="value" th:text="${actividad.totalHistoricoDonaciones()}">132</div>
+            <div class="value" th:text="${totalDonaciones}">132</div>
+            <div class="delta" th:text="${actividad.donacionesEnPeriodo()} + ' este mes'">13 este mes</div>
         </div>
         <div class="stat-card">
-            <div class="label">Este mes</div>
-            <div class="value" th:text="${actividad.donacionesEnPeriodo()}">13</div>
-            <div class="delta" th:text="'Tu récord es ' + ${actividad.recordDonaciones()}">Tu récord es 13</div>
+            <div class="label">Entregadas</div>
+            <div class="value" th:text="${donacionesEntregadas}">1</div>
         </div>
         <div class="stat-card">
             <div class="label">Misiones completadas</div>
@@ -34,7 +34,7 @@
         </div>
         <div class="stat-card">
             <div class="label">Entidades ayudadas</div>
-            <div class="value" th:text="${actividad.organizacionesAyudadas()}">9</div>
+            <div class="value" th:text="${entidadesAyudadas}">9</div>
         </div>
     </div>
 
@@ -46,9 +46,29 @@
                 <h2 id="titulo-donaciones" class="heading-md" style="margin:0;">Donaciones recientes</h2>
             </div>
 
+            <div class="tabs" role="tablist" aria-label="Filtrar donaciones por estado"
+                 style="margin-bottom: var(--space-4);">
+                <a class="tab" role="tab" th:href="@{/donante/dashboard}"
+                   th:aria-selected="${estadoFiltro == null} ? 'true' : 'false'">Todas</a>
+                <a class="tab" role="tab" th:href="@{/donante/dashboard(estado='EN_DEPOSITO')}"
+                   th:aria-selected="${estadoFiltro == 'EN_DEPOSITO'} ? 'true' : 'false'">En depósito</a>
+                <a class="tab" role="tab" th:href="@{/donante/dashboard(estado='ASIGNADA')}"
+                   th:aria-selected="${estadoFiltro == 'ASIGNADA'} ? 'true' : 'false'">Asignadas</a>
+                <a class="tab" role="tab" th:href="@{/donante/dashboard(estado='EN_TRASLADO')}"
+                   th:aria-selected="${estadoFiltro == 'EN_TRASLADO'} ? 'true' : 'false'">En traslado</a>
+                <a class="tab" role="tab" th:href="@{/donante/dashboard(estado='ENTREGADA')}"
+                   th:aria-selected="${estadoFiltro == 'ENTREGADA'} ? 'true' : 'false'">Entregadas</a>
+            </div>
+
             <!-- BRECHA G1: no existe endpoint que liste las donaciones de un donante.
                  Cuando exista, esta lista se llena desde la API sin cambiar la vista. -->
-            <div th:if="${#lists.isEmpty(donaciones)}">
+            <div th:if="${#lists.isEmpty(donaciones) and estadoFiltro != null}">
+                <div th:replace="~{fragments/componentes :: estado-vacio(
+                    'No tenés donaciones en ese estado',
+                    'Probá con otro estado o mirá todas.',
+                    'Ver todas', @{/donante/dashboard})}"></div>
+            </div>
+            <div th:if="${#lists.isEmpty(donaciones) and estadoFiltro == null}">
                 <div th:replace="~{fragments/componentes :: estado-vacio(
                     'Todavía no registraste donaciones',
                     'Acercate al depósito con lo que quieras donar: el equipo lo registra a tu nombre y desde acá vas a poder seguirlo.',
@@ -58,12 +78,17 @@
             <div class="flex flex-col gap-3" th:unless="${#lists.isEmpty(donaciones)}">
                 <article class="card" th:each="d : ${donaciones}">
                     <div class="card-title-row">
-                        <div style="min-width:0;">
-                            <p class="entity-card-eyebrow" style="margin:0;">
-                                Donación #<span th:text="${d.id}">1041</span>
-                            </p>
-                            <h3 class="heading-sm" style="margin: var(--space-1) 0;"
-                                th:text="${d.descripcion}">Alimentos no perecederos</h3>
+                        <div class="flex gap-3" style="min-width:0; align-items: flex-start;">
+                            <img th:if="${d.imagenUrl() != null}" th:src="${d.imagenUrl()}" alt=""
+                                 style="width:64px; height:64px; border-radius: var(--radius-md);
+                                        object-fit:cover; flex-shrink:0;">
+                            <div style="min-width:0;">
+                                <p class="entity-card-eyebrow" style="margin:0;">
+                                    Donación #<span th:text="${d.id}">1041</span>
+                                </p>
+                                <h3 class="heading-sm" style="margin: var(--space-1) 0;"
+                                    th:text="${d.descripcion}">Alimentos no perecederos</h3>
+                            </div>
                         </div>
                         <span class="badge" th:classappend="${d.claseBadge()}"
                               th:text="${d.etiquetaEstado()}">En traslado</span>
