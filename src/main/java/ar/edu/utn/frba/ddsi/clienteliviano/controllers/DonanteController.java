@@ -1,38 +1,43 @@
 package ar.edu.utn.frba.ddsi.clienteliviano.controllers;
 
-import ar.edu.utn.frba.ddsi.clienteliviano.demo.DatosDemo;
-import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
-import ar.edu.utn.frba.ddsi.clienteliviano.services.DonanteApiService;
-import java.util.List;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
+import ar.edu.utn.frba.ddsi.clienteliviano.services.DonanteApiService;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Área de la persona donante: sus donaciones, el detalle de cada una,
- * el catálogo de entidades y el ranking.
- */
+import java.util.List;
+import java.util.Map;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ActividadResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.InsigniaResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionEnCursoResponse;
+
 @Controller
 @RequestMapping("/donante")
 public class DonanteController {
 
   private final Sesion sesion;
-  private final DatosDemo datos;
   private final DonanteApiService api;
+  private final RestTemplate restTemplate;
 
-  public DonanteController(Sesion sesion, DatosDemo datos, DonanteApiService api) {
+  @Value("${backend.api.url.donaciones:http://localhost:8080/donaciones-service}")
+  private String donacionesUrl;
+
+  @Value("${backend.api.url.incentivos:http://localhost:8082/incentivos-service}")
+  private String incentivosUrl;
+
+  public DonanteController(Sesion sesion, DonanteApiService api, RestTemplate restTemplate) {
     this.sesion = sesion;
-    this.datos = datos;
     this.api = api;
+    this.restTemplate = restTemplate; // Trae el interceptor que propaga el JWT
   }
 
   private UsuarioActual exigirDonante(HttpSession session) {
@@ -47,28 +52,47 @@ public class DonanteController {
       return "redirect:/login";
     }
 
-    // Endpoint agregado que propuso el equipo: resuelve G1 y G2 de una.
-    // Mientras no exista, el andamio ocupa su lugar y la vista no se entera.
+    Long donanteId = yo.id(); // ID de MySQL resuelto para este usuario
+
+    // 1. Datos de Donaciones desde donaciones-service
     var resumen = api.dashboard();
-    List<DonacionVista> donaciones;
     if (resumen.isPresent()) {
-      donaciones = api.aVista(resumen.get().getDonacionesRecientes());
+      model.addAttribute("donaciones", api.aVista(resumen.get().getDonacionesRecientes()));
       model.addAttribute("totalDonaciones", resumen.get().getTotalDonaciones());
       model.addAttribute("donacionesEntregadas", resumen.get().getDonacionesEntregadas());
       model.addAttribute("entidadesAyudadas", resumen.get().getOngsBeneficiadas());
     } else {
-      donaciones = datos.donacionesDelDonante(yo.id(), estado);
-      model.addAttribute("totalDonaciones", datos.actividad().totalHistoricoDonaciones());
-      model.addAttribute("donacionesEntregadas", datos.donacionesEntregadas(yo.id()));
-      model.addAttribute("entidadesAyudadas", datos.actividad().organizacionesAyudadas());
+      model.addAttribute("donaciones", List.of());
+      model.addAttribute("totalDonaciones", 0);
+      model.addAttribute("donacionesEntregadas", 0);
+      model.addAttribute("entidadesAyudadas", 0);
     }
 
-    model.addAttribute("donaciones", donaciones);
+    // 2. Datos reales de Gamificación desde incentivos-service
+    try {
+      var mision = restTemplate.getForObject(incentivosUrl + "/" + donanteId + "/mision-en-curso", MisionEnCursoResponse.class);
+      model.addAttribute("mision", mision);
+    } catch (Exception e) {
+      model.addAttribute("mision", null);
+    }
+
+    try {
+      var insignias = restTemplate.getForObject(incentivosUrl + "/" + donanteId + "/insignias", InsigniaResponse[].class);
+      model.addAttribute("insignias", insignias != null ? List.of(insignias) : List.of());
+    } catch (Exception e) {
+      model.addAttribute("insignias", List.of());
+    }
+
+    try {
+      var actividad = restTemplate.getForObject(incentivosUrl + "/" + donanteId + "/actividad", ActividadResponse.class);
+      model.addAttribute("actividad", actividad != null ? actividad : new ActividadResponse(0, 0, 0, 0, null, 0, 0L, Map.of()));
+    } catch (Exception e) {
+      model.addAttribute("actividad", new ActividadResponse(0, 0, 0, 0, null, 0, 0L, Map.of()));
+    }
+
     model.addAttribute("estadoFiltro", estado);
-    model.addAttribute("actividad", datos.actividad());
-    model.addAttribute("mision", datos.misionEnCurso());
-    model.addAttribute("insignias", datos.insignias());
-    model.addAttribute("notificaciones", datos.notificaciones(Rol.DONANTE));
+    model.addAttribute("notificaciones", List.of()); // O consumo del servicio de notificaciones
+
     return "donante/dashboard";
   }
 
@@ -78,18 +102,20 @@ public class DonanteController {
     if (yo == null) {
       return "redirect:/login";
     }
-    var donacion = datos.donacion(id).filter(d -> java.util.Objects.equals(yo.id(), d.donanteId()));
-    if (donacion.isEmpty()) {
-      // 404 de verdad: devolver la vista con estado 200 le miente al navegador,
-      // a los buscadores y a las herramientas de verificación.
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Donación inexistente o ajena");
+
+    try {
+      // Consumo real de la donación por ID desde donaciones-service
+      DonacionVista donacion = restTemplate.getForObject(donacionesUrl + "/donaciones/" + id, DonacionVista.class);
+      if (donacion == null) {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Donación no encontrada");
+      }
+      model.addAttribute("donacion", donacion);
+      model.addAttribute("entrega", null);
+      model.addAttribute("entidad", null);
+    } catch (Exception e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Donación inexistente o error en backend");
     }
-    model.addAttribute("donacion", donacion.get());
-    model.addAttribute("entrega", donacion.get().entidadId() == null ? null
-        : datos.entregasDeLaEntidad(donacion.get().entidadId()).stream()
-            .filter(e -> e.donacionId().equals(id)).findFirst().orElse(null));
-    model.addAttribute("entidad", donacion.get().entidadId() == null ? null
-        : datos.entidad(donacion.get().entidadId()).orElse(null));
+
     return "donante/donacion";
   }
 
@@ -99,9 +125,13 @@ public class DonanteController {
     if (exigirDonante(session) == null) {
       return "redirect:/login";
     }
-    // El filtro por nombre lo resolverá la API con un query param; acá solo
-    // se conserva lo tipeado para que el campo no se vacíe al recargar.
-    model.addAttribute("entidades", datos.entidades());
+
+    try {
+      List entidades = restTemplate.getForObject(donacionesUrl + "/entidades", List.class);
+      model.addAttribute("entidades", entidades != null ? entidades : List.of());
+    } catch (Exception e) {
+      model.addAttribute("entidades", List.of());
+    }
     model.addAttribute("nombre", nombre);
     return "donante/entidades";
   }
@@ -111,11 +141,10 @@ public class DonanteController {
     if (exigirDonante(session) == null) {
       return "redirect:/login";
     }
-    // BRECHA G4: incentivos-service define RankingMensualResponse y una interfaz
-    // RankingService, pero no hay implementación ni endpoint que los exponga.
-    model.addAttribute("ranking", datos.ranking());
-    model.addAttribute("periodos", datos.periodosDeRanking());
-    model.addAttribute("periodoActual", datos.periodosDeRanking().get(0));
+    // Ranking se puede poblar cuando expongan el endpoint de incentivos
+    model.addAttribute("ranking", List.of());
+    model.addAttribute("periodos", List.of("2026-10"));
+    model.addAttribute("periodoActual", "2026-10");
     return "donante/ranking";
   }
 }
