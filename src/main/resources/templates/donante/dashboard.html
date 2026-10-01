@@ -22,7 +22,7 @@
         <div class="stat-card">
             <div class="label">Donaciones históricas</div>
             <div class="value" th:text="${totalDonaciones}">132</div>
-            <div class="delta" th:text="${actividad.donacionesEnPeriodo()} + ' este mes'">13 este mes</div>
+            <div class="delta" th:text="${(actividad != null && actividad.donacionesEnPeriodo() != null ? actividad.donacionesEnPeriodo() : 0) + ' este mes'}">0 este mes</div>
         </div>
         <div class="stat-card">
             <div class="label">Entregadas</div>
@@ -30,7 +30,7 @@
         </div>
         <div class="stat-card">
             <div class="label">Misiones completadas</div>
-            <div class="value" th:text="${actividad.misionesCompletadas()}">18</div>
+            <div class="value" th:text="${actividad != null ? actividad.misionesCompletadas() : 0}">0</div>
         </div>
         <div class="stat-card">
             <div class="label">Entidades ayudadas</div>

@@ -6,15 +6,8 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.LoginRequest;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.LinkedMultiValueMap;
@@ -24,39 +17,41 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * Autenticacion contra Keycloak por el grant `password`.
- *
- * El token y la identidad quedan en la sesion del servidor: nunca llegan al
- * navegador. RestClientConfig lee el token de esa misma sesion para firmar
- * cada llamada saliente a la API.
- */
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+
 @Controller
 public class LoginController {
 
-  private final RestTemplate restTemplate;
   private final Sesion sesion;
+  private final RestTemplate restTemplate = new RestTemplate();
   private final ObjectMapper objectMapper = new ObjectMapper();
 
-  @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri}")
-  private String keycloakIssuerUri;
+  @Value("${keycloak.base-url:http://localhost:8085}")
+  private String keycloakBaseUrl;
 
-  @Value("${keycloak.client-id}")
+  @Value("${keycloak.realm:DonaTrack}")
+  private String keycloakRealm;
+
+  @Value("${keycloak.client-id:donatrack-client}")
   private String clientId;
 
-  public LoginController(RestTemplate restTemplate, Sesion sesion) {
-    this.restTemplate = restTemplate;
+  @Value("${backend.api.url.donaciones:http://localhost:8080/donaciones-service}")
+  private String donacionesBaseUrl;
+
+  public LoginController(Sesion sesion) {
     this.sesion = sesion;
   }
 
   @GetMapping("/login")
-  public String mostrarLogin() {
+  public String getLogin() {
     return "publico/login";
   }
 
   @PostMapping("/login")
-  public String procesarLogin(LoginRequest loginRequest, Model model, HttpSession session) {
-    String tokenEndpoint = keycloakIssuerUri + "/protocol/openid-connect/token";
+  public String login(LoginRequest loginRequest, HttpSession session, Model model) {
+    String tokenEndpoint = String.format("%s/realms/%s/protocol/openid-connect/token", keycloakBaseUrl, keycloakRealm);
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -67,74 +62,93 @@ public class LoginController {
     body.add("username", loginRequest.username());
     body.add("password", loginRequest.password());
 
+    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+
     try {
-      ResponseEntity<Map> respuesta =
-          restTemplate.postForEntity(tokenEndpoint, new HttpEntity<>(body, headers), Map.class);
+      ResponseEntity<Map> response = restTemplate.postForEntity(tokenEndpoint, request, Map.class);
 
-      if (respuesta.getStatusCode().is2xxSuccessful() && respuesta.getBody() != null) {
-        String accessToken = (String) respuesta.getBody().get("access_token");
-        session.setAttribute(Sesion.TOKEN, accessToken);
+      if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+        String accessToken = (String) response.getBody().get("access_token");
+        session.setAttribute("JWT_TOKEN", accessToken);
 
-        UsuarioActual usuario = leerUsuarioDelToken(accessToken, loginRequest.username());
-        sesion.iniciar(session, usuario);
+        // 1. Decodificar Payload de Keycloak
+        String[] parts = accessToken.split("\\.");
+        if (parts.length > 1) {
+          String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]));
+          Map<String, Object> claims = objectMapper.readValue(payloadJson, Map.class);
 
-        // Cada rol entra a su propia area.
-        return "redirect:" + usuario.rol().getInicio();
+          String email = (String) claims.get("email");
+          if (email == null) {
+            email = (String) claims.get("preferred_username");
+          }
+          String nombre = (String) claims.get("name");
+          if (nombre == null) {
+            nombre = email;
+          }
+
+          // 2. Extraer Rol
+          Rol rol = Rol.DONANTE;
+          String destino = "/donante/dashboard";
+
+          Map<String, Object> realmAccess = (Map<String, Object>) claims.get("realm_access");
+          if (realmAccess != null && realmAccess.get("roles") instanceof List<?> roles) {
+            if (roles.contains("ADMIN")) {
+              rol = Rol.ADMIN;
+              destino = "/staff/dashboard";
+            } else if (roles.contains("ENTIDAD")) {
+              rol = Rol.ENTIDAD;
+              destino = "/entidad/dashboard";
+            }
+          }
+
+          // 3. Resolución dinámica del ID del donante desde MySQL
+          Long idUsuario = 1L; // Fallback por defecto
+          if (rol == Rol.DONANTE) {
+            try {
+              HttpHeaders authHeaders = new HttpHeaders();
+              authHeaders.setBearerAuth(accessToken);
+              HttpEntity<Void> entity = new HttpEntity<>(authHeaders);
+
+              String url = donacionesBaseUrl + "/donantes/by-email?email=" + email;
+              ResponseEntity<Map> resDonante = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+
+              if (resDonante.getStatusCode().is2xxSuccessful() && resDonante.getBody() != null) {
+                Object rawId = resDonante.getBody().get("donanteId");
+                if (rawId == null) {
+                  rawId = resDonante.getBody().get("id");
+                }
+                if (rawId instanceof Number numId) {
+                  idUsuario = numId.longValue();
+                }
+              }
+            } catch (Exception ex) {
+              System.err.println("No se pudo obtener el ID del donante por email: " + ex.getMessage());
+            }
+          }
+
+          // 4. Crear UsuarioActual con el ID exacto que espera MySQL e Incentivos
+          UsuarioActual usuarioActual = new UsuarioActual(idUsuario, nombre, email, rol);
+          session.setAttribute("usuarioActual", usuarioActual);
+          session.setAttribute("USUARIO", usuarioActual);
+
+          return "redirect:" + destino;
+        }
       }
     } catch (HttpClientErrorException e) {
-      model.addAttribute("error", "Email o contraseña incorrectos. Revisalos y probá de nuevo.");
+      model.addAttribute("error", "Email o contraseña incorrectos.");
       return "publico/login";
     } catch (Exception e) {
-      model.addAttribute("error",
-          "No pudimos contactar al servicio de autenticación. Probá de nuevo en unos minutos.");
+      model.addAttribute("error", "Error de conexión con Keycloak: " + e.getMessage());
       return "publico/login";
     }
 
-    model.addAttribute("error",
-        "No pudimos contactar al servicio de autenticación. Probá de nuevo en unos minutos.");
+    model.addAttribute("error", "No se pudo iniciar sesión.");
     return "publico/login";
   }
 
-  /**
-   * Lee el payload del JWT para saber quien entro y con que rol.
-   *
-   * El rol lo decide Keycloak, no el usuario: viene en realm_access.roles, el
-   * mismo claim que leen los cuatro microservicios para autorizar. Solo se
-   * decodifica el payload para mostrar nombre y rutear; la validacion de la
-   * firma es responsabilidad de la API, que es quien confia en el token.
-   */
-  private UsuarioActual leerUsuarioDelToken(String accessToken, String emailIngresado) {
-    String nombre = emailIngresado;
-    Rol rol = Rol.DONANTE;
-
-    try {
-      String[] partes = accessToken.split("\\.");
-      if (partes.length > 1) {
-        String payload = new String(Base64.getUrlDecoder().decode(partes[1]), StandardCharsets.UTF_8);
-        Map<String, Object> claims = objectMapper.readValue(payload, Map.class);
-
-        if (claims.get("name") instanceof String n && !n.isBlank()) {
-          nombre = n;
-        } else if (claims.get("preferred_username") instanceof String u && !u.isBlank()) {
-          nombre = u;
-        }
-
-        if (claims.get("realm_access") instanceof Map<?, ?> realmAccess
-            && realmAccess.get("roles") instanceof List<?> roles) {
-          // Si alguien tuviera varios roles, gana el de mas alcance.
-          if (roles.contains("ADMIN")) {
-            rol = Rol.ADMIN;
-          } else if (roles.contains("ENTIDAD")) {
-            rol = Rol.ENTIDAD;
-          }
-        }
-      }
-    } catch (Exception e) {
-      // Un token que no podemos leer no debe tumbar el login: entra como
-      // donante, que es el rol de menor alcance.
-      System.err.println("No se pudo leer el payload del JWT: " + e.getMessage());
-    }
-
-    return new UsuarioActual(null, nombre, emailIngresado, rol);
+  @PostMapping("/logout")
+  public String logout(HttpSession session) {
+    session.invalidate();
+    return "redirect:/login?logout=true";
   }
 }
