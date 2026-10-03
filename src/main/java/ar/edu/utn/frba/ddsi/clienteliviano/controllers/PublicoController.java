@@ -10,13 +10,18 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import ar.edu.utn.frba.ddsi.clienteliviano.services.RegistroService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.client.HttpClientErrorException;
+
 /**
  * Vistas abiertas: portada, alta de cuenta y textos legales.
- * El controller no habla HTTP con la API: cuando haya servicio cliente,
- * se inyecta acá y estos métodos siguen igual de delgados.
  */
 @Controller
+@RequiredArgsConstructor
 public class PublicoController {
+
+  private final RegistroService registroService;
 
   @GetMapping("/")
   public String portada() {
@@ -40,8 +45,6 @@ public class PublicoController {
                           Model model,
                           RedirectAttributes redirect) {
 
-    // Validación de formato para dar feedback rápido. La validación de dominio
-    // (email ya usado, documento inválido) la resuelve la API, no el cliente.
     if (form.getPassword() == null || !form.getPassword().equals(form.getPasswordConfirmacion())) {
       model.addAttribute("tiposOrganizacion", TipoOrganizacion.values());
       model.addAttribute("error", "Las dos contraseñas no coinciden. Revisalas y probá de nuevo.");
@@ -53,14 +56,23 @@ public class PublicoController {
       return "publico/registro";
     }
 
-    // PENDIENTE (equipo): acá va la llamada real.
-    //   form.esEntidad() -> POST {donaciones}/entidades  con EntidadCreateRequest
-    //   si no            -> POST {donaciones}/donantes   con DonanteCreateRequest
-    // más el alta de identidad en Keycloak, que hoy resuelve RegisterController.
-    // Los errores 400 por campo se trasladarán al BindingResult con rejectValue.
-
-    redirect.addFlashAttribute("toast",
-        Toast.exito("Creamos tu cuenta. Ingresá con tu email y contraseña."));
-    return "redirect:/login?registroExitoso=true";
+    try {
+      registroService.procesarRegistro(form);
+      redirect.addFlashAttribute("toast",
+          Toast.exito("Creamos tu cuenta exitosamente. Ingresá con tu email y contraseña."));
+      return "redirect:/login?registroExitoso=true";
+    } catch (HttpClientErrorException.Conflict e) {
+      model.addAttribute("tiposOrganizacion", TipoOrganizacion.values());
+      model.addAttribute("error", "Ya existe un usuario registrado con el correo: " + form.getEmail());
+      return "publico/registro";
+    } catch (HttpClientErrorException e) {
+      model.addAttribute("tiposOrganizacion", TipoOrganizacion.values());
+      model.addAttribute("error", "Datos inválidos: " + e.getResponseBodyAsString());
+      return "publico/registro";
+    } catch (Exception e) {
+      model.addAttribute("tiposOrganizacion", TipoOrganizacion.values());
+      model.addAttribute("error", "Error al registrar la cuenta: " + e.getMessage());
+      return "publico/registro";
+    }
   }
 }
