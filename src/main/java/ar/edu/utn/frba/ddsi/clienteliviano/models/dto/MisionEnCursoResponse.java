@@ -8,6 +8,8 @@ public record MisionEnCursoResponse(
 ) {
   /** Porcentaje para la barra de progreso. Presentación, no regla de negocio. */
   public int porcentaje() {
-    return objetivo <= 0 ? 0 : (int) Math.round(progresoActual * 100 / objetivo);
+    if (objetivo <= 0) return 0;
+    int p = (int) Math.round(progresoActual * 100 / objetivo);
+    return Math.min(100, Math.max(0, p));
   }
 }
