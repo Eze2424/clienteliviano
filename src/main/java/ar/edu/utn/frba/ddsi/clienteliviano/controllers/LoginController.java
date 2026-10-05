@@ -69,7 +69,16 @@ public class LoginController {
 
       if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
         String accessToken = (String) response.getBody().get("access_token");
+        String refreshToken = (String) response.getBody().get("refresh_token");
+        Object expiresInObj = response.getBody().get("expires_in");
+
         session.setAttribute("JWT_TOKEN", accessToken);
+        if (refreshToken != null) {
+          session.setAttribute("REFRESH_TOKEN", refreshToken);
+        }
+        if (expiresInObj instanceof Number num) {
+          session.setAttribute("JWT_EXPIRES_AT", System.currentTimeMillis() + (num.longValue() * 1000L));
+        }
 
         // 1. Decodificar Payload de Keycloak
         String[] parts = accessToken.split("\\.");
