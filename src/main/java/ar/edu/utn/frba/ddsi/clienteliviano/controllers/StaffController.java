@@ -1,254 +1,343 @@
 package ar.edu.utn.frba.ddsi.clienteliviano.controllers;
 
-import ar.edu.utn.frba.ddsi.clienteliviano.demo.DatosDemo;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Toast;
-import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionForm;
-import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionForm;
-import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteAltaForm;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.*;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.entities.TipoOrganizacion;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/**
- * Área de la persona administradora (rol ADMIN en Keycloak). Cubre sus seis
- * casos de uso:
- *   1. registrar donantes y donaciones del depósito -> /staff/donantes y /staff/donaciones/nueva
- *   2. marcar donaciones vencidas                   -> /staff/dashboard
- *   3. elegir la entidad destino de una donación    -> /staff/donaciones/{id}/asignar
- *   4. administrar camiones                         -> /staff/camiones
- *   5. ranking mensual e histórico                  -> /staff/ranking
- *   6. importar donantes desde CSV                  -> /staff/donantes
- */
+import java.util.ArrayList;
+import java.util.List;
+
 @Controller
 @RequestMapping("/staff")
 public class StaffController {
 
-  private final Sesion sesion;
-  private final DatosDemo datos;
+    private final Sesion sesion;
+    private final RestTemplate restTemplate;
 
-  public StaffController(Sesion sesion, DatosDemo datos) {
-    this.sesion = sesion;
-    this.datos = datos;
-  }
+    @Value("${backend.api.url.donaciones}")
+    private String donacionesUrl;
 
-  private boolean esAdmin(HttpSession session) {
-    return sesion.tieneRol(session, Rol.ADMIN);
-  }
+    @Value("${backend.api.url.logistica}")
+    private String logisticaUrl;
 
-  /* ---------- CU2 y CU3: depósito ---------- */
-
-  @GetMapping("/dashboard")
-  public String dashboard(HttpSession session, Model model) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
+    public StaffController(Sesion sesion, RestTemplate restTemplate) {
+        this.sesion = sesion;
+        this.restTemplate = restTemplate;
     }
-    model.addAttribute("donaciones", datos.todasLasDonaciones());
-    model.addAttribute("pendientes", datos.pendientesDeAsignacion());
-    model.addAttribute("camiones", datos.camiones());
-    return "staff/dashboard";
-  }
 
-  @PostMapping("/donaciones/{id}/vencida")
-  public String marcarVencida(@PathVariable Long id, HttpSession session,
-                              RedirectAttributes redirect) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
+    private boolean esAdmin(HttpSession session) {
+        return sesion.tieneRol(session, Rol.ADMIN);
     }
-    // PENDIENTE (equipo): el cambio de estado lo decide la API.
-    // EstadosController de donaciones-service está entero comentado (brecha G3).
-    redirect.addFlashAttribute("toast",
-        Toast.exito("Marcamos la donación #" + id + " como vencida. Sale del circuito de asignación."));
-    return "redirect:/staff/dashboard";
-  }
 
-  @GetMapping("/donaciones/{id}/asignar")
-  public String asignar(@PathVariable Long id, HttpSession session, Model model) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
-    }
-    var donacion = datos.donacion(id);
-    if (donacion.isEmpty()) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Donación inexistente");
-    }
-    model.addAttribute("donacion", donacion.get());
-    // GET /donaciones-service/{id}/propuestas: el resultado de los algoritmos
-    // de selección. El cliente solo lo muestra; la elección es de la persona.
-    model.addAttribute("propuestas", datos.propuestas(id));
-    return "staff/asignar";
-  }
+    /* ---------- CU2 y CU3: depósito ---------- */
 
-  @PostMapping("/donaciones/{id}/asignar")
-  public String confirmarAsignacion(@PathVariable Long id,
-                                    @RequestParam Long necesidadId,
-                                    @RequestParam String entidad,
-                                    HttpSession session,
+    // Estamos repitiendo la verificacion de sesion en cada controller. Supongo que se debe gestionar desde otro lado para que rechace directamente
+    // en caso de que no sea admin y quiera entrar a /staff/*
+
+    @GetMapping("/dashboard")
+    public String dashboard(HttpSession session, Model model) {
+        if (!esAdmin(session)) return "redirect:/login";
+
+        List<DonacionVista> donaciones = new ArrayList<>();
+        List<DonacionVista> pendientes = new ArrayList<>();
+        List<CamionResponse> camiones = new ArrayList<>();
+
+        try {
+            // Le faltan datos al DTO que envia el back
+            donaciones = restTemplate.exchange(
+                    donacionesUrl + "/donaciones", HttpMethod.GET, null,
+                    new ParameterizedTypeReference<List<DonacionVista>>() {
+                    }).getBody();
+
+            // Falta el endpoint para obtener las donaciones pendientes, supongo que seran las que estan en deposito?
+
+            // pendientes = restTemplate.exchange(...)
+
+            camiones = restTemplate.exchange(
+                    logisticaUrl + "/camiones", HttpMethod.GET, null,
+                    new ParameterizedTypeReference<List<CamionResponse>>() {
+                    }).getBody();
+
+        } catch (Exception e) {
+            System.err.println("Error al cargar datos del dashboard: " + e.getMessage());
+        }
+
+        model.addAttribute("donaciones", donaciones != null ? donaciones : List.of());
+        model.addAttribute("pendientes", pendientes);
+        model.addAttribute("camiones", camiones != null ? camiones : List.of());
+        return "staff/dashboard";
+    }
+
+    @PostMapping("/donaciones/{id}/vencida")
+    public String marcarVencida(@PathVariable Long id, HttpSession session, RedirectAttributes redirect) {
+        if (!esAdmin(session)) return "redirect:/login";
+
+        try {
+            restTemplate.postForEntity(donacionesUrl + "/donaciones-independientes/" + id + "/estado?nuevoEstado=VENCIDA&descripcion=Vencimiento", null, Void.class);
+            redirect.addFlashAttribute("toast", Toast.exito("Marcamos la donación #" + id + " como vencida. Sale del circuito de asignación."));
+        } catch (Exception e) {
+            redirect.addFlashAttribute("toast", Toast.error("No se pudo marcar como vencida: " + e.getMessage()));
+        }
+
+        return "redirect:/staff/dashboard";
+    }
+
+    @GetMapping("/donaciones/{id}/asignar")
+    public String asignar(@PathVariable Long id, HttpSession session, Model model) {
+        if (!esAdmin(session)) return "redirect:/login";
+
+        try {
+            DonacionVista donacion = restTemplate.getForObject(donacionesUrl + "/donaciones/" + id, DonacionVista.class);
+
+            AsignacionResponse propuestas = restTemplate.getForObject(donacionesUrl + "/" + id + "/propuestas", AsignacionResponse.class);
+
+            model.addAttribute("donacion", donacion);
+            model.addAttribute("propuestas", propuestas);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Donación inexistente");
+        }
+
+        return "staff/asignar";
+    }
+
+    @PostMapping("/donaciones/{id}/asignar")
+    public String confirmarAsignacion(@PathVariable Long id,
+                                      @RequestParam Long necesidadId,
+                                      @RequestParam String entidad,
+                                      HttpSession session,
+                                      RedirectAttributes redirect) {
+        if (!esAdmin(session)) return "redirect:/login";
+
+        try {
+            String url = donacionesUrl + "/" + id + "/confirmar-asignacion?necesidadId=" + necesidadId + "&entidadId=" + entidad;
+            restTemplate.postForEntity(url, null, Void.class);
+            redirect.addFlashAttribute("toast", Toast.exito("Asignamos la donación #" + id + " a la entidad."));
+        } catch (Exception e) {
+            redirect.addFlashAttribute("toast", Toast.error("Fallo al asignar: " + e.getMessage()));
+        }
+
+        return "redirect:/staff/dashboard";
+    }
+
+    /* ---------- CU1: alta de donación ---------- */
+
+    @GetMapping("/donaciones/nueva")
+    public String nuevaDonacion(HttpSession session, Model model) {
+        if (!esAdmin(session)) return "redirect:/login";
+
+        try {
+            List<DonanteResponse> donantes = restTemplate.exchange(
+                    donacionesUrl + "/donantes", HttpMethod.GET, null,
+                    new ParameterizedTypeReference<List<DonanteResponse>>() {
+                    }).getBody();
+            model.addAttribute("donantes", donantes);
+        } catch (Exception e) {
+            model.addAttribute("donantes", List.of());
+        }
+
+        model.addAttribute("form", new DonacionForm());
+        return "staff/nueva-donacion";
+    }
+
+    @PostMapping("/donaciones/nueva")
+    public String registrarDonacion(@ModelAttribute("form") DonacionForm form,
+                                    HttpSession session, Model model,
                                     RedirectAttributes redirect) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
-    }
-    // PENDIENTE (equipo): POST /donaciones-service/{id}/confirmar-asignacion
-    // con ConfirmarAsignacionRequest(necesidadId).
-    redirect.addFlashAttribute("toast",
-        Toast.exito("Asignamos la donación #" + id + " a " + entidad + ". Ya le avisamos."));
-    return "redirect:/staff/dashboard";
-  }
+        if (!esAdmin(session)) return "redirect:/login";
 
-  /* ---------- CU1: alta de donación ---------- */
+        if (form.getDonanteId() == null) {
+            try {
+                model.addAttribute("donantes", restTemplate.exchange(donacionesUrl + "/donantes",
+                        HttpMethod.GET, null, new ParameterizedTypeReference<List<DonanteResponse>>() {
+                }).getBody());
+            } catch (Exception ignored) {
+            }
 
-  @GetMapping("/donaciones/nueva")
-  public String nuevaDonacion(HttpSession session, Model model) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
-    }
-    model.addAttribute("form", new DonacionForm());
-    model.addAttribute("donantes", datos.donantes());
-    return "staff/nueva-donacion";
-  }
+            model.addAttribute("error", "Elegí a quién pertenece la donación antes de registrarla.");
+            return "staff/nueva-donacion";
+        }
 
-  @PostMapping("/donaciones/nueva")
-  public String registrarDonacion(@ModelAttribute("form") DonacionForm form,
-                                  HttpSession session, Model model,
-                                  RedirectAttributes redirect) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
-    }
-    if (form.getDonanteId() == null) {
-      model.addAttribute("donantes", datos.donantes());
-      model.addAttribute("error", "Elegí a quién pertenece la donación antes de registrarla.");
-      return "staff/nueva-donacion";
-    }
-    // PENDIENTE (equipo): POST /donaciones-service/donaciones con DonacionCreateRequest.
-    redirect.addFlashAttribute("toast",
-        Toast.exito("Registramos la donación. Ya entró al circuito de asignación."));
-    return "redirect:/staff/dashboard";
-  }
+        try {
+            restTemplate.postForEntity(donacionesUrl + "/donaciones", form, Void.class);
+            redirect.addFlashAttribute("toast", Toast.exito("Registramos la donación. Ya entró al circuito de asignación."));
+        } catch (Exception e) {
+            redirect.addFlashAttribute("toast", Toast.error("Error al registrar donación: " + e.getMessage()));
+        }
 
-  /* ---------- CU1 y CU6: donantes e importación ---------- */
-
-  @GetMapping("/donantes")
-  public String donantes(HttpSession session, Model model) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
-    }
-    model.addAttribute("donantes", datos.donantes());
-    model.addAttribute("tiposOrganizacion", TipoOrganizacion.values());
-    if (!model.containsAttribute("form")) {
-      model.addAttribute("form", new DonanteAltaForm());
-    }
-    return "staff/donantes";
-  }
-
-  @PostMapping("/donantes")
-  public String altaDonante(@ModelAttribute("form") DonanteAltaForm form,
-                            HttpSession session, Model model,
-                            RedirectAttributes redirect) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
-    }
-    if (form.getDocumento() == null || form.getDocumento().isBlank()) {
-      model.addAttribute("donantes", datos.donantes());
-      model.addAttribute("tiposOrganizacion", TipoOrganizacion.values());
-      model.addAttribute("error", "El número de documento es obligatorio para dar de alta un donante.");
-      return "staff/donantes";
-    }
-    // PENDIENTE (equipo): POST /donaciones-service/donantes
-    redirect.addFlashAttribute("toast", Toast.exito("Dimos de alta al donante."));
-    return "redirect:/staff/donantes";
-  }
-
-  @PostMapping("/donantes/importar")
-  public String importarCsv(@RequestParam("archivo") MultipartFile archivo,
-                            HttpSession session, RedirectAttributes redirect) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
-    }
-    if (archivo == null || archivo.isEmpty()) {
-      redirect.addFlashAttribute("toast", Toast.error("Elegí un archivo CSV antes de importar."));
-      return "redirect:/staff/donantes";
-    }
-    String nombre = archivo.getOriginalFilename();
-    if (nombre == null || !nombre.toLowerCase().endsWith(".csv")) {
-      redirect.addFlashAttribute("toast",
-          Toast.error("El archivo tiene que ser un CSV. Recibimos: " + nombre));
-      return "redirect:/staff/donantes";
+        return "redirect:/staff/dashboard";
     }
 
-    // PENDIENTE (equipo): subir el archivo al backend, que lo procesa en segundo
-    // plano (la consigna habla de más de 10.000 filas: no puede ser sincrónico).
-    // El cliente solo debería consultar el avance y mostrar el resultado.
-    redirect.addFlashAttribute("toast",
-        Toast.exito("Subimos «" + nombre + "». Te avisamos cuando termine de procesarse."));
-    return "redirect:/staff/donantes";
-  }
+    /* ---------- CU1 y CU6: donantes e importación ---------- */
 
-  /* ---------- CU4: camiones ---------- */
+    @GetMapping("/donantes")
+    public String donantes(HttpSession session, Model model) {
+        if (!esAdmin(session)) return "redirect:/login";
 
-  @GetMapping("/camiones")
-  public String camiones(HttpSession session, Model model) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
-    }
-    model.addAttribute("camiones", datos.camiones());
-    if (!model.containsAttribute("form")) {
-      model.addAttribute("form", new CamionForm());
-    }
-    return "staff/camiones";
-  }
+        try {
+            List<DonanteResponse> donantes = restTemplate.exchange(
+                    donacionesUrl + "/donantes", HttpMethod.GET, null,
+                    new ParameterizedTypeReference<List<DonanteResponse>>() {
+                    }).getBody();
+            model.addAttribute("donantes", donantes);
+        } catch (Exception e) {
+            model.addAttribute("donantes", List.of());
+        }
 
-  @PostMapping("/camiones")
-  public String altaCamion(@ModelAttribute("form") CamionForm form,
-                           HttpSession session, Model model,
-                           RedirectAttributes redirect) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
+        model.addAttribute("tiposOrganizacion", TipoOrganizacion.values());
+        if (!model.containsAttribute("form")) {
+            model.addAttribute("form", new DonanteAltaForm());
+        }
+        return "staff/donantes";
     }
-    if (form.getPatente() == null || form.getPatente().isBlank()) {
-      model.addAttribute("camiones", datos.camiones());
-      model.addAttribute("error", "La patente es obligatoria.");
-      return "staff/camiones";
-    }
-    // PENDIENTE (equipo): POST /camiones de logistica-service
-    redirect.addFlashAttribute("toast",
-        Toast.exito("Agregamos el camión " + form.getPatente() + " a la flota."));
-    return "redirect:/staff/camiones";
-  }
 
-  @PostMapping("/camiones/{id}/eliminar")
-  public String bajaCamion(@PathVariable String id, HttpSession session,
-                           RedirectAttributes redirect) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
-    }
-    // PENDIENTE (equipo): DELETE /camiones de logistica-service
-    redirect.addFlashAttribute("toast", Toast.exito("Dimos de baja el camión."));
-    return "redirect:/staff/camiones";
-  }
+    @PostMapping("/donantes")
+    public String altaDonante(@ModelAttribute("form") DonanteAltaForm form,
+                              HttpSession session, Model model,
+                              RedirectAttributes redirect) {
+        if (!esAdmin(session)) return "redirect:/login";
 
-  /* ---------- CU5: ranking ---------- */
+        if (form.getDocumento() == null || form.getDocumento().isBlank()) {
+            model.addAttribute("error", "El número de documento es obligatorio para dar de alta un donante.");
+            return donantes(session, model);
+        }
 
-  @GetMapping("/ranking")
-  public String ranking(HttpSession session, Model model,
-                        @RequestParam(required = false) String periodo) {
-    if (!esAdmin(session)) {
-      return "redirect:/login";
+        try {
+            restTemplate.postForEntity(donacionesUrl + "/donantes", form, Void.class);
+            redirect.addFlashAttribute("toast", Toast.exito("Dimos de alta al donante."));
+        } catch (Exception e) {
+            redirect.addFlashAttribute("toast", Toast.error("Error al registrar donante."));
+        }
+
+        return "redirect:/staff/donantes";
     }
-    String elegido = periodo != null ? periodo : datos.periodosDeRanking().get(0);
-    model.addAttribute("ranking", datos.ranking());
-    model.addAttribute("periodos", datos.periodosDeRanking());
-    model.addAttribute("periodoActual", elegido);
-    return "staff/ranking";
-  }
+
+    //Falta el endpoint en el back para importar el csv.
+
+    @PostMapping("/donantes/importar")
+    public String importarCsv(@RequestParam("archivo") MultipartFile archivo,
+                              HttpSession session, RedirectAttributes redirect) {
+        if (!esAdmin(session)) return "redirect:/login";
+
+        if (archivo == null || archivo.isEmpty()) {
+            redirect.addFlashAttribute("toast", Toast.error("Elegí un archivo CSV antes de importar."));
+            return "redirect:/staff/donantes";
+        }
+
+        String nombre = archivo.getOriginalFilename();
+        if (nombre == null || !nombre.toLowerCase().endsWith(".csv")) {
+            redirect.addFlashAttribute("toast", Toast.error("El archivo debe ser un CSV. Recibimos: " + nombre));
+            return "redirect:/staff/donantes";
+        }
+
+        // El back todavia no tiene endpoint para importar el csv
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("archivo", archivo.getResource());
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        restTemplate.postForEntity(donacionesUrl + "/donantes/importar", requestEntity, Void.class);
+
+        redirect.addFlashAttribute("toast", Toast.exito("CSV procesado cpm exito. Se importaron los datos del archivo."));
+        return "redirect:/staff/donantes";
+    }
+
+    @GetMapping("/camiones")
+    public String camiones(HttpSession session, Model model) {
+        if (!esAdmin(session)) return "redirect:/login";
+
+        try {
+            List<CamionResponse> camiones = restTemplate.exchange(
+                    logisticaUrl + "/camiones", HttpMethod.GET, null,
+                    new ParameterizedTypeReference<List<CamionResponse>>() {
+                    }).getBody();
+            model.addAttribute("camiones", camiones);
+        } catch (Exception e) {
+            model.addAttribute("camiones", List.of());
+        }
+
+        if (!model.containsAttribute("form")) {
+            model.addAttribute("form", new CamionForm());
+        }
+        return "staff/camiones";
+    }
+
+    @PostMapping("/camiones")
+    public String altaCamion(@ModelAttribute("form") CamionForm form,
+                             HttpSession session, Model model,
+                             RedirectAttributes redirect) {
+        if (!esAdmin(session)) return "redirect:/login";
+
+        if (form.getPatente() == null || form.getPatente().isBlank()) {
+            model.addAttribute("error", "La patente es obligatoria.");
+            return camiones(session, model);
+        }
+
+        try {
+            restTemplate.postForEntity(logisticaUrl + "/camiones", form, Void.class);
+            redirect.addFlashAttribute("toast", Toast.exito("Agregamos el camión " + form.getPatente() + " a la flota."));
+        } catch (Exception e) {
+            redirect.addFlashAttribute("toast", Toast.error("Error al registrar camión."));
+        }
+
+        return "redirect:/staff/camiones";
+    }
+
+    @PostMapping("/camiones/{id}/eliminar")
+    public String bajaCamion(@PathVariable String id, HttpSession session,
+                             RedirectAttributes redirect) {
+        if (!esAdmin(session)) return "redirect:/login";
+
+        try {
+            restTemplate.delete(logisticaUrl + "/camiones/" + id);
+            redirect.addFlashAttribute("toast", Toast.exito("Dimos de baja el camión."));
+        } catch (Exception e) {
+            redirect.addFlashAttribute("toast", Toast.error("Fallo al eliminar."));
+        }
+
+        return "redirect:/staff/camiones";
+    }
+
+    /* ---------- CU5: ranking ---------- */
+
+    @GetMapping("/ranking")
+    public String ranking(HttpSession session, Model model,
+                          @RequestParam(required = false) String periodo) {
+        if (!esAdmin(session)) return "redirect:/login";
+
+        // Faltan los endpoints para los rankings en el back
+
+        List<String> periodosDeRanking = List.of();
+        List<RankingFila> ranking = List.of();
+        String elegido = periodo != null ? periodo : "";
+
+        model.addAttribute("ranking", ranking);
+        model.addAttribute("periodos", periodosDeRanking);
+        model.addAttribute("periodoActual", elegido);
+
+        return "staff/ranking";
+    }
 }
+
+
