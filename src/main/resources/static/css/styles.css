@@ -724,6 +724,29 @@ input:focus, select:focus, textarea:focus {
     max-height: 90vh;
     overflow-y: auto;
 }
+.modal.modal-lg {
+    max-width: 680px;
+}
+
+.subdonaciones-box {
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    margin: var(--space-3) 0;
+}
+.subdonacion-pill-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    flex-wrap: wrap;
+    padding: var(--space-1) 0;
+}
+.subdonacion-pill-row:not(:last-child) {
+    border-bottom: 1px dashed var(--color-border);
+    padding-bottom: var(--space-2);
+}
 .modal-header {
     display: flex;
     align-items: flex-start;

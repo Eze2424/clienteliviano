@@ -1,14 +1,12 @@
 package ar.edu.utn.frba.ddsi.clienteliviano.models.dto;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 
 /**
  * Una donacion dentro del resumen del dashboard del donante.
- * DTO definido por Scuri23 y Eze2424 como contrato del endpoint agregado
- * GET /donaciones-service/donantes/me/dashboard.
- *
- * Es la forma que DEVUELVE la API. La vista no lo usa directamente: se mapea a
- * DonacionVista, que agrega la traduccion de estados y la clase del badge.
+ * Contiene el listado de subdonaciones (donaciones independientes categorizadas).
  */
 @Data
 public class DonacionResumenDTO {
@@ -19,4 +17,5 @@ public class DonacionResumenDTO {
   private String estado;
   private String descripcionBreve;
   private String imagenUrl;
+  private List<SubdonacionDTO> subdonaciones = new ArrayList<>();
 }

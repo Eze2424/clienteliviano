@@ -84,37 +84,173 @@
                                         object-fit:cover; flex-shrink:0;">
                             <div style="min-width:0;">
                                 <p class="entity-card-eyebrow" style="margin:0;">
-                                    Donación #<span th:text="${d.id}">1041</span>
+                                    Donación #<span th:text="${d.id()}">1041</span>
                                 </p>
                                 <h3 class="heading-sm" style="margin: var(--space-1) 0;"
-                                    th:text="${d.descripcion}">Alimentos no perecederos</h3>
+                                    th:text="${d.descripcion()}">Alimentos no perecederos</h3>
                             </div>
                         </div>
-                        <span class="badge" th:classappend="${d.claseBadge()}"
-                              th:text="${d.etiquetaEstado()}">En traslado</span>
+                        <span class="badge" th:classappend="${d.claseBadgeConsolidada()}"
+                              th:text="${d.etiquetaConsolidada()}">En traslado</span>
+                    </div>
+
+                    <!-- Resumen de donaciones independientes por bienes si existen -->
+                    <div class="subdonaciones-box" th:if="${d.tieneSubdonaciones()}">
+                        <div style="font-size: var(--text-xs); font-weight: var(--font-semibold); color: var(--color-text-muted); text-transform: uppercase; margin-bottom: var(--space-2);">
+                            Donaciones independientes por bienes:
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <div th:each="sub : ${d.subdonaciones()}" class="subdonacion-pill-row">
+                                <div class="flex items-center gap-2" style="min-width:0;">
+                                    <span>📦</span>
+                                    <strong th:text="${sub.subcategoria()}">Alimentos</strong>
+                                    <span th:if="${sub.bienesResumen() != null and !sub.bienesResumen().isBlank()}"
+                                          class="card-subtitle" style="margin:0; font-size: var(--text-xs);"
+                                          th:text="'(' + ${sub.bienesResumen()} + ')'"></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="card-subtitle" style="margin:0; font-size: var(--text-xs);"
+                                          th:text="${sub.asignada()} ? '→ ' + ${sub.entidad()} : '→ Sin asignar'"></span>
+                                    <span class="badge" th:classappend="${sub.claseBadge()}"
+                                          th:text="${sub.etiquetaEstado()}">En traslado</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="flex gap-4" style="flex-wrap: wrap; margin: var(--space-3) 0;">
                         <div class="data-tile">
                             <span class="data-tile-label">Destino</span>
                             <span class="data-tile-value"
-                                  th:text="${d.asignada()} ? ${d.entidad} : 'Todavía sin asignar'">
+                                  th:text="${d.asignada()} ? ${d.entidad()} : 'Todavía sin asignar'">
                                 Comedor Los Hornos
                             </span>
                         </div>
                         <div class="data-tile">
                             <span class="data-tile-label">Registrada</span>
                             <span class="data-tile-value"
-                                  th:text="${#temporals.format(d.fecha, 'dd/MM/yyyy')}">24/09/2026</span>
+                                  th:text="${#temporals.format(d.fecha(), 'dd/MM/yyyy')}">24/09/2026</span>
                         </div>
                         <div class="data-tile">
                             <span class="data-tile-label">Bienes</span>
-                            <span class="data-tile-value" th:text="${d.cantidadBienes}">12</span>
+                            <span class="data-tile-value" th:text="${d.cantidadBienes()}">12</span>
+                        </div>
+                        <div class="data-tile" th:if="${d.tieneSubdonaciones()}">
+                            <span class="data-tile-label">Subdonaciones</span>
+                            <span class="data-tile-value" th:text="${#lists.size(d.subdonaciones())}">2</span>
                         </div>
                     </div>
 
-                    <a class="btn btn-secondary btn-sm"
-                       th:href="@{/donante/donaciones/{id}(id=${d.id})}">Seguir esta donación</a>
+                    <div>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                                th:data-open-modal="'modal-donacion-' + ${d.id()}">
+                            Seguir esta donación
+                        </button>
+                    </div>
+
+                    <!-- Panel / Modal de seguimiento de la donación y sus donaciones independientes -->
+                    <div class="modal-overlay" th:id="'modal-donacion-' + ${d.id()}" role="dialog" aria-modal="true" th:aria-labelledby="'modal-title-' + ${d.id()}">
+                        <div class="modal modal-lg">
+                            <div class="modal-header">
+                                <div>
+                                    <h2 class="heading-md" th:id="'modal-title-' + ${d.id()}" style="margin:0;"
+                                        th:text="'Seguimiento · Donación #' + ${d.id()}">Donación #1041</h2>
+                                    <p class="modal-desc" style="margin-top: 4px;"
+                                       th:text="${d.descripcion()} + (${d.fecha() != null} ? ' · Registrada el ' + ${#temporals.format(d.fecha(), 'dd/MM/yyyy')} : '')"></p>
+                                </div>
+                                <button class="modal-close" data-close-modal aria-label="Cerrar modal">✕</button>
+                            </div>
+
+                            <div class="modal-body" style="display:flex; flex-direction:column; gap: var(--space-4);">
+                                <!-- Banner consolidado -->
+                                <div class="flex items-center justify-between" style="background: var(--color-bg); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-left: 4px solid var(--color-primary);">
+                                    <div>
+                                        <span style="font-size: var(--text-xs); text-transform: uppercase; color: var(--color-text-muted); font-weight: bold; display:block;">Estado General Consolidado</span>
+                                        <strong th:text="${d.etiquetaConsolidada()}">Parcialmente entregada</strong>
+                                    </div>
+                                    <span class="badge" th:classappend="${d.claseBadgeConsolidada()}" th:text="${d.etiquetaConsolidada()}">Parcialmente entregada</span>
+                                </div>
+
+                                <!-- Detalle por cada Donación Independiente -->
+                                <div>
+                                    <h3 class="heading-sm" style="margin: 0 0 var(--space-3);">Donaciones independientes asociadas</h3>
+
+                                    <div th:if="${not d.tieneSubdonaciones()}">
+                                        <p class="card-subtitle">Esta donación se encuentra en proceso de categorización en el depósito.</p>
+                                    </div>
+
+                                    <div class="flex flex-col gap-3" th:if="${d.tieneSubdonaciones()}">
+                                        <div th:each="sub, iterStat : ${d.subdonaciones()}" class="card" style="border: 1px solid var(--color-border); padding: var(--space-4); box-shadow: none; background: var(--color-surface);">
+                                            <div class="card-title-row" style="margin-bottom: var(--space-2);">
+                                                <div>
+                                                    <div class="entity-card-eyebrow" style="margin:0;"
+                                                         th:text="'Donación independiente #' + (${sub.id() != null} ? ${sub.id()} : ${iterStat.count})">Donación independiente #1</div>
+                                                    <h4 class="heading-sm" style="margin: 2px 0 0;" th:text="${sub.subcategoria()}">Alimentos no perecederos</h4>
+                                                </div>
+                                                <span class="badge" th:classappend="${sub.claseBadge()}" th:text="${sub.etiquetaEstado()}">En traslado</span>
+                                            </div>
+
+                                            <div class="flex gap-4" style="flex-wrap: wrap; margin: var(--space-2) 0 var(--space-3); font-size: var(--text-sm);">
+                                                <div>
+                                                    <span class="data-tile-label" style="display:block;">Entidad asignada</span>
+                                                    <strong th:text="${sub.asignada()} ? ${sub.entidad()} : 'Pendiente de asignación'">Comedor Los Hornos</strong>
+                                                </div>
+                                                <div th:if="${sub.fechaEntrega() != null and !sub.fechaEntrega().isBlank()}">
+                                                    <span class="data-tile-label" style="display:block;">Fecha de entrega</span>
+                                                    <strong th:text="${sub.fechaEntrega()}">28/09/2026</strong>
+                                                </div>
+                                            </div>
+
+                                            <!-- Línea de tiempo visual del avance -->
+                                            <div style="margin: var(--space-2) 0 var(--space-3); padding: var(--space-3); background: var(--color-bg); border-radius: var(--radius-sm); font-size: var(--text-xs);">
+                                                <div class="flex items-center justify-between gap-1 text-center">
+                                                    <div style="flex:1;" th:styleappend="${sub.estado() == 'EN_DEPOSITO' || sub.estado() == 'ASIGNADA' || sub.estado() == 'LISTA' || sub.estado() == 'EN_TRASLADO' || sub.estado() == 'ENTREGADA'} ? 'font-weight:bold; color:var(--color-primary);' : 'color:var(--color-text-muted);'">
+                                                        <div style="font-size:16px;">🏢</div>
+                                                        <div>En depósito</div>
+                                                    </div>
+                                                    <div style="color:var(--color-border);">→</div>
+                                                    <div style="flex:1;" th:styleappend="${sub.estado() == 'ASIGNADA' || sub.estado() == 'LISTA' || sub.estado() == 'EN_TRASLADO' || sub.estado() == 'ENTREGADA'} ? 'font-weight:bold; color:var(--color-primary);' : 'color:var(--color-text-muted);'">
+                                                        <div style="font-size:16px;">🤝</div>
+                                                        <div>Asignada</div>
+                                                    </div>
+                                                    <div style="color:var(--color-border);">→</div>
+                                                    <div style="flex:1;" th:styleappend="${sub.estado() == 'LISTA' || sub.estado() == 'EN_TRASLADO' || sub.estado() == 'ENTREGADA'} ? 'font-weight:bold; color:var(--color-primary);' : 'color:var(--color-text-muted);'">
+                                                        <div style="font-size:16px;">🚚</div>
+                                                        <div>En traslado</div>
+                                                    </div>
+                                                    <div style="color:var(--color-border);">→</div>
+                                                    <div style="flex:1;" th:styleappend="${sub.estado() == 'ENTREGADA'} ? 'font-weight:bold; color:var(--color-success);' : 'color:var(--color-text-muted);'">
+                                                        <div style="font-size:16px;">✅</div>
+                                                        <div>Entregada</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Bienes incluidos -->
+                                            <div th:if="${sub.bienes() != null and !#lists.isEmpty(sub.bienes())}">
+                                                <span style="font-size: var(--text-xs); font-weight: var(--font-semibold); color: var(--color-text-muted); text-transform: uppercase;">Bienes incluidos:</span>
+                                                <ul class="list-reset" style="margin-top: 4px; display: flex; flex-direction: column; gap: 4px;">
+                                                    <li th:each="b : ${sub.bienes()}" class="flex items-center justify-between" style="font-size: var(--text-sm); padding: 6px 10px; background: var(--color-bg); border-radius: var(--radius-sm);">
+                                                        <span>
+                                                            <span th:text="${b.descripcion()}">Arroz largo fino</span>
+                                                            <span th:if="${b.esUsado()}" class="badge badge-neutral" style="font-size: 10px; padding: 1px 5px; margin-left: 4px;">Usado</span>
+                                                            <span th:if="${b.fechaDeVencimiento() != null and !b.fechaDeVencimiento().isBlank()}" class="card-subtitle" style="font-size: 11px; margin-left: 4px;" th:text="'(Vence: ' + ${b.fechaDeVencimiento()} + ')'"></span>
+                                                        </span>
+                                                        <strong th:text="${#numbers.formatDecimal(b.cantidad(), 1, 0)} + ' u.'">10 u.</strong>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <a th:href="@{/donante/donaciones/{id}(id=${d.id()})}" class="btn btn-primary btn-sm">Ver mapa de entrega</a>
+                                <button type="button" class="btn btn-secondary btn-sm" data-close-modal>Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
                 </article>
             </div>
         </section>
