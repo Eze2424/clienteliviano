@@ -11,7 +11,12 @@
 <main id="main" class="main-content">
 
     <div style="margin-bottom: var(--space-5);">
-        <h1 style="margin-bottom: var(--space-1);">Mis donaciones</h1>
+        <div class="flex items-center gap-3" style="margin-bottom: var(--space-1); flex-wrap: wrap;">
+            <h1 style="margin: 0;">Mis donaciones</h1>
+            <span class="badge badge-primary" style="font-size: var(--text-sm); padding: 4px 12px; font-weight: var(--font-semibold);"
+                  th:if="${actividad != null and actividad.categoria() != null and !actividad.categoria().isBlank()}"
+                  th:text="'Categoría: ' + ${actividad.categoria()}">Categoría: COLABORADOR</span>
+        </div>
         <p class="card-subtitle" style="margin:0;">
             Seguí el camino de lo que donaste, a dónde fue y el impacto que tuvo.
         </p>
@@ -260,7 +265,12 @@
 
             <!-- Misión en curso -->
             <div class="card" th:if="${mision != null}">
-                <h2 class="heading-sm" style="margin-bottom: var(--space-1);">Misión actual</h2>
+                <div class="card-title-row" style="margin-bottom: var(--space-1);">
+                    <h2 class="heading-sm" style="margin: 0;">Misión actual</h2>
+                    <span class="badge badge-neutral" style="font-size: var(--text-xs);"
+                          th:if="${actividad != null and actividad.categoria() != null and !actividad.categoria().isBlank()}"
+                          th:text="${actividad.categoria()}">COLABORADOR</span>
+                </div>
                 <p class="card-subtitle" style="margin: 0 0 var(--space-3);"
                    th:text="${mision.nombreMision()}">Cinco entregas en septiembre</p>
                 <div class="progress-track"
@@ -273,6 +283,17 @@
                    th:text="${#numbers.formatInteger(mision.progresoActual(), 1)} + ' de ' +
                             ${#numbers.formatInteger(mision.objetivo(), 1)} + ' completadas'">
                     3 de 5 completadas
+                </p>
+            </div>
+
+            <div class="card" th:if="${mision == null and actividad != null and actividad.categoria() != null and !actividad.categoria().isBlank()}">
+                <div class="card-title-row" style="margin-bottom: var(--space-1);">
+                    <h2 class="heading-sm" style="margin: 0;">Tu categoría</h2>
+                    <span class="badge badge-primary" style="font-size: var(--text-xs);"
+                          th:text="${actividad.categoria()}">COLABORADOR</span>
+                </div>
+                <p class="card-subtitle" style="margin: 0; font-size: var(--text-sm);">
+                    Actualmente no tenés misiones activas en curso.
                 </p>
             </div>
 

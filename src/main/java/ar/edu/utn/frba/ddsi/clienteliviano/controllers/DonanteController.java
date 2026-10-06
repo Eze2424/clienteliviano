@@ -102,9 +102,9 @@ public class DonanteController {
     ActividadResponse actividad = null;
     try {
       actividad = restTemplate.getForObject(incentivosUrl + "/" + donanteId + "/actividad", ActividadResponse.class);
-      model.addAttribute("actividad", actividad != null ? actividad : new ActividadResponse(0, 0, 0, 0, null, 0, 0L, Map.of()));
+      model.addAttribute("actividad", actividad != null ? actividad : new ActividadResponse(0, 0, 0, 0, null, 0, 0L, Map.of(), "COLABORADOR"));
     } catch (Exception e) {
-      actividad = new ActividadResponse(0, 0, 0, 0, null, 0, 0L, Map.of());
+      actividad = new ActividadResponse(0, 0, 0, 0, null, 0, 0L, Map.of(), "COLABORADOR");
       model.addAttribute("actividad", actividad);
     }
 
