@@ -51,7 +51,7 @@
             <form th:action="@{/registro}" th:object="${form}" method="post" novalidate>
 
                 <!-- ---------- Tipo de cuenta ---------- -->
-                <fieldset style="border:none; padding:0; margin:0 0 var(--space-5);">
+                <fieldset id="bloque-tipo-cuenta" style="border:none; padding:0; margin:0 0 var(--space-5);">
                     <legend class="heading-sm" style="margin-bottom: var(--space-2);">Elegí el tipo de cuenta</legend>
                     <p class="hint" style="margin-bottom: var(--space-3);">
                         Definí si donás a título personal, en nombre de una organización,
@@ -217,9 +217,9 @@
                 <div class="flex items-center justify-between" style="margin-top: var(--space-6); flex-wrap: wrap; gap: var(--space-3);">
                     <a th:href="@{/login}" class="btn btn-secondary">Ya tengo cuenta</a>
                     <div class="flex gap-2">
-                        <button type="button" class="btn btn-secondary" id="prev-step-btn" hidden>Volver</button>
+                        <button type="button" class="btn btn-secondary" id="prev-step-btn" hidden style="display: none;">Volver</button>
                         <button type="button" class="btn btn-primary" id="next-step-btn">Siguiente</button>
-                        <button type="submit" class="btn btn-primary" id="submit-btn" hidden
+                        <button type="submit" class="btn btn-primary" id="submit-btn" hidden style="display: none;"
                                 data-loading-on-submit data-loading-texto="Creando cuenta…">Crear cuenta</button>
                     </div>
                 </div>
@@ -248,11 +248,31 @@
 
         function mostrarPaso() {
             pasos.forEach((id, i) => {
-                document.getElementById(id).hidden = i !== actual;
+                const el = document.getElementById(id);
+                if (el) {
+                    el.hidden = i !== actual;
+                    el.style.display = i === actual ? '' : 'none';
+                }
             });
-            btnPrev.hidden = actual === 0;
-            btnNext.hidden = actual === pasos.length - 1;
-            btnSubmit.hidden = actual !== pasos.length - 1;
+
+            const esPrimero = actual === 0;
+            const esUltimo = actual === pasos.length - 1;
+
+            const bloqueTipoCuenta = document.getElementById('bloque-tipo-cuenta');
+            if (bloqueTipoCuenta) {
+                bloqueTipoCuenta.hidden = !esPrimero;
+                bloqueTipoCuenta.style.display = esPrimero ? '' : 'none';
+            }
+
+            btnPrev.hidden = esPrimero;
+            btnPrev.style.display = esPrimero ? 'none' : 'inline-flex';
+
+            btnNext.hidden = esUltimo;
+            btnNext.style.display = esUltimo ? 'none' : 'inline-flex';
+
+            btnSubmit.hidden = !esUltimo;
+            btnSubmit.style.display = !esUltimo ? 'none' : 'inline-flex';
+
             progreso.textContent = 'Paso ' + (actual + 1) + ' de ' + pasos.length;
         }
 
