@@ -26,12 +26,12 @@
     <div class="grid grid-cols-4" style="margin-bottom: var(--space-5);">
         <div class="stat-card">
             <div class="label">Donaciones históricas</div>
-            <div class="value" th:text="${totalDonaciones}">132</div>
-            <div class="delta" th:text="${(actividad != null && actividad.donacionesEnPeriodo() != null ? actividad.donacionesEnPeriodo() : 0) + ' este mes'}">0 este mes</div>
+            <div class="value" th:text="${totalDonaciones != null ? totalDonaciones : 0}">132</div>
+            <div class="delta" th:text="|${actividad != null and actividad.donacionesEnPeriodo() != null ? actividad.donacionesEnPeriodo() : 0} este mes|">0 este mes</div>
         </div>
         <div class="stat-card">
             <div class="label">Entregadas</div>
-            <div class="value" th:text="${donacionesEntregadas}">1</div>
+            <div class="value" th:text="${donacionesEntregadas != null ? donacionesEntregadas : 0}">1</div>
         </div>
         <div class="stat-card">
             <div class="label">Misiones completadas</div>
@@ -39,7 +39,7 @@
         </div>
         <div class="stat-card">
             <div class="label">Entidades ayudadas</div>
-            <div class="value" th:text="${entidadesAyudadas}">9</div>
+            <div class="value" th:text="${entidadesAyudadas != null ? entidadesAyudadas : 0}">9</div>
         </div>
     </div>
 
@@ -134,7 +134,7 @@
                         <div class="data-tile">
                             <span class="data-tile-label">Registrada</span>
                             <span class="data-tile-value"
-                                  th:text="${#temporals.format(d.fecha(), 'dd/MM/yyyy')}">24/09/2026</span>
+                                  th:text="${d.fecha() != null ? #temporals.format(d.fecha(), 'dd/MM/yyyy') : 'Pendiente'}">24/09/2026</span>
                         </div>
                         <div class="data-tile">
                             <span class="data-tile-label">Bienes</span>
@@ -280,8 +280,8 @@
                     <div class="progress-fill" th:style="'width:' + ${mision.porcentaje()} + '%'"></div>
                 </div>
                 <p class="card-subtitle" style="margin: var(--space-2) 0 0; font-size: var(--text-sm);"
-                   th:text="${#numbers.formatInteger(mision.progresoActual(), 1)} + ' de ' +
-                            ${#numbers.formatInteger(mision.objetivo(), 1)} + ' completadas'">
+                   th:text="${#numbers.formatDecimal(mision.progresoActual(), 1, 0)} + ' de ' +
+                            ${#numbers.formatDecimal(mision.objetivo(), 1, 0)} + ' completadas'">
                     3 de 5 completadas
                 </p>
             </div>
@@ -297,51 +297,95 @@
                 </p>
             </div>
 
-            <!-- Insignias -->
-            <div class="card">
-                <h2 class="heading-sm" style="margin-bottom: var(--space-3);">Insignias</h2>
-
-                <div th:if="${#lists.isEmpty(insignias)}">
-                    <div th:replace="~{fragments/componentes :: estado-vacio(
-                        'Sin insignias todavía',
-                        'Se desbloquean al completar misiones.', null, null)}"></div>
+            <!-- Vitrina de Medallas / Insignias -->
+            <div class="card" id="seccion-medallas">
+                <div class="card-title-row" style="margin-bottom: var(--space-3);">
+                    <h2 class="heading-sm" style="margin: 0;">Vitrina de logros</h2>
+                    <span class="badge badge-neutral" style="font-size: var(--text-xs); font-weight: var(--font-semibold);"
+                          th:text="${#lists.size(insignias)} + ' obtenidas'">0 obtenidas</span>
                 </div>
 
-                <ul class="list-reset flex flex-col gap-3" th:unless="${#lists.isEmpty(insignias)}">
-                    <li th:each="i : ${insignias}" class="flex gap-3 items-center">
-                        <span class="avatar" aria-hidden="true">🏅</span>
-                        <span style="min-width:0;">
-                            <strong style="display:block; font-size: var(--text-sm);"
-                                    th:text="${i.nombre()}">Constancia</strong>
-                            <span class="card-subtitle" style="font-size: var(--text-xs);"
-                                  th:text="${i.descripcion()}">Tres meses seguidos donando</span>
-                        </span>
-                    </li>
-                </ul>
+                <div th:if="${#lists.isEmpty(insignias)}">
+                    <div class="medal-empty-state">
+                        <span style="font-size: 1.8rem; display: block; margin-bottom: var(--space-1);" aria-hidden="true">🎯</span>
+                        <strong style="font-size: var(--text-sm); display: block; color: var(--color-text);">¡Comenzá tu colección!</strong>
+                        <p class="card-subtitle" style="margin-top: 4px; font-size: var(--text-xs);">
+                            Completá tu misión actual para desbloquear tu primera insignia.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="medal-showcase-grid" th:unless="${#lists.isEmpty(insignias)}">
+                    <div class="medal-item tooltip-host" th:each="i : ${insignias}" tabindex="0">
+                        <div class="medal-badge">
+                            <span class="medal-icon" aria-hidden="true">🏅</span>
+                        </div>
+                        <span class="medal-title" th:text="${i.nombre()}">Constancia</span>
+                        <div class="tooltip" role="tooltip">
+                            <strong style="display: block; color: var(--color-primary-light); margin-bottom: 2px;" th:text="${i.nombre()}">Constancia</strong>
+                            <span th:text="${i.descripcion()}">Tres meses seguidos donando</span>
+                            <span th:if="${i.fechaObtencion() != null}"
+                                  style="display: block; margin-top: 4px; opacity: 0.8; font-size: 10px;"
+                                  th:text="'Desbloqueada: ' + ${#temporals.format(i.fechaObtencion(), 'dd/MM/yyyy')}"></span>
+                        </div>
+                    </div>
+
+                    <!-- Próximo desafío motivacional -->
+                    <div class="medal-item medal-locked tooltip-host" tabindex="0">
+                        <div class="medal-badge locked">
+                            <span class="medal-icon" aria-hidden="true">🔒</span>
+                        </div>
+                        <span class="medal-title">Próxima</span>
+                        <div class="tooltip" role="tooltip">
+                            <strong>Próximo desafío</strong>
+                            <span>Completá la misión activa para revelar esta medalla.</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Notificaciones -->
+            <!-- Notificaciones y Novedades -->
             <div class="card" id="notificaciones">
-                <h2 class="heading-sm" style="margin-bottom: var(--space-3);">Notificaciones</h2>
+                <div class="card-title-row" style="margin-bottom: var(--space-3);">
+                    <div class="flex items-center gap-2">
+                        <h2 class="heading-sm" style="margin: 0;">Novedades</h2>
+                        <span class="notif-dot" aria-hidden="true" th:if="${sinLeer > 0}"></span>
+                    </div>
+                    <span class="badge" th:classappend="${sinLeer > 0} ? 'badge-primary' : 'badge-neutral'"
+                          style="font-size: var(--text-xs);"
+                          th:text="${sinLeer > 0} ? ${sinLeer} + ' nuevas' : 'Al día'">Al día</span>
+                </div>
 
                 <div th:if="${#lists.isEmpty(notificaciones)}">
                     <div th:replace="~{fragments/componentes :: estado-vacio(
                         'Sin avisos nuevos',
-                        'Te avisamos cuando una donación tuya cambie de estado.', null, null)}"></div>
+                        'Te avisamos cuando una donación tuya cambie de estado o avances de misión.', null, null)}"></div>
                 </div>
 
-                <ul class="list-reset flex flex-col gap-3" th:unless="${#lists.isEmpty(notificaciones)}">
-                    <li th:each="n : ${notificaciones}" class="flex gap-2" style="align-items: flex-start;">
-                        <span aria-hidden="true" th:text="${n.icono()}">📦</span>
-                        <span style="min-width:0;">
-                            <strong style="display:block; font-size: var(--text-sm);"
-                                    th:text="${n.titulo}">Tu donación encontró destino</strong>
-                            <span class="visually-hidden" th:if="${!n.leida}">Sin leer.</span>
-                            <span class="card-subtitle" style="font-size: var(--text-xs);"
-                                  th:text="${n.detalle}">La donación #1052 fue asignada.</span>
-                        </span>
-                    </li>
-                </ul>
+                <div class="notif-feed-container" th:unless="${#lists.isEmpty(notificaciones)}">
+                    <article th:each="n : ${notificaciones}"
+                             class="notif-card"
+                             th:classappend="|${!n.leida() ? 'notif-unread' : ''} notif-type-${n.tipo()}|">
+                        <div class="notif-card-header">
+                            <span class="notif-type-tag"
+                                  th:text="${n.tipo() == 'ASIGNACION_DONANTE' ? 'Destino asignado' : (n.tipo() == 'ENTREGA_EXITOSA_DONANTE' ? 'Entregada' : (n.tipo() == 'MISION_COMPLETADA' ? 'Misión lograda' : 'Aviso'))}">
+                                Aviso
+                            </span>
+                            <span class="notif-time" th:if="${n.fecha() != null}"
+                                  th:text="${#temporals.format(n.fecha(), 'dd/MM HH:mm')}">hace 2h</span>
+                        </div>
+                        <div class="notif-card-body">
+                            <div class="flex gap-2" style="align-items: flex-start;">
+                                <span class="notif-icon" aria-hidden="true" th:text="${n.icono()}">📦</span>
+                                <div style="min-width: 0;">
+                                    <strong class="notif-title" th:text="${n.titulo()}">Tu donación encontró destino</strong>
+                                    <span class="visually-hidden" th:if="${!n.leida()}">Sin leer.</span>
+                                    <p class="notif-detail" th:text="${n.detalle()}">La donación fue asignada.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
             </div>
         </aside>
     </div>
