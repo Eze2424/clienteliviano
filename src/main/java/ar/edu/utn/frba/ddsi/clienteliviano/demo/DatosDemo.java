@@ -248,7 +248,7 @@ public class DatosDemo {
     evolucion.put("2026-07", 11);
     evolucion.put("2026-08", 8);
     evolucion.put("2026-09", 13);
-    return new ActividadResponse(132, 13, 18, 9, "2026-09", 13, 3L, evolucion);
+    return new ActividadResponse(132, 13, 18, 9, "2026-09", 13, 3L, evolucion, "COLABORADOR");
   }
 
   public MisionEnCursoResponse misionEnCurso() {

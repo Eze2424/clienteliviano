@@ -11,5 +11,6 @@ public record ActividadResponse(
     String periodoConsultado,
     Integer donacionesEnPeriodo,
     Long misionesEnPeriodo,
-    Map<String, Integer> evolucionMensual
+    Map<String, Integer> evolucionMensual,
+    String categoria
 ) {}
