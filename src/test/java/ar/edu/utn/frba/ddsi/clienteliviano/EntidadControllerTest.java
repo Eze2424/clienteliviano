@@ -186,6 +186,82 @@ public class EntidadControllerTest {
   }
 
   @Test
+  void dashboard_ConFiltroEstado_FiltraDonacionesCorrectamente() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ENTIDAD, 10L);
+
+    var d1 = new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionAsignadaDTO(
+        100L, "Alimentos", "ASIGNADA", java.time.LocalDate.now(), null, "Donante", 1L, 5, List.of()
+    );
+    var d2 = new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionAsignadaDTO(
+        200L, "Ropa", "EN_TRASLADO", java.time.LocalDate.now(), null, "Donante", 1L, 3, List.of()
+    );
+    var dashResponse = new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DashboardEntidadResponse(
+        "Hogar", 2, 0, 1, 2, List.of(d1, d2)
+    );
+
+    when(entidadApiService.dashboard()).thenReturn(java.util.Optional.of(dashResponse));
+    when(entidadApiService.mapearDonacion(eq(d1), eq(10L))).thenReturn(
+        new ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista(
+            100L, "Alimentos", "ASIGNADA", java.time.LocalDate.now(), null, false, 1L, "Donante", 10L, "Hogar", 5, null
+        )
+    );
+    when(entidadApiService.mapearDonacion(eq(d2), eq(10L))).thenReturn(
+        new ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista(
+            200L, "Ropa", "EN_TRASLADO", java.time.LocalDate.now(), null, false, 1L, "Donante", 10L, "Hogar", 3, null
+        )
+    );
+
+    mockMvc.perform(get("/entidad/dashboard").param("estado", "EN_TRASLADO").session(session))
+        .andExpect(status().isOk())
+        .andExpect(view().name("entidad/dashboard"))
+        .andExpect(model().attribute("estadoFiltro", "EN_TRASLADO"))
+        .andExpect(model().attribute("totalDonaciones", 2))
+        .andExpect(model().attribute("donaciones", org.hamcrest.Matchers.hasSize(1)));
+  }
+
+  @Test
+  void dashboard_FiltroAsignada_IncluyeEstadoLista() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ENTIDAD, 10L);
+
+    var d1 = new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionAsignadaDTO(
+        100L, "Alimentos", "ASIGNADA", java.time.LocalDate.now(), null, "Donante", 1L, 5, List.of()
+    );
+    var d2 = new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionAsignadaDTO(
+        200L, "Juguetes", "LISTA", java.time.LocalDate.now(), null, "Donante", 1L, 2, List.of()
+    );
+    var d3 = new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionAsignadaDTO(
+        300L, "Ropa", "EN_TRASLADO", java.time.LocalDate.now(), null, "Donante", 1L, 3, List.of()
+    );
+    var dashResponse = new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DashboardEntidadResponse(
+        "Hogar", 3, 0, 1, 2, List.of(d1, d2, d3)
+    );
+
+    when(entidadApiService.dashboard()).thenReturn(java.util.Optional.of(dashResponse));
+    when(entidadApiService.mapearDonacion(eq(d1), eq(10L))).thenReturn(
+        new ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista(
+            100L, "Alimentos", "ASIGNADA", java.time.LocalDate.now(), null, false, 1L, "Donante", 10L, "Hogar", 5, null
+        )
+    );
+    when(entidadApiService.mapearDonacion(eq(d2), eq(10L))).thenReturn(
+        new ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista(
+            200L, "Juguetes", "LISTA", java.time.LocalDate.now(), null, false, 1L, "Donante", 10L, "Hogar", 2, null
+        )
+    );
+    when(entidadApiService.mapearDonacion(eq(d3), eq(10L))).thenReturn(
+        new ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista(
+            300L, "Ropa", "EN_TRASLADO", java.time.LocalDate.now(), null, false, 1L, "Donante", 10L, "Hogar", 3, null
+        )
+    );
+
+    mockMvc.perform(get("/entidad/dashboard").param("estado", "ASIGNADA").session(session))
+        .andExpect(status().isOk())
+        .andExpect(view().name("entidad/dashboard"))
+        .andExpect(model().attribute("estadoFiltro", "ASIGNADA"))
+        .andExpect(model().attribute("totalDonaciones", 3))
+        .andExpect(model().attribute("donaciones", org.hamcrest.Matchers.hasSize(2)));
+  }
+
+  @Test
   void detalle_DonacionPropia_MuestraDetalle() throws Exception {
     MockHttpSession session = sesionConUsuario(Rol.ENTIDAD, 10L);
 
