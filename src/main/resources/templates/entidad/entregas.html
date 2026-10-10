@@ -18,7 +18,12 @@
         </p>
     </div>
 
-    <div th:if="${#lists.isEmpty(entregas)}">
+    <!-- Banner de error si falla la conexión -->
+    <div th:if="${error != null}" class="alert alert-danger" role="alert" style="margin-bottom: var(--space-4);">
+        <strong th:text="${error}">Error al conectar con los servicios de logística.</strong>
+    </div>
+
+    <div th:if="${#lists.isEmpty(entregas) and error == null}">
         <div th:replace="~{fragments/componentes :: estado-vacio(
             'No hay entregas en camino',
             'Cuando una donación asignada salga del depósito, vas a poder seguir el camión desde acá.',
@@ -46,6 +51,7 @@
               es posicionamiento visual, no cálculo de ruta.
             -->
             <span class="map-pin map-pin-active" th:each="e : ${entregas}"
+                  th:if="${e.patenteCamion != null and (e.latitud != 0.0 or e.longitud != 0.0)}"
                   th:style="'left:' + ${e.posX()} + '%; top:' + ${e.posY()} + '%;'">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                 <span th:text="${e.patenteCamion}">AB-123-CD</span>
@@ -73,7 +79,7 @@
                                 Donación #<span th:text="${e.donacionId}">1041</span>
                             </p>
                             <h3 class="heading-sm" style="margin: var(--space-1) 0;"
-                                th:text="${e.patenteCamion}">AB-123-CD</h3>
+                                th:text="${e.patenteCamion != null ? e.patenteCamion : 'Sin camión asignado'}">AB-123-CD</h3>
                         </div>
                         <span class="badge" th:classappend="${e.claseBadge()}"
                               th:text="${e.etiquetaEstado()}">En traslado</span>
@@ -83,25 +89,25 @@
                        th:text="${e.descripcionDonacion}">Alimentos no perecederos</p>
 
                     <div class="flex flex-col gap-2">
-                        <div class="data-tile">
+                        <div class="data-tile" th:if="${e.conductor != null}">
                             <span class="data-tile-label">Conductor</span>
                             <span class="data-tile-value" th:text="${e.conductor}">Ricardo Gómez</span>
                         </div>
-                        <div class="data-tile">
+                        <div class="data-tile" th:if="${e.ultimaActualizacion != null}">
                             <span class="data-tile-label">Última actualización</span>
                             <span class="data-tile-value"
                                   th:text="${#temporals.format(e.ultimaActualizacion, 'dd/MM/yyyy HH:mm')} + ' hs'">
                                 29/09/2026 11:42 hs
                             </span>
                         </div>
-                        <div class="data-tile">
+                        <div class="data-tile" th:if="${e.latitud != 0.0 or e.longitud != 0.0}">
                             <span class="data-tile-label">Ubicación informada</span>
                             <span class="data-tile-value"
                                   th:text="${#numbers.formatDecimal(e.latitud, 1, 4)} + ', ' + ${#numbers.formatDecimal(e.longitud, 1, 4)}">
                                 -34.9450, -57.9600
                             </span>
                         </div>
-                        <div class="data-tile">
+                        <div class="data-tile" th:if="${e.llegadaEstimada != null}">
                             <span class="data-tile-label">Llegada estimada</span>
                             <span class="data-tile-value" th:text="${e.llegadaEstimada}">Hoy 14:20</span>
                         </div>

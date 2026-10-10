@@ -15,6 +15,7 @@ import lombok.Data;
 public class NecesidadForm {
 
   private Long id;
+  private Long subcategoriaId;
   private String subcategoria;
   private String descripcion;
   private Double cantidadSolicitada;

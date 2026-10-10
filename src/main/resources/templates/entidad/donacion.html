@@ -97,25 +97,36 @@
         <aside class="sidebar" aria-labelledby="titulo-recepcion">
             <h2 id="titulo-recepcion" class="heading-sm" style="margin-bottom: var(--space-3);">Recepción</h2>
 
-            <div class="banner banner-info" role="status" th:if="${donacion.estado == 'ENTREGADA'}">
-                <span aria-hidden="true">✓</span>
-                <p><strong>Recepción confirmada</strong>Ya registraste que recibiste esta donación.</p>
+            <div th:if="${donacion.estado == 'ENTREGADA'}">
+                <div class="banner banner-info" role="status" style="margin-bottom: var(--space-3);">
+                    <span aria-hidden="true">✓</span>
+                    <div>
+                        <p style="margin:0;"><strong>Recepción confirmada</strong></p>
+                        <p style="margin: var(--space-1) 0 0; font-size: var(--text-sm);">Esta donación ya fue entregada y confirmada en tu sede.</p>
+                    </div>
+                </div>
             </div>
 
-            <div th:unless="${donacion.estado == 'ENTREGADA'}">
+            <div th:if="${donacion.estado == 'EN_TRASLADO'}">
                 <p class="card-subtitle" style="margin-bottom: var(--space-4);">
-                    Cuando la donación llegue, confirmá la recepción y subí fotos de lo que
-                    recibiste. Quien donó recibe el aviso automáticamente.
+                    La donación se encuentra en camino. Cuando el camión llegue a tu sede, confirmá la recepción y subí fotos de lo que recibiste. Quien donó recibe el aviso automáticamente.
                 </p>
                 <button class="btn btn-primary btn-block" data-open-modal="modal-recepcion">
                     Confirmar recepción
                 </button>
+            </div>
+
+            <div th:if="${donacion.estado != 'ENTREGADA' and donacion.estado != 'EN_TRASLADO'}">
+                <p class="card-subtitle">
+                    La donación todavía no se encuentra en traslado hacia tu sede. Podrás confirmar la recepción una vez que el camión inicie el recorrido.
+                </p>
             </div>
         </aside>
     </div>
 
     <!-- ============ Modal de confirmación ============ -->
     <div class="modal-overlay" id="modal-recepcion" role="dialog" aria-modal="true"
+         th:if="${donacion.estado == 'EN_TRASLADO'}"
          aria-labelledby="titulo-modal-recepcion">
         <div class="modal">
             <form th:action="@{/entidad/donaciones/{id}/confirmar(id=${donacion.id})}"

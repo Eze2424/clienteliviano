@@ -36,21 +36,16 @@
             <form th:action="@{/entidad/necesidades}" th:object="${form}" method="post" novalidate>
 
                 <div class="field">
-                    <label for="subcategoria">Categoría del bien</label>
-                    <input type="text" id="subcategoria" th:field="*{subcategoria}"
-                           placeholder="Alimentos" aria-describedby="hint-subcategoria" list="subcategorias">
-                    <!-- BRECHA G7: donaciones-service pide subcategoriaId pero no expone
-                         ningún endpoint que liste las subcategorías. Hasta que exista,
-                         el campo es texto con sugerencias. -->
-                    <datalist id="subcategorias">
-                        <option value="Alimentos"></option>
-                        <option value="Higiene"></option>
-                        <option value="Limpieza"></option>
-                        <option value="Mobiliario"></option>
-                        <option value="Vestimenta"></option>
-                        <option value="Útiles escolares"></option>
-                    </datalist>
-                    <span class="hint" id="hint-subcategoria">Elegí una de la lista o escribí la tuya.</span>
+                    <label for="subcategoriaId">Categoría del bien</label>
+                    <select id="subcategoriaId" th:field="*{subcategoriaId}" aria-describedby="hint-subcategoria">
+                        <option value="" th:selected="*{subcategoriaId == null}">Seleccioná una subcategoría</option>
+                        <option th:each="sub : ${subcategorias}"
+                                th:value="${sub.id}"
+                                th:text="${sub.categoria != null ? sub.categoria + ' — ' + sub.nombre : sub.nombre}">
+                            Alimentos — Arroz
+                        </option>
+                    </select>
+                    <span class="hint" id="hint-subcategoria">Elegí la subcategoría que mejor encaja con el bien.</span>
                 </div>
 
                 <div class="field">
@@ -102,9 +97,15 @@
                 <article class="card" th:each="n : ${necesidades}" style="padding: var(--space-4);">
                     <div class="card-title-row">
                         <div style="min-width:0;">
-                            <span class="chip" th:text="${n.subcategoria}">Alimentos</span>
+                            <div style="display: flex; gap: var(--space-2); align-items: center; margin-bottom: var(--space-1);">
+                                <span class="chip" th:text="${n.subcategoria}">Alimentos</span>
+                                <span class="chip" th:if="${n.esExtraordinaria}" style="background-color: #fef3c7; color: #92400e;">Urgente</span>
+                            </div>
                             <p style="margin: var(--space-2) 0 0;" th:text="${n.descripcion}">
                                 Aceite, harina y fideos
+                            </p>
+                            <p th:if="${n.cantidadSolicitada != null}" style="margin: var(--space-1) 0 0; font-size: 0.875rem; color: var(--color-text-muted);">
+                                Cantidad solicitada: <strong th:text="${n.cantidadSolicitada}">40</strong>
                             </p>
                         </div>
                         <!-- Baja por POST: cambia estado en el servidor, no puede ser un enlace -->
@@ -117,6 +118,7 @@
                     </div>
                 </article>
             </div>
+
         </section>
     </div>
 </main>
