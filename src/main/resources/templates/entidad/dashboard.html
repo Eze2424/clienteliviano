@@ -27,7 +27,7 @@
 
         <div class="stat-card">
             <div class="label">Donaciones asignadas</div>
-            <div class="value" th:text="${#lists.size(donaciones)}">3</div>
+            <div class="value" th:text="${totalDonaciones != null ? totalDonaciones : #lists.size(donaciones)}">3</div>
         </div>
         <div class="stat-card">
             <div class="label">Entregas en camino</div>
@@ -48,8 +48,27 @@
                 <a th:href="@{/entidad/entregas}" class="btn btn-secondary btn-sm">Ver el mapa de entregas</a>
             </div>
 
-            <!-- Estado vacío: qué pasa y qué hacer -->
-            <div th:if="${#lists.isEmpty(donaciones)}">
+            <!-- Filtro de donaciones por estado -->
+            <div class="tabs" role="tablist" aria-label="Filtrar donaciones por estado"
+                 style="margin-bottom: var(--space-4);">
+                <a class="tab" role="tab" th:href="@{/entidad/dashboard}"
+                   th:aria-selected="${estadoFiltro == null} ? 'true' : 'false'">Todas</a>
+                <a class="tab" role="tab" th:href="@{/entidad/dashboard(estado='ASIGNADA')}"
+                   th:aria-selected="${estadoFiltro == 'ASIGNADA'} ? 'true' : 'false'">Asignadas</a>
+                <a class="tab" role="tab" th:href="@{/entidad/dashboard(estado='EN_TRASLADO')}"
+                   th:aria-selected="${estadoFiltro == 'EN_TRASLADO'} ? 'true' : 'false'">En traslado</a>
+                <a class="tab" role="tab" th:href="@{/entidad/dashboard(estado='ENTREGADA')}"
+                   th:aria-selected="${estadoFiltro == 'ENTREGADA'} ? 'true' : 'false'">Entregadas</a>
+            </div>
+
+            <!-- Estado vacío: según filtro o sin donaciones -->
+            <div th:if="${#lists.isEmpty(donaciones) and estadoFiltro != null}">
+                <div th:replace="~{fragments/componentes :: estado-vacio(
+                    'No tenés donaciones en ese estado',
+                    'Probá con otro estado o mirá todas las asignadas.',
+                    'Ver todas', @{/entidad/dashboard})}"></div>
+            </div>
+            <div th:if="${#lists.isEmpty(donaciones) and estadoFiltro == null}">
                 <div th:replace="~{fragments/componentes :: estado-vacio(
                     'Todavía no te asignaron donaciones',
                     'Cuando publiques tus necesidades, el sistema empieza a buscar donaciones que encajen y te avisa acá.',
@@ -98,43 +117,50 @@
         </section>
 
         <!-- ============ Notificaciones (CU4) ============ -->
-        <aside class="sidebar" id="notificaciones" aria-labelledby="titulo-avisos">
-            <div class="flex items-center justify-between" style="margin-bottom: var(--space-3);">
-                <h2 id="titulo-avisos" class="heading-sm" style="margin: 0;">Tus avisos</h2>
-                <span th:if="${sinLeer > 0}" class="badge badge-primary" th:text="${sinLeer} + ' sin leer'">1 sin leer</span>
-            </div>
+        <aside class="sidebar">
+            <div class="card" id="notificaciones">
+                <div class="card-title-row" style="margin-bottom: var(--space-3);">
+                    <div class="flex items-center gap-2">
+                        <h2 class="heading-sm" style="margin: 0;">Novedades</h2>
+                        <span class="notif-dot" aria-hidden="true" th:if="${sinLeer > 0}"></span>
+                    </div>
+                    <span class="badge" th:classappend="${sinLeer > 0} ? 'badge-primary' : 'badge-neutral'"
+                          style="font-size: var(--text-xs);"
+                          th:text="${sinLeer > 0} ? ${sinLeer} + ' nuevas' : 'Al día'">Al día</span>
+                </div>
 
-            <div th:if="${#lists.isEmpty(notificaciones)}">
-                <div th:replace="~{fragments/componentes :: estado-vacio(
-                    'Sin avisos por ahora',
-                    'Te vamos a avisar cuando te asignen una donación o cuando una entrega salga del depósito.',
-                    null, null)}"></div>
-            </div>
+                <div th:if="${#lists.isEmpty(notificaciones)}">
+                    <div th:replace="~{fragments/componentes :: estado-vacio(
+                        'Sin avisos nuevos',
+                        'Te avisamos cuando te asignen una donación o cuando una entrega esté en camino.',
+                        null, null)}"></div>
+                </div>
 
-            <ul class="list-reset flex flex-col gap-3" th:unless="${#lists.isEmpty(notificaciones)}">
-                <li th:each="n : ${notificaciones}" class="card"
-                    th:style="${n.leida} ? '' : 'border-left: 3px solid var(--color-primary);'"
-                    style="padding: var(--space-3);">
-                    <div class="flex gap-2" style="align-items: flex-start;">
-                        <span aria-hidden="true" th:text="${n.icono()}">📦</span>
-                        <div style="min-width:0; flex: 1;">
-                            <strong style="font-size: var(--text-sm);" th:text="${n.titulo}">Te asignaron una donación</strong>
-                            <span class="visually-hidden" th:if="${!n.leida}">Sin leer.</span>
-                            <p class="card-subtitle" style="margin: var(--space-1) 0 0; font-size: var(--text-sm);"
-                               th:text="${n.detalle}">Donación #1041.</p>
-                            <div class="flex items-center justify-between" style="margin-top: var(--space-2); gap: var(--space-2);">
-                                <span class="card-subtitle" style="font-size: var(--text-xs);"
-                                      th:text="${#temporals.format(n.fecha, 'dd/MM/yyyy HH:mm')}">28/09/2026 16:10</span>
-                                <form th:if="${!n.leida and n.id != null}" th:action="@{/entidad/notificaciones/{id}/leida(id=${n.id})}" method="post" style="margin: 0;">
-                                    <button type="submit" class="btn btn-secondary btn-sm" style="font-size: var(--text-xs); padding: 2px 8px;">
-                                        Marcar como leída
-                                    </button>
-                                </form>
+                <div class="notif-feed-container" th:unless="${#lists.isEmpty(notificaciones)}">
+                    <article th:each="n : ${notificaciones}"
+                             class="notif-card"
+                             th:classappend="|${!n.leida() ? 'notif-unread' : ''} notif-type-${n.tipo()}|">
+                        <div class="notif-card-header">
+                            <span class="notif-type-tag"
+                                  th:text="${n.tipo() == 'ASIGNACION_ENTIDAD' ? 'Donación asignada' : (n.tipo() == 'ENTREGA_EXITOSA_ENTIDAD' ? 'Entregada' : (n.tipo() == 'RUTA_INICIADA' ? 'En camino' : (n.tipo() == 'ASIGNACION_DONANTE' ? 'Destino asignado' : (n.tipo() == 'ENTREGA_EXITOSA_DONANTE' ? 'Entregada' : 'Aviso'))))}">
+                                Aviso
+                            </span>
+                            <span class="notif-time" th:if="${n.fecha() != null}"
+                                  th:text="${#temporals.format(n.fecha(), 'dd/MM HH:mm')}">hace 2h</span>
+                        </div>
+                        <div class="notif-card-body">
+                            <div class="flex gap-2" style="align-items: flex-start;">
+                                <span class="notif-icon" aria-hidden="true" th:text="${n.icono()}">📦</span>
+                                <div style="min-width: 0;">
+                                    <strong class="notif-title" th:text="${n.titulo()}">Te asignaron una donación</strong>
+                                    <span class="visually-hidden" th:if="${!n.leida()}">Sin leer.</span>
+                                    <p class="notif-detail" th:text="${n.detalle()}">Donación #1041.</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </li>
-            </ul>
+                    </article>
+                </div>
+            </div>
         </aside>
     </div>
 </main>

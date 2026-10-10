@@ -5,6 +5,7 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.Toast;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ConfirmacionRecepcionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadForm;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -56,11 +58,14 @@ public class EntidadController {
   /* ---------- CU2 y CU4: donaciones asignadas y notificaciones ---------- */
 
   @GetMapping("/dashboard")
-  public String dashboard(HttpSession session, Model model) {
+  public String dashboard(HttpSession session, Model model,
+                          @RequestParam(required = false) String estado) {
     UsuarioActual yo = exigirEntidad(session);
     if (yo == null) {
       return "redirect:/login";
     }
+
+    String estadoFiltro = (estado != null && !estado.isBlank()) ? estado.trim() : null;
 
     var optDash = entidadApiService.dashboard();
     if (optDash.isPresent()) {
@@ -68,15 +73,25 @@ public class EntidadController {
       var donacionesVista = dash.donaciones().stream()
           .map(d -> entidadApiService.mapearDonacion(d, yo.id()))
           .toList();
-      model.addAttribute("donaciones", donacionesVista);
+      var filtradas = donacionesVista;
+      if (estadoFiltro != null) {
+        filtradas = donacionesVista.stream()
+            .filter(d -> coincideEstado(d, estadoFiltro))
+            .toList();
+      }
+      model.addAttribute("donaciones", filtradas);
+      model.addAttribute("totalDonaciones", donacionesVista.size());
       model.addAttribute("entregasActivas", dash.entregasActivas());
       model.addAttribute("necesidadesActivas", dash.necesidadesActivas());
     } else {
       model.addAttribute("donaciones", java.util.List.of());
+      model.addAttribute("totalDonaciones", 0);
       model.addAttribute("entregasActivas", 0);
       model.addAttribute("necesidadesActivas", 0);
       model.addAttribute("error", "No pudimos conectar con el servidor de donaciones. Por favor, reintentá en unos momentos.");
     }
+
+    model.addAttribute("estadoFiltro", estadoFiltro);
 
     var notifsDto = notificacionApiService.listar(yo.email(), yo.id());
     var notificaciones = notifsDto.stream()
@@ -86,6 +101,23 @@ public class EntidadController {
     long sinLeer = notificaciones.stream().filter(n -> !n.leida()).count();
     model.addAttribute("sinLeer", sinLeer);
     return "entidad/dashboard";
+  }
+
+  private boolean coincideEstado(DonacionVista donacion, String estadoFiltro) {
+    if (donacion == null || estadoFiltro == null) {
+      return false;
+    }
+    String estadoDonacion = donacion.estado();
+    if (estadoDonacion == null) {
+      return false;
+    }
+    if (estadoDonacion.equalsIgnoreCase(estadoFiltro)) {
+      return true;
+    }
+    if ("ASIGNADA".equalsIgnoreCase(estadoFiltro) && "LISTA".equalsIgnoreCase(estadoDonacion)) {
+      return true;
+    }
+    return false;
   }
 
   @PostMapping("/notificaciones/{id}/leida")
