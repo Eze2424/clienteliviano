@@ -110,7 +110,6 @@ public class LoginController {
             }
           }
 
-          // 3. Resolución dinámica del ID del donante desde MySQL
           Long idUsuario = 1L; // Fallback por defecto
           if (rol == Rol.DONANTE) {
             try {
@@ -132,6 +131,31 @@ public class LoginController {
               }
             } catch (Exception ex) {
               System.err.println("No se pudo obtener el ID del donante por email: " + ex.getMessage());
+            }
+          } else if (rol == Rol.ENTIDAD) {
+            try {
+              HttpHeaders authHeaders = new HttpHeaders();
+              authHeaders.setBearerAuth(accessToken);
+              HttpEntity<Void> entity = new HttpEntity<>(authHeaders);
+
+              String url = donacionesBaseUrl + "/entidades/by-email?email=" + email;
+              ResponseEntity<Map> resEntidad = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+
+              if (resEntidad.getStatusCode().is2xxSuccessful() && resEntidad.getBody() != null) {
+                Object rawId = resEntidad.getBody().get("id");
+                if (rawId instanceof Number numId) {
+                  idUsuario = numId.longValue();
+                } else {
+                  model.addAttribute("error", "Tu cuenta no tiene una entidad asociada en el sistema.");
+                  return "publico/login";
+                }
+              } else {
+                model.addAttribute("error", "Tu cuenta no tiene una entidad asociada en el sistema.");
+                return "publico/login";
+              }
+            } catch (Exception ex) {
+              model.addAttribute("error", "Tu cuenta no tiene una entidad asociada en el sistema.");
+              return "publico/login";
             }
           }
 

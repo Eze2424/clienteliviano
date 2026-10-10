@@ -35,7 +35,7 @@ public class RestClientConfig {
 
   @Bean
   public RestTemplate restTemplate() {
-    RestTemplate restTemplate = new RestTemplate();
+    RestTemplate restTemplate = new RestTemplate(new org.springframework.http.client.JdkClientHttpRequestFactory());
 
     ClientHttpRequestInterceptor interceptor = (request, body, execution) -> {
       ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();

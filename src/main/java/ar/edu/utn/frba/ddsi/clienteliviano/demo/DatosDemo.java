@@ -103,10 +103,6 @@ public class DatosDemo {
         .count();
   }
 
-  public List<DonacionVista> donacionesDeLaEntidad(Long entidadId) {
-    return donaciones.stream().filter(d -> java.util.Objects.equals(entidadId, d.entidadId())).toList();
-  }
-
   /** Pendientes de asignación: las que el algoritmo todavía no derivó a una entidad. */
   public List<DonacionVista> pendientesDeAsignacion() {
     return donaciones.stream().filter(d -> !d.asignada()).toList();
@@ -161,34 +157,6 @@ public class DatosDemo {
 
   public Optional<EntidadVista> entidad(Long id) {
     return entidades.stream().filter(e -> e.id().equals(id)).findFirst();
-  }
-
-  /* ---------------- Necesidades de la entidad logueada ---------------- */
-
-  private final List<NecesidadResponse> necesidadesPropias = new ArrayList<>(List.of(
-      new NecesidadResponse(31L, "Alimentos", "Aceite, harina y fideos — 40 unidades por mes"),
-      new NecesidadResponse(32L, "Alimentos", "Leche en polvo — 20 latas"),
-      new NecesidadResponse(33L, "Limpieza", "Lavandina y detergente — 15 litros")
-  ));
-
-  public List<NecesidadResponse> necesidadesPropias() {
-    return necesidadesPropias;
-  }
-
-  /* ---------------- Entregas en curso (logística) ---------------- */
-
-  private final List<EntregaVista> entregas = new ArrayList<>(List.of(
-      new EntregaVista("ENT-0922", 1041L, "Alimentos no perecederos: 100 kg de arroz, 50 kg de fideos",
-          "AB-123-CD", "Ricardo Gómez", "EN_TRASLADO", -34.9450, -57.9600,
-          LocalDateTime.of(2026, 9, 29, 11, 42), "Hoy 14:20"),
-      new EntregaVista("ENT-0931", 1057L, "Frazadas polares x 50",
-          "XY-889-ZZ", "Marta Ledesma", "LISTA", -34.6037, -58.3816,
-          LocalDateTime.of(2026, 9, 29, 10, 5), "Mañana 09:00")
-  ));
-
-  public List<EntregaVista> entregasDeLaEntidad(Long entidadId) {
-    List<Long> propias = donacionesDeLaEntidad(entidadId).stream().map(DonacionVista::id).toList();
-    return entregas.stream().filter(e -> propias.contains(e.donacionId())).toList();
   }
 
   /* ---------------- Camiones ---------------- */
