@@ -234,12 +234,8 @@ public class DonanteController {
       return "redirect:/login";
     }
 
-    try {
-      List entidades = restTemplate.getForObject(donacionesUrl + "/entidades", List.class);
-      model.addAttribute("entidades", entidades != null ? entidades : List.of());
-    } catch (Exception e) {
-      model.addAttribute("entidades", List.of());
-    }
+    var entidades = api.obtenerEntidades(nombre);
+    model.addAttribute("entidades", entidades);
     model.addAttribute("nombre", nombre);
     return "donante/entidades";
   }

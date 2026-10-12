@@ -2,8 +2,11 @@ package ar.edu.utn.frba.ddsi.clienteliviano.services;
 
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DashboardDonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionResumenDTO;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.EntidadResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.BienDetalleVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntidadVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.SubdonacionVista;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -14,6 +17,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -55,6 +59,82 @@ public class DonanteApiService {
       log.warn("No se pudo obtener el dashboard del donante desde backend ({}): {}", backendApiUrl, e.getMessage());
       return Optional.empty();
     }
+  }
+
+  /**
+   * Obtiene las entidades beneficiarias registradas, mapeadas a EntidadVista
+   * y opcionalmente filtradas por nombre o dirección.
+   */
+  public List<EntidadVista> obtenerEntidades(String nombreFiltro) {
+    try {
+      ResponseEntity<EntidadResponse[]> respuesta = restTemplate.getForEntity(
+          backendApiUrl + "/entidades", EntidadResponse[].class);
+      if (!respuesta.getStatusCode().is2xxSuccessful() || respuesta.getBody() == null) {
+        return List.of();
+      }
+
+      List<EntidadResponse> todas = List.of(respuesta.getBody());
+      return todas.stream()
+          .filter(e -> coincideFiltroNombre(e, nombreFiltro))
+          .map(this::aVista)
+          .toList();
+    } catch (Exception e) {
+      log.warn("No se pudieron obtener las entidades beneficiarias desde backend ({}): {}", backendApiUrl, e.getMessage());
+      return List.of();
+    }
+  }
+
+  private boolean coincideFiltroNombre(EntidadResponse e, String nombreFiltro) {
+    if (nombreFiltro == null || nombreFiltro.isBlank()) {
+      return true;
+    }
+    String query = nombreFiltro.trim().toLowerCase();
+    boolean coincideRazonSocial = e.razonSocial() != null && e.razonSocial().toLowerCase().contains(query);
+    boolean coincideDireccion = e.direccion() != null && e.direccion().toLowerCase().contains(query);
+    return coincideRazonSocial || coincideDireccion;
+  }
+
+  public EntidadVista aVista(EntidadResponse entidad) {
+    List<NecesidadResponse> nec = entidad.necesidades() != null
+        ? entidad.necesidades().stream()
+            .map(n -> new NecesidadResponse(
+                n.id(),
+                (n.subcategoria() != null && !n.subcategoria().isBlank()) ? n.subcategoria() : "General",
+                n.descripcion(),
+                n.cantidadSolicitada() != null ? n.cantidadSolicitada() : 0.0,
+                Boolean.TRUE.equals(n.esExtraordinaria())
+            ))
+            .toList()
+        : List.of();
+
+    boolean extraordinaria = nec.stream().anyMatch(n -> Boolean.TRUE.equals(n.esExtraordinaria()));
+    String tipo = inferirTipoEntidad(entidad.razonSocial());
+
+    return new EntidadVista(
+        entidad.id(),
+        entidad.razonSocial(),
+        entidad.direccion(),
+        entidad.telefono(),
+        entidad.latitud(),
+        entidad.longitud(),
+        tipo,
+        extraordinaria,
+        null, // foto
+        entidad.razonSocial(),
+        nec
+    );
+  }
+
+  private String inferirTipoEntidad(String razonSocial) {
+    if (razonSocial == null) return "Entidad Beneficiaria";
+    String rz = razonSocial.toLowerCase();
+    if (rz.contains("comedor")) return "Comedor";
+    if (rz.contains("hogar")) return "Hogar";
+    if (rz.contains("escuela")) return "Escuela";
+    if (rz.contains("fundaci")) return "Fundación";
+    if (rz.contains("asociaci")) return "Asociación";
+    if (rz.contains("coop")) return "Cooperativa";
+    return "Organización";
   }
 
   /** Traduce la forma de la API a la que necesita la vista. */

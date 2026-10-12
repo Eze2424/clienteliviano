@@ -98,13 +98,18 @@
                         <p class="card-subtitle" style="margin: var(--space-1) 0 0;"
                            th:text="${e.direccion()}">Calle 137 y 66, La Plata</p>
 
-                        <p class="card-subtitle" style="margin: var(--space-3) 0 0;">
+                        <p class="card-subtitle" style="margin: var(--space-3) 0 0;"
+                           th:if="${e.necesidades() != null and !e.necesidades().isEmpty()}">
                             <strong>Está necesitando:</strong>
                             <span th:text="${#strings.listJoin(
                                     #sets.toSet(e.necesidades().![subcategoria()]), ', ')}">Alimentos</span>
                         </p>
+                        <p class="card-subtitle" style="margin: var(--space-3) 0 0;"
+                           th:if="${e.necesidades() == null or e.necesidades().isEmpty()}">
+                            <span class="hint" style="margin:0;">Sin necesidades registradas actualmente</span>
+                        </p>
 
-                        <div class="entity-card-needs">
+                        <div class="entity-card-needs" th:if="${e.necesidades() != null and !e.necesidades().isEmpty()}">
                             <span class="badge" th:classappend="${e.claseUrgencia()}"
                                   th:text="${e.etiquetaUrgencia()}">Necesidades recurrentes</span>
                         </div>
