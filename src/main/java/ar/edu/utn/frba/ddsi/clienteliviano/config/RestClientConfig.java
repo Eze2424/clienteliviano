@@ -45,7 +45,7 @@ public class RestClientConfig {
 
         if (session != null) {
           String token = obtenerTokenValido(session);
-          if (token != null) {
+          if (token != null && request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION) == null) {
             request.getHeaders().setBearerAuth(token);
           }
         }

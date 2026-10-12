@@ -21,10 +21,21 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class RegistroService {
 
   private final RestTemplate restTemplate;
+  private final RestTemplate keycloakRestTemplate;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public RegistroService(RestTemplate restTemplate) {
+    this.restTemplate = restTemplate;
+    this.keycloakRestTemplate = new RestTemplate();
+  }
+
+  public RegistroService(RestTemplate restTemplate, RestTemplate keycloakRestTemplate) {
+    this.restTemplate = restTemplate;
+    this.keycloakRestTemplate = keycloakRestTemplate;
+  }
 
   @Value("${backend.api.url.donaciones}")
   private String backendApiUrl;
@@ -92,7 +103,7 @@ public class RegistroService {
     }
 
     String url = backendApiUrl + "/donantes";
-    restTemplate.postForEntity(url, req, Void.class);
+    keycloakRestTemplate.postForEntity(url, req, Void.class);
   }
 
   public void registrarEntidadDesdeForm(RegistroForm form) {
@@ -113,7 +124,7 @@ public class RegistroService {
     req.setMedioPredeterminado(form.getMedioPredeterminado() != null ? form.getMedioPredeterminado() : "EMAIL");
 
     String url = backendApiUrl + "/entidades";
-    restTemplate.postForEntity(url, req, Void.class);
+    keycloakRestTemplate.postForEntity(url, req, Void.class);
   }
 
   public boolean registrarYAsignarRolEnKeycloak(String email, String password, String rolName, String nombre, String apellido) {
@@ -131,7 +142,7 @@ public class RegistroService {
       tokenBody.add("grant_type", "password");
 
       HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(tokenBody, tokenHeaders);
-      ResponseEntity<Map> tokenResponse = restTemplate.postForEntity(tokenEndpoint, tokenRequest, Map.class);
+      ResponseEntity<Map> tokenResponse = keycloakRestTemplate.postForEntity(tokenEndpoint, tokenRequest, Map.class);
 
       String adminToken = (String) tokenResponse.getBody().get("access_token");
 
@@ -156,7 +167,7 @@ public class RegistroService {
       userBody.put("credentials", List.of(credential));
 
       HttpEntity<Map<String, Object>> userRequest = new HttpEntity<>(userBody, userHeaders);
-      ResponseEntity<Void> userResponse = restTemplate.postForEntity(usersEndpoint, userRequest, Void.class);
+      ResponseEntity<Void> userResponse = keycloakRestTemplate.postForEntity(usersEndpoint, userRequest, Void.class);
 
       if (!userResponse.getStatusCode().is2xxSuccessful()) {
         return false;
@@ -176,7 +187,7 @@ public class RegistroService {
       getHeaders.setBearerAuth(adminToken);
       HttpEntity<Void> getRequest = new HttpEntity<>(getHeaders);
 
-      ResponseEntity<Map> roleResponse = restTemplate.exchange(roleEndpoint, HttpMethod.GET, getRequest, Map.class);
+      ResponseEntity<Map> roleResponse = keycloakRestTemplate.exchange(roleEndpoint, HttpMethod.GET, getRequest, Map.class);
       Map<String, Object> roleData = roleResponse.getBody();
 
       // 5. Asignar rol
@@ -187,11 +198,14 @@ public class RegistroService {
       mappingHeaders.setBearerAuth(adminToken);
 
       HttpEntity<List<Map<String, Object>>> mappingRequest = new HttpEntity<>(List.of(roleData), mappingHeaders);
-      ResponseEntity<Void> mappingResponse = restTemplate.postForEntity(mappingEndpoint, mappingRequest, Void.class);
+      ResponseEntity<Void> mappingResponse = keycloakRestTemplate.postForEntity(mappingEndpoint, mappingRequest, Void.class);
 
       return mappingResponse.getStatusCode().is2xxSuccessful();
     } catch (HttpClientErrorException.Conflict e) {
       throw e;
+    } catch (org.springframework.web.client.HttpStatusCodeException e) {
+      System.err.println("Error al contactar la Admin API de Keycloak (" + e.getStatusCode() + "): " + e.getResponseBodyAsString());
+      return false;
     } catch (Exception e) {
       System.err.println("Error al contactar la Admin API de Keycloak: " + e.getMessage());
       return false;
