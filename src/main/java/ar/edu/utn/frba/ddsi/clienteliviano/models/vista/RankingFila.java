@@ -1,13 +1,11 @@
 package ar.edu.utn.frba.ddsi.clienteliviano.models.vista;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * Una fila del ranking mensual de donantes.
- *
- * BRECHA: incentivos-service define RankingMensualResponse(idDonante, nombre,
- * misionesCumplidas) y una interfaz RankingService, pero no hay implementación
- * ni endpoint que los exponga. Ver brecha G4. El orden y el puntaje los calcula
- * la API: el cliente solo renderiza la lista en el orden en que llega.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record RankingFila(
     int posicion,
     Long donanteId,
@@ -17,4 +15,8 @@ public record RankingFila(
     long misionesCumplidas,
     int insignias,
     long puntajeImpacto
-) {}
+) {
+  public boolean esTop3() {
+    return posicion >= 1 && posicion <= 3;
+  }
+}

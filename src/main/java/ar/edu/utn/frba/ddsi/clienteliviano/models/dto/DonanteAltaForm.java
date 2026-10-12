@@ -4,10 +4,8 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.entities.TipoOrganizacion;
 import lombok.Data;
 
 /**
- * Alta de un donante hecha por la persona administradora, cuando alguien
- * se acerca al depósito sin cuenta previa.
- * Espeja DonanteCreateRequest de donaciones-service, que no lleva contraseña:
- * la identidad se otorga después (ver la importación por CSV).
+ * Alta de un donante hecha por la persona administradora.
+ * Espeja DonanteCreateRequest de donaciones-service.
  */
 @Data
 public class DonanteAltaForm {
@@ -25,4 +23,5 @@ public class DonanteAltaForm {
   private String razonSocial;
   private String rubro;
   private TipoOrganizacion tipoOrganizacion;
+  private Boolean crearUsuario = false;
 }

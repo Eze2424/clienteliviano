@@ -14,8 +14,26 @@ public record DonanteResponse(
     Boolean esJuridico,
     String razonSocial,
     String rubro,
-    TipoOrganizacion tipoOrganizacion
+    TipoOrganizacion tipoOrganizacion,
+    String email,
+    String telefono
 ) {
+  public DonanteResponse(
+      Long donanteId,
+      String nombre,
+      String apellido,
+      int edad,
+      String dni,
+      String genero,
+      String direccion,
+      Boolean esJuridico,
+      String razonSocial,
+      String rubro,
+      TipoOrganizacion tipoOrganizacion
+  ) {
+    this(donanteId, nombre, apellido, edad, dni, genero, direccion, esJuridico, razonSocial, rubro, tipoOrganizacion, null, null);
+  }
+
   /** Cómo se lo nombra en pantalla: la razón social si es jurídico. */
   public String nombreVisible() {
     return Boolean.TRUE.equals(esJuridico) && razonSocial != null

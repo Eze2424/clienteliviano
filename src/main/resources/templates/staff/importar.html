@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Importación de donantes',
+        'Seguimiento en tiempo real de la importación masiva de donantes.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: staff('donantes')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <div class="card-title-row" style="margin-bottom: var(--space-5);">
+        <div style="min-width:0;">
+            <h1 style="margin-bottom: var(--space-1);">Importación masiva de donantes</h1>
+            <p class="card-subtitle" style="margin:0;">
+                El archivo se procesa en segundo plano para soportar grandes volúmenes de datos.
+            </p>
+        </div>
+        <div>
+            <span id="badge-estado" class="badge"
+                  th:classappend="${job.estado() == 'FINALIZADO' ? 'badge-success' : (job.estado() == 'ERROR' ? 'badge-danger' : 'badge-neutral')}"
+                  th:text="${job.estado()}" style="font-size: var(--text-base); padding: 6px 14px;">EN_CURSO</span>
+        </div>
+    </div>
+
+    <!-- Tarjeta de progreso -->
+    <div class="card" style="margin-bottom: var(--space-5); padding: var(--space-5);">
+        <div class="flex justify-between" style="align-items: center; margin-bottom: var(--space-2);">
+            <strong style="font-size: var(--text-base);">Progreso general</strong>
+            <span id="porcentaje-texto" style="font-weight: 600;" th:text="${job.porcentaje()} + '%'">0%</span>
+        </div>
+
+        <div style="background: var(--color-surface-2, #e5e7eb); border-radius: 9999px; overflow: hidden; height: 16px; margin-bottom: var(--space-4);">
+            <div id="barra-progreso"
+                 style="background: var(--color-primary, #2563eb); height: 100%; transition: width 0.4s ease;"
+                 th:style="'width: ' + ${job.porcentaje()} + '%;'"></div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-4" style="margin-top: var(--space-4); text-align: center;">
+            <div class="card" style="padding: var(--space-3); background: var(--color-surface-1, #f9fafb);">
+                <div class="card-subtitle" style="font-size: var(--text-xs); text-transform: uppercase;">Filas procesadas</div>
+                <div id="val-procesadas" style="font-size: var(--text-2xl); font-weight: 700;" th:text="${job.procesadas()}">0</div>
+            </div>
+            <div class="card" style="padding: var(--space-3); background: var(--color-surface-1, #f9fafb);">
+                <div class="card-subtitle" style="font-size: var(--text-xs); text-transform: uppercase;">Nuevos creados</div>
+                <div id="val-creados" style="font-size: var(--text-2xl); font-weight: 700; color: var(--color-success, #16a34a);" th:text="${job.creados()}">0</div>
+            </div>
+            <div class="card" style="padding: var(--space-3); background: var(--color-surface-1, #f9fafb);">
+                <div class="card-subtitle" style="font-size: var(--text-xs); text-transform: uppercase;">Actualizados</div>
+                <div id="val-actualizados" style="font-size: var(--text-2xl); font-weight: 700; color: var(--color-primary, #2563eb);" th:text="${job.actualizados()}">0</div>
+            </div>
+            <div class="card" style="padding: var(--space-3); background: var(--color-surface-1, #f9fafb);">
+                <div class="card-subtitle" style="font-size: var(--text-xs); text-transform: uppercase;">Errores</div>
+                <div id="val-errores" style="font-size: var(--text-2xl); font-weight: 700; color: var(--color-danger, #dc2626);" th:text="${#lists.size(job.errores())}">0</div>
+            </div>
+        </div>
+
+        <p id="val-mensaje" class="card-subtitle" style="margin-top: var(--space-4); margin-bottom: 0;" th:text="${job.mensaje()}">
+            Procesando filas del archivo...
+        </p>
+    </div>
+
+    <!-- Reporte de errores de validación -->
+    <section id="seccion-errores" class="card" style="margin-bottom: var(--space-5); padding: var(--space-4);">
+        <h2 style="font-size: var(--text-lg); margin-top: 0; margin-bottom: var(--space-3);">Reporte de observaciones</h2>
+        <div id="contenedor-tabla-errores" th:classappend="${#lists.isEmpty(job.errores()) ? 'hidden' : ''}">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th scope="col" style="width: 120px;">Fila</th>
+                        <th scope="col">Motivo</th>
+                    </tr>
+                    </thead>
+                    <tbody id="cuerpo-tabla-errores">
+                    <tr th:each="err : ${job.errores()}">
+                        <td th:text="'#' + ${err.fila()}">#12</td>
+                        <td th:text="${err.motivo()}">Faltan columnas requeridas</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p id="sin-errores" th:classappend="${!#lists.isEmpty(job.errores()) ? 'hidden' : ''}" class="card-subtitle" style="margin: 0;">
+            No se registraron errores de formato ni datos descartados.
+        </p>
+    </section>
+
+    <div class="flex gap-2">
+        <a th:href="@{/staff/donantes}" class="btn btn-secondary">← Volver al listado de donantes</a>
+    </div>
+
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+
+<script th:inline="javascript">
+    (function () {
+        const jobId = /*[[${job.jobId()}]]*/ '';
+        let estadoActual = /*[[${job.estado()}]]*/ 'EN_CURSO';
+
+        if (!jobId || estadoActual === 'FINALIZADO' || estadoActual === 'ERROR') {
+            return;
+        }
+
+        const barraProgreso = document.getElementById('barra-progreso');
+        const porcentajeTexto = document.getElementById('porcentaje-texto');
+        const badgeEstado = document.getElementById('badge-estado');
+        const valProcesadas = document.getElementById('val-procesadas');
+        const valCreados = document.getElementById('val-creados');
+        const valActualizados = document.getElementById('val-actualizados');
+        const valErrores = document.getElementById('val-errores');
+        const valMensaje = document.getElementById('val-mensaje');
+        const cuerpoErrores = document.getElementById('cuerpo-tabla-errores');
+        const contenedorTabla = document.getElementById('contenedor-tabla-errores');
+        const sinErrores = document.getElementById('sin-errores');
+
+        const intervalId = setInterval(async () => {
+            try {
+                const response = await fetch('/staff/api/donantes/importar/' + encodeURIComponent(jobId));
+                if (!response.ok) {
+                    return;
+                }
+                const data = await response.json();
+
+                // Actualizar contadores
+                valProcesadas.textContent = data.procesadas;
+                valCreados.textContent = data.creados;
+                valActualizados.textContent = data.actualizados;
+                const cantErrores = data.errores ? data.errores.length : 0;
+                valErrores.textContent = cantErrores;
+                if (data.mensaje) {
+                    valMensaje.textContent = data.mensaje;
+                }
+
+                // Actualizar barra de progreso
+                let pct = 0;
+                if (data.total > 0) {
+                    pct = Math.min(100, Math.round((data.procesadas / data.total) * 100));
+                } else if (data.estado === 'FINALIZADO') {
+                    pct = 100;
+                }
+                barraProgreso.style.width = pct + '%';
+                porcentajeTexto.textContent = pct + '%';
+
+                // Actualizar badge
+                badgeEstado.textContent = data.estado;
+                badgeEstado.className = 'badge ' + (data.estado === 'FINALIZADO' ? 'badge-success' : (data.estado === 'ERROR' ? 'badge-danger' : 'badge-neutral'));
+
+                // Actualizar tabla de errores
+                if (data.errores && data.errores.length > 0) {
+                    cuerpoErrores.innerHTML = '';
+                    data.errores.forEach(err => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>#${err.fila}</td><td>${err.motivo}</td>`;
+                        cuerpoErrores.appendChild(tr);
+                    });
+                    contenedorTabla.classList.remove('hidden');
+                    sinErrores.classList.add('hidden');
+                }
+
+                // Finalización del polling
+                if (data.estado === 'FINALIZADO' || data.estado === 'ERROR') {
+                    clearInterval(intervalId);
+                }
+            } catch (err) {
+                console.error('Error al consultar estado del job:', err);
+            }
+        }, 2000);
+    })();
+</script>
+</body>
+</html>

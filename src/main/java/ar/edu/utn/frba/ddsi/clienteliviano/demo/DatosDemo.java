@@ -103,33 +103,6 @@ public class DatosDemo {
         .count();
   }
 
-  /** Pendientes de asignación: las que el algoritmo todavía no derivó a una entidad. */
-  public List<DonacionVista> pendientesDeAsignacion() {
-    return donaciones.stream().filter(d -> !d.asignada()).toList();
-  }
-
-  public Optional<DonacionVista> donacion(Long id) {
-    return donaciones.stream().filter(d -> d.id().equals(id)).findFirst();
-  }
-
-  /* ---------------- Donantes ---------------- */
-
-  private final List<DonanteResponse> donantes = new ArrayList<>(List.of(
-      new DonanteResponse(1L, "Elena", "Martínez", 41, "28456789", "FEMENINO",
-          "Av. Rivadavia 4820, CABA", false, null, null, null),
-      new DonanteResponse(3L, "Marcos", "Ferreyra", 52, "20114477", "MASCULINO",
-          "Bv. Oroño 1200, Rosario", true, "Fundación Caminos", "Educación",
-          TipoOrganizacion.ONG),
-      new DonanteResponse(5L, "Lucía", "Paz", 37, "31998877", "FEMENINO",
-          "Ruta 2 km 42, Berazategui", true, "Supermercados del Sur", "Alimentación",
-          TipoOrganizacion.EMPRESA),
-      new DonanteResponse(8L, "Javier", "Sosa", 29, "35112233", "MASCULINO",
-          "Belgrano 550, Quilmes", false, null, null, null)
-  ));
-
-  public List<DonanteResponse> donantes() {
-    return donantes;
-  }
 
   /* ---------------- Entidades beneficiarias ---------------- */
 
@@ -159,17 +132,6 @@ public class DatosDemo {
     return entidades.stream().filter(e -> e.id().equals(id)).findFirst();
   }
 
-  /* ---------------- Camiones ---------------- */
-
-  private final List<CamionResponse> camiones = new ArrayList<>(List.of(
-      new CamionResponse("64f1a2", "AB-123-CD", 32.0, 2.6, 4500.0, -34.9450, -57.9600),
-      new CamionResponse("64f1a3", "XY-889-ZZ", 18.5, 2.2, 2800.0, -34.6037, -58.3816),
-      new CamionResponse("64f1a4", "LM-456-QP", 45.0, 3.0, 8000.0, -34.6158, -58.4333)
-  ));
-
-  public List<CamionResponse> camiones() {
-    return camiones;
-  }
 
   /* ---------------- Notificaciones ---------------- */
 
@@ -234,33 +196,5 @@ public class DatosDemo {
     );
   }
 
-  /* ---------------- Ranking ---------------- */
-
-  public List<RankingFila> ranking() {
-    return List.of(
-        new RankingFila(1, 3L, "Fundación Caminos", "Organización", "Guardián", 142, 9, 9850),
-        new RankingFila(2, 1L, "Elena Martínez", "Persona", "Benefactor", 118, 6, 8200),
-        new RankingFila(3, 5L, "Supermercados del Sur", "Organización", "Guardián", 94, 7, 7100),
-        new RankingFila(4, 8L, "Club Atlético Norte", "Organización", "Benefactor", 76, 4, 5400),
-        new RankingFila(5, 11L, "Javier Sosa", "Persona", "Benefactor", 61, 3, 4300)
-    );
-  }
-
-  public List<String> periodosDeRanking() {
-    return List.of("2026-09", "2026-08", "2026-07", "2026-06", "2026-05", "2026-04");
-  }
-
-  /* ---------------- Propuestas de los algoritmos de selección ---------------- */
-
-  public AsignacionResponse propuestas(Long donacionId) {
-    return new AsignacionResponse(
-        donacionId,
-        List.of(new PropuestaVista(31L, 7L, "Comedor Los Hornos", "Alimentos",
-            "Aceite, harina y fideos", 40)),
-        List.of(new PropuestaVista(51L, 9L, "Merendero El Alba", "Alimentos",
-            "Cacao y azúcar", 25)),
-        List.of(new PropuestaVista(32L, 7L, "Comedor Los Hornos", "Alimentos",
-            "Leche en polvo", 20)),
-        true);
-  }
 }
+

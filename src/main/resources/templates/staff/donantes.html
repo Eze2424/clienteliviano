@@ -23,10 +23,17 @@
         </div>
     </div>
 
-    <div class="banner banner-warning" role="alert" th:if="${error != null}"
-         style="margin-bottom: var(--space-5);">
-        <span aria-hidden="true">⚠</span>
-        <p><span th:text="${error}">Falta un dato.</span></p>
+    <!-- ============ Buscador ============ -->
+    <div class="card" style="margin-bottom: var(--space-4); padding: var(--space-3);">
+        <form th:action="@{/staff/donantes}" method="get" class="flex gap-2" style="align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 240px;">
+                <label for="campo-busqueda" class="visually-hidden">Buscar donantes</label>
+                <input type="search" id="campo-busqueda" name="q" th:value="${q}"
+                       placeholder="Buscar por nombre, documento o email…" style="margin:0;">
+            </div>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+            <a th:if="${q != null and !q.isBlank()}" th:href="@{/staff/donantes}" class="btn btn-secondary">Limpiar</a>
+        </form>
     </div>
 
     <!-- ============ Listado ============ -->
@@ -35,8 +42,8 @@
 
         <div th:if="${#lists.isEmpty(donantes)}">
             <div th:replace="~{fragments/componentes :: estado-vacio(
-                'Todavía no hay donantes registrados',
-                'Dalos de alta de a uno, o importá un padrón existente desde un archivo CSV.',
+                'No se encontraron donantes',
+                'No hay donantes que coincidan con la búsqueda o todavía no hay registros.',
                 null, null)}"></div>
         </div>
 
@@ -48,6 +55,8 @@
                     <th scope="col">Donante</th>
                     <th scope="col">Tipo</th>
                     <th scope="col">Documento</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Teléfono</th>
                     <th scope="col">Rubro</th>
                     <th scope="col">Dirección</th>
                 </tr>
@@ -58,13 +67,36 @@
                     <td>
                         <span class="badge badge-neutral" th:text="${d.tipo()}">Persona</span>
                     </td>
-                    <td th:text="${d.dni()}">28456789</td>
-                    <td th:text="${d.rubro() != null} ? ${d.rubro()} : '—'">—</td>
-                    <td th:text="${d.direccion()}">Av. Rivadavia 4820, CABA</td>
+                    <td th:text="${d.dni() != null ? d.dni() : '—'}">28456789</td>
+                    <td th:text="${d.email() != null and !d.email().isBlank() ? d.email() : '—'}">elena@ejemplo.com</td>
+                    <td th:text="${d.telefono() != null and !d.telefono().isBlank() ? d.telefono() : '—'}">+54 11 4455-6677</td>
+                    <td th:text="${d.rubro() != null ? d.rubro() : '—'}">—</td>
+                    <td th:text="${d.direccion() != null and !d.direccion().isBlank() ? d.direccion() : '—'}">Av. Rivadavia 4820, CABA</td>
                 </tr>
                 </tbody>
             </table>
         </div>
+
+        <!-- ============ Paginación ============ -->
+        <nav th:if="${pagina != null and pagina.totalPages() > 1}"
+             aria-label="Paginación de donantes"
+             class="flex gap-2 justify-between"
+             style="margin-top: var(--space-4); align-items: center;">
+            <div>
+                <a th:if="${pagina.hasPrevious()}"
+                   th:href="@{/staff/donantes(page=${pagina.page() - 1}, q=${q})}"
+                   class="btn btn-secondary btn-sm">← Anterior</a>
+            </div>
+            <div class="card-subtitle" style="font-size: var(--text-sm);">
+                Página <span th:text="${pagina.page() + 1}">1</span> de <span th:text="${pagina.totalPages()}">5</span>
+                (<span th:text="${pagina.totalElements()}">100</span> donantes)
+            </div>
+            <div>
+                <a th:if="${pagina.hasNext()}"
+                   th:href="@{/staff/donantes(page=${pagina.page() + 1}, q=${q})}"
+                   class="btn btn-secondary btn-sm">Siguiente →</a>
+            </div>
+        </nav>
     </section>
 
     <!-- ============ Modal: alta manual (CU1) ============ -->
@@ -76,8 +108,7 @@
                     <div>
                         <h2 id="titulo-modal-alta" style="margin:0;">Dar de alta un donante</h2>
                         <p class="modal-desc">
-                            Con estos datos ya podés registrarle donaciones. El usuario para
-                            que entre al sistema se otorga después.
+                            Con estos datos ya podés registrarle donaciones en el depósito.
                         </p>
                     </div>
                     <button type="button" class="modal-close" data-close-modal
@@ -126,10 +157,10 @@
 
                 <div class="field-row">
                     <div class="field">
-                        <label for="documento">Documento</label>
+                        <label for="documento">Documento / CUIT</label>
                         <input type="text" id="documento" th:field="*{documento}" placeholder="30123456"
                                required aria-describedby="hint-doc">
-                        <span class="hint" id="hint-doc">Es con lo que identificamos al donante.</span>
+                        <span class="hint" id="hint-doc">Identifica inequívocamente al donante.</span>
                     </div>
                     <div class="field">
                         <label for="edad">Edad</label>
@@ -160,6 +191,14 @@
                             <option value="WHATSAPP">WhatsApp</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="field">
+                    <label class="checkbox-option">
+                        <input type="checkbox" th:field="*{crearUsuario}" id="crear-usuario">
+                        <span>Crear cuenta de acceso en el sistema (Keycloak)</span>
+                    </label>
+                    <span class="hint">Si se activa, el backend creará el usuario con rol Donante y le enviará sus credenciales.</span>
                 </div>
 
                 <div class="modal-footer">
@@ -201,10 +240,12 @@
                 <div class="field">
                     <label for="archivo">Archivo CSV</label>
                     <input type="file" id="archivo" name="archivo" accept=".csv,text/csv"
-                           required data-autofocus aria-describedby="hint-csv">
+                           required data-autofocus aria-describedby="hint-csv"
+                           onchange="if(this.files[0] && this.files[0].size > 10*1024*1024) { alert('El archivo seleccionado supera el límite de 10 MB.'); this.value = ''; }">
                     <span class="hint" id="hint-csv">
-                        Una fila por donante. Columnas esperadas:
-                        <code>nombre, apellido, documento, edad, genero, direccion, email, telefono</code>.
+                        Una fila por donante, separador pipe (|), con o sin cabecera:
+                        <br><code>TipoPersona|TipoDoc|Documento|Nombre o Razón Social|Email|Teléfono</code>
+                        <br>Tipos soportados: <code>HUMANA</code> o <code>JURIDICA</code>. Máx. 10 MB.
                     </span>
                 </div>
 
@@ -228,8 +269,10 @@
         function alternar() {
             bloques.forEach((b) => { b.hidden = !check.checked; });
         }
-        check.addEventListener('change', alternar);
-        alternar();
+        if (check) {
+            check.addEventListener('change', alternar);
+            alternar();
+        }
     })();
 </script>
 </body>

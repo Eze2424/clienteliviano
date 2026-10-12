@@ -34,14 +34,20 @@
                 <fieldset class="card" style="border:0; margin-bottom: var(--space-5);">
                     <legend class="heading-md" style="margin-bottom: var(--space-3);">Quién dona</legend>
 
+                    <div class="field" style="margin-bottom: var(--space-3);">
+                        <label for="buscador-donante">Buscar donante</label>
+                        <input type="text" id="buscador-donante" placeholder="Escribí para filtrar por nombre, DNI o email…" autocomplete="off">
+                        <span class="hint" id="hint-busqueda-donante">Filtrá la lista de donantes registrados para seleccionarlo rápidamente.</span>
+                    </div>
+
                     <div class="field">
-                        <label for="donanteId">Donante</label>
+                        <label for="donanteId">Donante seleccionado *</label>
                         <select id="donanteId" th:field="*{donanteId}" required
                                 aria-describedby="hint-donante">
                             <option value="">Elegí a quién pertenece</option>
                             <option th:each="d : ${donantes}"
                                     th:value="${d.donanteId()}"
-                                    th:text="${d.nombreVisible()} + ' · ' + ${d.tipo()} + ' · DNI ' + ${d.dni()}">
+                                    th:text="${d.nombreVisible()} + ' · ' + ${d.tipo()} + ' · Doc ' + ${d.dni()}">
                                 Elena Martínez
                             </option>
                         </select>
@@ -80,31 +86,37 @@
                              style="background: var(--color-bg); margin-bottom: var(--space-3);">
                             <div class="field-row">
                                 <div class="field">
-                                    <label th:for="'bien-desc-' + ${it.index}">Bien</label>
+                                    <label th:for="'bien-desc-' + ${it.index}">Descripción del bien</label>
                                     <input type="text" th:id="'bien-desc-' + ${it.index}"
                                            th:field="*{bienes[__${it.index}__].descripcion}"
                                            placeholder="Arroz largo fino 1 kg">
                                 </div>
                                 <div class="field">
-                                    <label th:for="'bien-sub-' + ${it.index}">Categoría</label>
-                                    <input type="text" th:id="'bien-sub-' + ${it.index}"
-                                           th:field="*{bienes[__${it.index}__].subcategoria}"
-                                           list="subcategorias" placeholder="Alimentos">
+                                    <label th:for="'bien-sub-' + ${it.index}">Subcategoría *</label>
+                                    <select th:id="'bien-sub-' + ${it.index}"
+                                            th:field="*{bienes[__${it.index}__].subcategoriaId}" required>
+                                        <option value="">Elegí una subcategoría</option>
+                                        <option th:each="s : ${subcategorias}"
+                                                th:value="${s.id()}"
+                                                th:text="${s.nombre()} + (${s.categoria() != null and !s.categoria().isBlank()} ? ' (' + ${s.categoria()} + ')' : '')">
+                                            Alimentos
+                                        </option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="field-row">
                                 <div class="field">
-                                    <label th:for="'bien-cant-' + ${it.index}">Cantidad</label>
+                                    <label th:for="'bien-cant-' + ${it.index}">Cantidad *</label>
                                     <input type="number" min="1" step="1" th:id="'bien-cant-' + ${it.index}"
-                                           th:field="*{bienes[__${it.index}__].cantidad}" placeholder="100">
+                                           th:field="*{bienes[__${it.index}__].cantidad}" placeholder="100" required>
                                 </div>
                                 <div class="field">
-                                    <label th:for="'bien-peso-' + ${it.index}">Peso (kg)</label>
+                                    <label th:for="'bien-peso-' + ${it.index}">Peso total (kg)</label>
                                     <input type="number" min="0" step="0.1" th:id="'bien-peso-' + ${it.index}"
                                            th:field="*{bienes[__${it.index}__].peso}" placeholder="100">
                                 </div>
                                 <div class="field">
-                                    <label th:for="'bien-vol-' + ${it.index}">Volumen (m³)</label>
+                                    <label th:for="'bien-vol-' + ${it.index}">Volumen total (m³)</label>
                                     <input type="number" min="0" step="0.01" th:id="'bien-vol-' + ${it.index}"
                                            th:field="*{bienes[__${it.index}__].volumen}" placeholder="0.5">
                                 </div>
@@ -118,7 +130,7 @@
                                            th:field="*{bienes[__${it.index}__].fechaDeVencimiento}">
                                 </div>
                                 <div class="field">
-                                    <label class="checkbox-option">
+                                    <label class="checkbox-option" style="margin-top: var(--space-4);">
                                         <input type="checkbox" th:field="*{bienes[__${it.index}__].esUsado}">
                                         <span>Es usado</span>
                                     </label>
@@ -126,15 +138,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <datalist id="subcategorias">
-                        <option value="Alimentos"></option>
-                        <option value="Higiene"></option>
-                        <option value="Limpieza"></option>
-                        <option value="Mobiliario"></option>
-                        <option value="Vestimenta"></option>
-                        <option value="Útiles escolares"></option>
-                    </datalist>
 
                     <button type="button" class="btn btn-secondary btn-sm" id="agregar-bien">
                         + Agregar otro bien
@@ -179,6 +182,42 @@
 <div th:replace="~{fragments/layout :: scripts}"></div>
 
 <script th:inline="none">
+    /* Autocomplete interactivo de donantes */
+    (function () {
+        const buscador = document.getElementById('buscador-donante');
+        const selectDonante = document.getElementById('donanteId');
+        if (!buscador || !selectDonante) return;
+
+        let debounceTimer;
+        buscador.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            const query = e.target.value.trim();
+            debounceTimer = setTimeout(() => {
+                fetch('/staff/api/donantes?size=50&q=' + encodeURIComponent(query))
+                    .then((res) => res.json())
+                    .then((data) => {
+                        const seleccionActual = selectDonante.value;
+                        selectDonante.innerHTML = '<option value="">Elegí a quién pertenece</option>';
+                        if (data && data.content) {
+                            data.content.forEach((d) => {
+                                const opt = document.createElement('option');
+                                opt.value = d.donanteId;
+                                const tipo = d.esJuridico ? 'Organización' : 'Persona';
+                                const nombre = d.esJuridico && d.razonSocial ? d.razonSocial : (d.nombre + ' ' + d.apellido);
+                                const doc = d.dni ? ' · Doc ' + d.dni : '';
+                                opt.textContent = nombre + ' · ' + tipo + doc;
+                                if (String(d.donanteId) === String(seleccionActual)) {
+                                    opt.selected = true;
+                                }
+                                selectDonante.appendChild(opt);
+                            });
+                        }
+                    })
+                    .catch((err) => console.warn('Error al buscar donantes:', err));
+            }, 300);
+        });
+    })();
+
     /* Agrega otro bien clonando el último bloque y renumerando name/id/for,
        para que Spring los ligue a form.bienes[i]. */
     document.getElementById('agregar-bien').addEventListener('click', () => {
@@ -187,16 +226,16 @@
         const copia = bloques[bloques.length - 1].cloneNode(true);
         const nuevo = bloques.length;
 
-        copia.querySelectorAll('input').forEach((campo) => {
+        copia.querySelectorAll('input, select').forEach((campo) => {
             if (campo.name) campo.name = campo.name.replace(/bienes\[\d+\]/, 'bienes[' + nuevo + ']');
             if (campo.id) campo.id = campo.id.replace(/-\d+$/, '-' + nuevo);
             if (campo.type === 'checkbox') campo.checked = false;
+            else if (campo.tagName === 'SELECT') campo.selectedIndex = 0;
             else campo.value = '';
         });
         copia.querySelectorAll('label[for]').forEach((etiqueta) => {
             etiqueta.htmlFor = etiqueta.htmlFor.replace(/-\d+$/, '-' + nuevo);
         });
-        // Spring agrega un input oculto _campo por cada checkbox; hay que renumerarlo igual
         copia.querySelectorAll('input[type=hidden]').forEach((oculto) => {
             if (oculto.name) oculto.name = oculto.name.replace(/bienes\[\d+\]/, 'bienes[' + nuevo + ']');
         });

@@ -8,10 +8,8 @@ import lombok.Data;
 public class BienForm {
 
   private String descripcion;
-
-  /** BRECHA G7: la API pide subcategoriaId y no hay endpoint que liste las opciones. */
-  private String subcategoria;
-
+  private Long subcategoriaId;
+  private String foto;
   private Double cantidad;
   private boolean esUsado;
   private LocalDate fechaDeVencimiento;

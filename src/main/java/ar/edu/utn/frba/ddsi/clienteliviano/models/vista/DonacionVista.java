@@ -109,6 +109,28 @@ public record DonacionVista(
     return "badge-neutral";
   }
 
+  public static DonacionVista desdeResumen(ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionIndependienteResumenResponse r) {
+    return new DonacionVista(
+        r.id(),
+        r.descripcion(),
+        r.estado(),
+        null,
+        r.fechaVencimiento(),
+        r.vencida(),
+        r.donanteId(),
+        r.donanteNombre(),
+        r.entidadAsignadaId(),
+        r.entidadAsignadaNombre(),
+        1,
+        null,
+        List.of()
+    );
+  }
+
+  public boolean enDeposito() {
+    return "EN_DEPOSITO".equalsIgnoreCase(estado);
+  }
+
   /** Traducción del enum TipoEstado del backend a texto para la persona. */
   public String etiquetaEstado() {
     if (estado == null) return "En depósito";
@@ -119,6 +141,7 @@ public record DonacionVista(
       case "EN_TRASLADO" -> "En traslado";
       case "ENTREGADA" -> "Entregada";
       case "ENTREGA_FALLIDA" -> "Entrega fallida";
+      case "VENCIDA" -> "Vencida";
       default -> estado;
     };
   }
@@ -130,7 +153,7 @@ public record DonacionVista(
       case "ENTREGADA" -> "badge-success";
       case "EN_TRASLADO", "LISTA" -> "badge-info";
       case "ASIGNADA" -> "badge-warning";
-      case "ENTREGA_FALLIDA" -> "badge-danger";
+      case "ENTREGA_FALLIDA", "VENCIDA" -> "badge-danger";
       default -> "badge-neutral";
     };
   }
