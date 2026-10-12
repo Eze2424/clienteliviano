@@ -10,42 +10,75 @@
 
 <main id="main" class="main-content">
 
-    <div style="margin-bottom: var(--space-5);">
-        <h1 style="margin-bottom: var(--space-1);">Depósito</h1>
-        <p class="card-subtitle" style="margin:0;">
-            Todo lo que está registrado, en qué estado, y qué falta asignar.
-        </p>
+    <div class="card-title-row" style="margin-bottom: var(--space-5);">
+        <div>
+            <h1 style="margin-bottom: var(--space-1);">Depósito</h1>
+            <p class="card-subtitle" style="margin:0;">
+                Todo lo que está registrado, en qué estado, y qué falta asignar.
+            </p>
+        </div>
+        <div>
+            <a th:href="@{/staff/donaciones/nueva}" class="btn btn-primary">Registrar donación</a>
+        </div>
     </div>
 
+    <!-- ============ Stats Cards ============ -->
     <div class="grid grid-cols-4" style="margin-bottom: var(--space-5);">
         <div class="stat-card">
             <div class="label">Donaciones registradas</div>
-            <div class="value" th:text="${#lists.size(donaciones)}">7</div>
+            <div class="value" th:text="${totalRegistradas}">0</div>
         </div>
         <div class="stat-card">
             <div class="label">Sin asignar</div>
-            <div class="value" th:text="${#lists.size(pendientes)}">2</div>
+            <div class="value" th:text="${sinAsignar}">0</div>
         </div>
         <div class="stat-card">
             <div class="label">Vencidas</div>
-            <div class="value"
-                 th:text="${#lists.size(donaciones.?[vencida])}">1</div>
+            <div class="value" th:text="${vencidasTotal}">0</div>
         </div>
         <div class="stat-card">
             <div class="label">Camiones en flota</div>
-            <div class="value" th:text="${#lists.size(camiones)}">3</div>
+            <div class="value" th:text="${#lists.size(camiones)}">0</div>
         </div>
     </div>
 
     <!-- ============ Aviso de vencidas (CU2) ============ -->
     <div class="banner banner-warning" role="alert" style="margin-bottom: var(--space-5);"
-         th:if="${!#lists.isEmpty(donaciones.?[vencida])}">
+         th:if="${vencidasTotal > 0}">
         <span aria-hidden="true">⚠</span>
         <p>
             <strong>Hay donaciones vencidas en el depósito</strong>
             Revisá la lista y dalas de baja del circuito: el sistema no puede asignar
             bienes que ya pasaron su fecha de vencimiento.
         </p>
+    </div>
+
+    <!-- ============ Filtros por Estado ============ -->
+    <div class="card" style="margin-bottom: var(--space-4); padding: var(--space-3);">
+        <div class="flex gap-2" style="align-items: center; flex-wrap: wrap;">
+            <span class="card-subtitle" style="font-weight: 600; margin-right: var(--space-2);">Filtrar por estado:</span>
+            <a th:href="@{/staff/dashboard}"
+               class="btn btn-sm"
+               th:classappend="${estadoSeleccionado == 'TODOS'} ? 'btn-primary' : 'btn-secondary'">Todas</a>
+            <a th:href="@{/staff/dashboard(estado='EN_DEPOSITO')}"
+               class="btn btn-sm"
+               th:classappend="${estadoSeleccionado == 'EN_DEPOSITO'} ? 'btn-primary' : 'btn-secondary'">En depósito</a>
+            <a th:href="@{/staff/dashboard(estado='ASIGNADA')}"
+               class="btn btn-sm"
+               th:classappend="${estadoSeleccionado == 'ASIGNADA'} ? 'btn-primary' : 'btn-secondary'">Asignada</a>
+            <a th:href="@{/staff/dashboard(estado='LISTA')}"
+               class="btn btn-sm"
+               th:classappend="${estadoSeleccionado == 'LISTA'} ? 'btn-primary' : 'btn-secondary'">Lista</a>
+            <a th:href="@{/staff/dashboard(estado='EN_TRASLADO')}"
+               class="btn btn-sm"
+               th:classappend="${estadoSeleccionado == 'EN_TRASLADO'} ? 'btn-primary' : 'btn-secondary'">En traslado</a>
+            <a th:href="@{/staff/dashboard(estado='ENTREGADA')}"
+               class="btn btn-sm"
+               th:classappend="${estadoSeleccionado == 'ENTREGADA'} ? 'btn-primary' : 'btn-secondary'">Entregada</a>
+            <a th:href="@{/staff/dashboard(estado='VENCIDA')}"
+               class="btn btn-sm"
+               th:classappend="${estadoSeleccionado == 'VENCIDA'} ? 'btn-primary' : 'btn-secondary'">Vencida</a>
+        </div>
     </div>
 
     <!-- ============ Listado ============ -->
@@ -56,8 +89,8 @@
 
         <div th:if="${#lists.isEmpty(donaciones)}">
             <div th:replace="~{fragments/componentes :: estado-vacio(
-                'El depósito está vacío',
-                'Registrá la primera donación que recibas y va a aparecer acá.',
+                'No hay donaciones en esta vista',
+                'No se encontraron donaciones para el filtro seleccionado o el depósito está vacío.',
                 'Registrar donación', @{/staff/donaciones/nueva})}"></div>
         </div>
 
@@ -96,14 +129,14 @@
                         <span th:unless="${d.asignada()}" class="card-subtitle">Sin asignar</span>
                     </td>
                     <td>
-                        <div class="flex gap-2" style="flex-wrap: wrap;">
-                            <!-- CU3: elegir la entidad destino con el resultado de los algoritmos -->
-                            <a th:if="${!d.asignada() and !d.vencida}"
+                        <div class="flex gap-2" style="flex-wrap: wrap; align-items: center;">
+                            <!-- Asignar: solo si está en depósito y sin asignar -->
+                            <a th:if="${d.enDeposito() and !d.asignada()}"
                                th:href="@{/staff/donaciones/{id}/asignar(id=${d.id})}"
                                class="btn btn-primary btn-sm">Asignar</a>
 
-                            <!-- CU2: dar de baja lo vencido. POST porque cambia estado. -->
-                            <form th:if="${d.vencida}" method="post"
+                            <!-- Marcar vencida: solo visible en EN_DEPOSITO y no VENCIDA -->
+                            <form th:if="${d.enDeposito() and !'VENCIDA'.equalsIgnoreCase(d.estado)}" method="post"
                                   th:action="@{/staff/donaciones/{id}/vencida(id=${d.id})}"
                                   style="margin:0;">
                                 <button type="submit" class="btn btn-danger btn-sm"
@@ -113,7 +146,7 @@
                                 </button>
                             </form>
 
-                            <span th:if="${d.asignada() and !d.vencida}" class="card-subtitle"
+                            <span th:if="${!d.enDeposito()}" class="card-subtitle"
                                   style="font-size: var(--text-sm);">—</span>
                         </div>
                     </td>
@@ -121,6 +154,27 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- ============ Paginación ============ -->
+        <nav th:if="${pagina != null and pagina.totalPages() > 1}"
+             aria-label="Paginación de donaciones"
+             class="flex gap-2 justify-between"
+             style="margin-top: var(--space-4); align-items: center;">
+            <div>
+                <a th:if="${pagina.hasPrevious()}"
+                   th:href="@{/staff/dashboard(page=${pagina.page() - 1}, estado=${estadoSeleccionado})}"
+                   class="btn btn-secondary btn-sm">← Anterior</a>
+            </div>
+            <div class="card-subtitle" style="font-size: var(--text-sm);">
+                Página <span th:text="${pagina.page() + 1}">1</span> de <span th:text="${pagina.totalPages()}">5</span>
+                (<span th:text="${pagina.totalElements()}">100</span> donaciones)
+            </div>
+            <div>
+                <a th:if="${pagina.hasNext()}"
+                   th:href="@{/staff/dashboard(page=${pagina.page() + 1}, estado=${estadoSeleccionado})}"
+                   class="btn btn-secondary btn-sm">Siguiente →</a>
+            </div>
+        </nav>
     </section>
 </main>
 

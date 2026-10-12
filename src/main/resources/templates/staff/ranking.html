@@ -38,8 +38,6 @@
             </p>
         </div>
 
-            <!-- BRECHA G4: incentivos-service define RankingMensualResponse y la
-                 interfaz RankingService, pero no hay endpoint que los exponga. -->
             <div th:if="${#lists.isEmpty(ranking)}">
                 <div th:replace="~{fragments/componentes :: estado-vacio(
                     'Todavía no hay ranking de este mes',
@@ -65,8 +63,14 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="f : ${ranking}">
-                        <th scope="row" th:text="${f.posicion()}">1</th>
+                    <tr th:each="f : ${ranking}"
+                        th:style="${f.esTop3()} ? 'background-color: var(--bg-hover, rgba(0,0,0,0.02)); font-weight: 500;' : ''">
+                        <th scope="row">
+                            <span th:if="${f.posicion() == 1}" aria-label="Primer puesto">🥇 </span>
+                            <span th:if="${f.posicion() == 2}" aria-label="Segundo puesto">🥈 </span>
+                            <span th:if="${f.posicion() == 3}" aria-label="Tercer puesto">🥉 </span>
+                            <span th:text="${f.posicion()}">1</span>
+                        </th>
                         <td th:text="${f.nombre()}">Fundación Caminos</td>
                         <td th:text="${f.tipoDonante()}">Organización</td>
                         <td>
@@ -74,7 +78,7 @@
                         </td>
                         <td th:text="${f.misionesCumplidas()}">142</td>
                         <td th:text="${f.insignias()}">9</td>
-                        <td th:text="${#numbers.formatInteger(f.puntajeImpacto(), 1, 'POINT')}">9.850</td>
+                        <td th:text="${f.puntajeImpacto() > 0 ? #numbers.formatInteger(f.puntajeImpacto(), 1, 'POINT') : '-'}">9.850</td>
                     </tr>
                     </tbody>
                 </table>

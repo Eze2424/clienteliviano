@@ -16,4 +16,17 @@ public class CamionForm {
   private Double capacidadDeCarga;
   private Double latitud;
   private Double longitud;
+
+  public static CamionForm desde(CamionResponse c) {
+    CamionForm f = new CamionForm();
+    f.setId(c.id());
+    f.setPatente(c.patente());
+    f.setVolumen(c.volumen());
+    f.setAltura(c.altura());
+    f.setCapacidadDeCarga(c.capacidadDeCarga());
+    f.setLatitud(c.latitud());
+    f.setLongitud(c.longitud());
+    return f;
+  }
 }
+

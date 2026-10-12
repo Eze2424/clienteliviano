@@ -62,6 +62,7 @@
                         <th scope="col">Carga (kg)</th>
                         <th scope="col">Volumen (m³)</th>
                         <th scope="col">Alto (m)</th>
+                        <th scope="col">Última act.</th>
                         <th scope="col"><span class="visually-hidden">Acciones</span></th>
                     </tr>
                     </thead>
@@ -71,15 +72,47 @@
                         <td th:text="${#numbers.formatDecimal(c.capacidadDeCarga(), 1, 'POINT', 0, 'COMMA')}">4.500</td>
                         <td th:text="${#numbers.formatDecimal(c.volumen(), 1, 1)}">32,0</td>
                         <td th:text="${#numbers.formatDecimal(c.altura(), 1, 1)}">2,6</td>
+                        <td th:text="${c.ultimaActualizacion() != null ? #temporals.format(c.ultimaActualizacion(), 'dd/MM/yyyy HH:mm') : '-'}">-</td>
                         <td>
-                            <form method="post" style="margin:0;"
-                                  th:action="@{/staff/camiones/{id}/eliminar(id=${c.id()})}">
-                                <button type="submit" class="btn btn-ghost btn-sm"
-                                        th:aria-label="'Dar de baja el camión ' + ${c.patente()}"
-                                        data-loading-on-submit data-loading-texto="Dando de baja…">
+                            <div style="display:flex; gap: var(--space-2); align-items:center;">
+                                <a th:href="@{/staff/camiones(editarId=${c.id()})}"
+                                   class="btn btn-ghost btn-sm"
+                                   th:aria-label="'Editar el camión ' + ${c.patente()}">
+                                    Editar
+                                </a>
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        th:data-open-modal="'modal-baja-' + ${c.id()}"
+                                        th:aria-label="'Dar de baja el camión ' + ${c.patente()}">
                                     Dar de baja
                                 </button>
-                            </form>
+                            </div>
+
+                            <!-- Modal de confirmación de baja -->
+                            <div class="modal-overlay" th:id="'modal-baja-' + ${c.id()}" role="dialog" aria-modal="true"
+                                 th:aria-labelledby="'titulo-modal-baja-' + ${c.id()}">
+                                <div class="modal">
+                                    <div class="modal-header">
+                                        <div>
+                                            <h2 th:id="'titulo-modal-baja-' + ${c.id()}" style="margin:0;">Confirmar baja</h2>
+                                            <p class="modal-desc" style="margin-top: var(--space-2);">
+                                                ¿Estás seguro de que deseás dar de baja el camión con patente <strong th:text="${c.patente()}">AB-123-CD</strong>? Esta acción no se puede deshacer.
+                                            </p>
+                                        </div>
+                                        <button type="button" class="modal-close" data-close-modal
+                                                aria-label="Cerrar el diálogo">✕</button>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                                        <form method="post" style="margin:0;"
+                                              th:action="@{/staff/camiones/{id}/eliminar(id=${c.id()})}">
+                                            <button type="submit" class="btn btn-danger"
+                                                    data-loading-on-submit data-loading-texto="Dando de baja…">
+                                                Confirmar baja
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     </tbody>
@@ -88,19 +121,25 @@
         </aside>
     </div>
 
-    <!-- ============ Modal: alta de camión ============ -->
-    <div class="modal-overlay" id="modal-camion" role="dialog" aria-modal="true"
+    <!-- ============ Modal: alta / edición de camión ============ -->
+    <div class="modal-overlay" th:classappend="${editando} ? 'is-open' : ''" id="modal-camion" role="dialog" aria-modal="true"
          aria-labelledby="titulo-modal-camion">
         <div class="modal">
-            <form th:action="@{/staff/camiones}" th:object="${form}" method="post" novalidate>
+            <form th:action="${form.id != null && !form.id.isBlank()} ? @{/staff/camiones/{id}(id=${form.id})} : @{/staff/camiones}"
+                  th:object="${form}" method="post" novalidate>
+                <input type="hidden" th:field="*{id}" />
                 <div class="modal-header">
                     <div>
-                        <h2 id="titulo-modal-camion" style="margin:0;">Agregar un camión</h2>
+                        <h2 id="titulo-modal-camion" style="margin:0;"
+                            th:text="${form.id != null && !form.id.isBlank()} ? 'Editar camión' : 'Agregar un camión'">
+                            Agregar un camión
+                        </h2>
                         <p class="modal-desc">
                             La capacidad es lo que usa el planificador para armar las rutas.
                         </p>
                     </div>
-                    <button type="button" class="modal-close" data-close-modal
+                    <a th:if="${editando}" th:href="@{/staff/camiones}" class="modal-close" aria-label="Cerrar el diálogo">✕</a>
+                    <button th:unless="${editando}" type="button" class="modal-close" data-close-modal
                             aria-label="Cerrar el diálogo">✕</button>
                 </div>
 
@@ -114,21 +153,21 @@
                     <div class="field">
                         <label for="capacidadDeCarga">Capacidad de carga (kg)</label>
                         <input type="number" min="0" step="1" id="capacidadDeCarga"
-                               th:field="*{capacidadDeCarga}" placeholder="4500">
+                               th:field="*{capacidadDeCarga}" placeholder="4500" required>
                     </div>
                     <div class="field">
                         <label for="volumen">Volumen (m³)</label>
                         <input type="number" min="0" step="0.1" id="volumen"
-                               th:field="*{volumen}" placeholder="32">
+                               th:field="*{volumen}" placeholder="32" required>
                     </div>
                     <div class="field">
                         <label for="altura">Altura (m)</label>
                         <input type="number" min="0" step="0.1" id="altura"
-                               th:field="*{altura}" placeholder="2.6">
+                               th:field="*{altura}" placeholder="2.6" required>
                     </div>
                 </div>
 
-                <div class="field-row">
+                <div class="field-row" th:if="${form.id == null || form.id.isBlank()}">
                     <div class="field">
                         <label for="latitud">Latitud inicial</label>
                         <input type="number" step="0.000001" id="latitud"
@@ -140,12 +179,17 @@
                                th:field="*{longitud}" placeholder="-58.3816">
                     </div>
                 </div>
-                <span class="hint" id="hint-coord">Dónde está estacionado hoy. Después se actualiza sola.</span>
+                <span class="hint" id="hint-coord" th:if="${form.id == null || form.id.isBlank()}">Dónde está estacionado hoy. Después se actualiza sola.</span>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                    <a th:if="${editando}" th:href="@{/staff/camiones}" class="btn btn-secondary">Cancelar</a>
+                    <button th:unless="${editando}" type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
                     <button type="submit" class="btn btn-primary"
-                            data-loading-on-submit data-loading-texto="Agregando…">Agregar camión</button>
+                            data-loading-on-submit
+                            th:data-loading-texto="${form.id != null && !form.id.isBlank()} ? 'Guardando…' : 'Agregando…'"
+                            th:text="${form.id != null && !form.id.isBlank()} ? 'Guardar cambios' : 'Agregar camión'">
+                        Agregar camión
+                    </button>
                 </div>
             </form>
         </div>
