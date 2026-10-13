@@ -33,4 +33,9 @@ public record AsignacionResponse(
         || (subatendidos != null && !subatendidos.isEmpty())
         || (semantico != null && !semantico.isEmpty());
   }
+
+  public Boolean hayCoincidencias() {
+    return (hayCoincidencias != null && hayCoincidencias)
+        || (interseccion != null && !interseccion.isEmpty());
+  }
 }

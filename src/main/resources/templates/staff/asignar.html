@@ -31,21 +31,23 @@
     </div>
 
     <!--
-      Los tres grupos los calcula donaciones-service con sus algoritmos de
-      selección (GET /{id}/propuestas). El cliente NO los ordena ni los puntúa:
-      los muestra y deja que la persona administradora decida.
+      El matchmaking evalúa la donación contra las necesidades de las entidades
+      usando dos algoritmos: Compatibilidad Semántica y Prioridad a Entidades Subatendidas.
+      La persona administradora toma la decisión final de asignación.
     -->
     <div class="banner banner-info" role="note" style="margin-bottom: var(--space-5);">
         <span aria-hidden="true">🧮</span>
         <p>
-            <strong>Estas propuestas las calculó el sistema</strong>
-            Están agrupadas según con qué criterio coincidieron. Elegí una necesidad y confirmá:
-            la decisión final es tuya.
+            <strong>Proceso de matchmaking de donaciones</strong>
+            El sistema evalúa las necesidades materiales registradas por las entidades beneficiarias mediante dos algoritmos:
+            <em>Compatibilidad Semántica</em> (analiza correspondencia de características, descripción y volumen) y
+            <em>Prioridad a Entidades Subatendidas</em> (favorece a quienes recibieron menos donaciones en el trimestre).
+            La confirmación final del destino la toma la persona administradora.
         </p>
     </div>
 
-    <!-- Si ninguna de las 3 listas tiene propuestas -->
-    <div th:if="${#lists.isEmpty(propuestas.interseccionSegura) and #lists.isEmpty(propuestas.subatendidosSegura) and #lists.isEmpty(propuestas.semanticoSegura)}">
+    <!-- Si ninguna de las listas tiene propuestas -->
+    <div th:if="${!propuestas.tienePropuestas()}">
         <div class="card" style="text-align:center; padding:var(--space-6); margin-bottom:var(--space-6);">
             <div style="font-size:2.5rem; margin-bottom:var(--space-2);">🔍</div>
             <h2 class="heading-md" style="margin-bottom:var(--space-2);">Los algoritmos no encontraron destino aún</h2>
@@ -65,98 +67,140 @@
     </div>
 
     <!-- Si hay al menos una propuesta en alguna lista -->
-    <form th:unless="${#lists.isEmpty(propuestas.interseccionSegura) and #lists.isEmpty(propuestas.subatendidosSegura) and #lists.isEmpty(propuestas.semanticoSegura)}"
+    <form th:if="${propuestas.tienePropuestas()}"
           method="post" th:action="@{/staff/donaciones/{id}/asignar(id=${donacion.id})}">
 
         <fieldset style="border:none; padding:0; margin:0;">
             <legend class="visually-hidden">Elegí la necesidad a la que se asigna la donación</legend>
 
-            <!-- Grupo 1: Intersección -->
-            <section style="margin-bottom: var(--space-6);">
-                <h2 class="heading-md" style="margin-bottom: var(--space-1);">Coincidencia exacta</h2>
-                <p class="card-subtitle" style="margin-bottom: var(--space-3);">
-                    La entidad pidió exactamente esta subcategoría de bien.
-                </p>
-                <div th:if="${#lists.isEmpty(propuestas.interseccionSegura)}" class="card" style="padding:var(--space-3); background:var(--bg-subtle, #f8f9fa);">
-                    <p class="card-subtitle" style="margin:0;">Sin coincidencias exactas para esta categoría.</p>
-                </div>
-                <div th:unless="${#lists.isEmpty(propuestas.interseccionSegura)}" class="flex flex-col gap-2">
-                    <label class="card radio-option" th:each="p : ${propuestas.interseccionSegura}"
-                           style="align-items: flex-start; padding: var(--space-4); cursor:pointer;">
-                        <input type="radio" name="necesidadId" th:value="${p.necesidadId()}" required>
-                        <span style="min-width:0;">
-                            <strong th:text="${p.nombreEntidad()}">Comedor Los Hornos</strong>
-                            <span class="chip" style="margin-left: var(--space-2);"
-                                  th:text="${p.subcategoria()}">Alimentos</span>
-                            <span th:if="${p.esExtraordinaria() != null and p.esExtraordinaria()}" class="chip chip-warning" style="margin-left: var(--space-2);">Extraordinaria</span>
-                            <span class="card-subtitle" style="display:block; margin-top: var(--space-1);">
-                                <span th:text="${p.descripcion()}">Aceite, harina y fideos</span>
-                                <span th:if="${p.cantidadSolicitada() != null}">
-                                    · pidió <span th:text="${p.cantidadSolicitada()}">10</span> unidades
-                                </span>
-                            </span>
-                        </span>
-                    </label>
-                </div>
-            </section>
+            <!-- Caso 1: Hay coincidencias en el Top 10 de ambos algoritmos -->
+            <div th:if="${propuestas.hayCoincidencias()}">
+                <section style="margin-bottom: var(--space-6);">
+                    <div class="banner banner-brand" role="note" style="margin-bottom: var(--space-4);">
+                        <span aria-hidden="true">🎯</span>
+                        <p>
+                            <strong>Coincidencias detectadas</strong>
+                            El sistema filtró automáticamente las necesidades que aparecieron en el Top 10 de ambos algoritmos
+                            (Compatibilidad Semántica y Prioridad a Entidades Subatendidas) para que la persona administradora confirme el destino final.
+                        </p>
+                    </div>
 
-            <!-- Grupo 2: Subatendidos -->
-            <section style="margin-bottom: var(--space-6);">
-                <h2 class="heading-md" style="margin-bottom: var(--space-1);">Entidades subatendidas</h2>
-                <p class="card-subtitle" style="margin-bottom: var(--space-3);">
-                    Vienen recibiendo menos de lo que necesitan.
-                </p>
-                <div th:if="${#lists.isEmpty(propuestas.subatendidosSegura)}" class="card" style="padding:var(--space-3); background:var(--bg-subtle, #f8f9fa);">
-                    <p class="card-subtitle" style="margin:0;">Sin entidades subatendidas para esta categoría.</p>
-                </div>
-                <div th:unless="${#lists.isEmpty(propuestas.subatendidosSegura)}" class="flex flex-col gap-2">
-                    <label class="card radio-option" th:each="p : ${propuestas.subatendidosSegura}"
-                           style="align-items: flex-start; padding: var(--space-4); cursor:pointer;">
-                        <input type="radio" name="necesidadId" th:value="${p.necesidadId()}" required>
-                        <span style="min-width:0;">
-                            <strong th:text="${p.nombreEntidad()}">Merendero El Alba</strong>
-                            <span class="chip" style="margin-left: var(--space-2);"
-                                  th:text="${p.subcategoria()}">Alimentos</span>
-                            <span th:if="${p.esExtraordinaria() != null and p.esExtraordinaria()}" class="chip chip-warning" style="margin-left: var(--space-2);">Extraordinaria</span>
-                            <span class="card-subtitle" style="display:block; margin-top: var(--space-1);">
-                                <span th:text="${p.descripcion()}">Cacao y azúcar</span>
-                                <span th:if="${p.cantidadSolicitada() != null}">
-                                    · pidió <span th:text="${p.cantidadSolicitada()}">10</span> unidades
-                                </span>
-                            </span>
-                        </span>
-                    </label>
-                </div>
-            </section>
+                    <h2 class="heading-md" style="margin-bottom: var(--space-1);">Propuestas coincidentes (Top 10 de ambos algoritmos)</h2>
+                    <p class="card-subtitle" style="margin-bottom: var(--space-3);">
+                        Seleccioná la necesidad prioritaria para asignar esta donación.
+                    </p>
 
-            <!-- Grupo 3: Semántico -->
-            <section style="margin-bottom: var(--space-6);">
-                <h2 class="heading-md" style="margin-bottom: var(--space-1);">Coincidencia por similitud</h2>
-                <p class="card-subtitle" style="margin-bottom: var(--space-3);">
-                    Lo que pidieron se parece a lo donado, aunque no sea idéntico.
-                </p>
-                <div th:if="${#lists.isEmpty(propuestas.semanticoSegura)}" class="card" style="padding:var(--space-3); background:var(--bg-subtle, #f8f9fa);">
-                    <p class="card-subtitle" style="margin:0;">Sin coincidencias por similitud semántica.</p>
-                </div>
-                <div th:unless="${#lists.isEmpty(propuestas.semanticoSegura)}" class="flex flex-col gap-2">
-                    <label class="card radio-option" th:each="p : ${propuestas.semanticoSegura}"
-                           style="align-items: flex-start; padding: var(--space-4); cursor:pointer;">
-                        <input type="radio" name="necesidadId" th:value="${p.necesidadId()}" required>
-                        <span style="min-width:0;">
-                            <strong th:text="${p.nombreEntidad()}">Comedor Los Hornos</strong>
-                            <span class="chip" style="margin-left: var(--space-2);"
-                                  th:text="${p.subcategoria()}">Alimentos</span>
-                            <span th:if="${p.esExtraordinaria() != null and p.esExtraordinaria()}" class="chip chip-warning" style="margin-left: var(--space-2);">Extraordinaria</span>
-                            <span class="card-subtitle" style="display:block; margin-top: var(--space-1);">
-                                <span th:text="${p.descripcion()}">Leche en polvo</span>
-                                <span th:if="${p.cantidadSolicitada() != null}">
-                                    · pidió <span th:text="${p.cantidadSolicitada()}">10</span> unidades
+                    <div class="flex flex-col gap-2">
+                        <label class="card radio-option" th:each="p, iterStat : ${propuestas.interseccionSegura}"
+                               style="align-items: flex-start; padding: var(--space-4); cursor:pointer;">
+                            <input type="radio" name="necesidadId" th:value="${p.necesidadId()}" required>
+                            <span style="min-width:0; flex:1;">
+                                <span style="display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap;">
+                                    <span class="chip font-mono" style="font-weight:700;" th:text="${iterStat.count} + 'º'">1º</span>
+                                    <strong th:text="${p.nombreEntidad()}">Comedor Los Hornos</strong>
+                                    <span class="chip" th:text="${p.subcategoria()}">Alimentos</span>
+                                    <span th:if="${p.esExtraordinaria() != null and p.esExtraordinaria()}"
+                                          class="badge badge-warning">Extraordinaria</span>
+                                    <span th:if="${p.score() != null}" class="badge badge-info"
+                                          th:text="'Score: ' + ${p.scoreFormateado()}">Score: 0.92</span>
+                                    <span th:if="${p.scorePorcentaje() != null}" class="chip"
+                                          th:text="${p.scorePorcentaje()}">92%</span>
+                                </span>
+                                <span class="card-subtitle" style="display:block; margin-top: var(--space-2);">
+                                    <span th:text="${p.descripcion()}">Aceite, harina y fideos</span>
+                                    <span th:if="${p.cantidadSolicitada() != null}">
+                                        · pidió <span th:text="${p.cantidadSolicitada()}">10</span> unidades
+                                    </span>
                                 </span>
                             </span>
-                        </span>
-                    </label>
+                        </label>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Caso 2: NO hubo coincidencias en el Top 10 conjunto -->
+            <div th:unless="${propuestas.hayCoincidencias()}">
+                <div class="banner banner-warning" role="note" style="margin-bottom: var(--space-5);">
+                    <span aria-hidden="true">⚠️</span>
+                    <p>
+                        <strong>Sin coincidencias en el Top 10 conjunto</strong>
+                        No hubo necesidades que coincidieran simultáneamente en el Top 10 de ambos algoritmos.
+                        A continuación se presentan ambos rankings por separado para que elijas según el criterio que consideres más conveniente.
+                    </p>
                 </div>
-            </section>
+
+                <!-- Sección 1: Semántico -->
+                <section style="margin-bottom: var(--space-6);">
+                    <h2 class="heading-md" style="margin-bottom: var(--space-1);">Ranking por Compatibilidad Semántica (Top 10)</h2>
+                    <p class="card-subtitle" style="margin-bottom: var(--space-3);">
+                        Prioriza la coincidencia en las características del bien donado, descripción y cobertura de volumen.
+                    </p>
+                    <div th:if="${#lists.isEmpty(propuestas.semanticoSegura)}" class="card" style="padding:var(--space-3); background:var(--bg-subtle, #f8f9fa);">
+                        <p class="card-subtitle" style="margin:0;">Sin propuestas por compatibilidad semántica.</p>
+                    </div>
+                    <div th:unless="${#lists.isEmpty(propuestas.semanticoSegura)}" class="flex flex-col gap-2">
+                        <label class="card radio-option" th:each="p, iterStat : ${propuestas.semanticoSegura}"
+                               style="align-items: flex-start; padding: var(--space-4); cursor:pointer;">
+                            <input type="radio" name="necesidadId" th:value="${p.necesidadId()}" required>
+                            <span style="min-width:0; flex:1;">
+                                <span style="display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap;">
+                                    <span class="chip font-mono" style="font-weight:700;" th:text="${iterStat.count} + 'º'">1º</span>
+                                    <strong th:text="${p.nombreEntidad()}">Comedor Los Hornos</strong>
+                                    <span class="chip" th:text="${p.subcategoria()}">Alimentos</span>
+                                    <span th:if="${p.esExtraordinaria() != null and p.esExtraordinaria()}"
+                                          class="badge badge-warning">Extraordinaria</span>
+                                    <span th:if="${p.score() != null}" class="badge badge-info"
+                                          th:text="'Score: ' + ${p.scoreFormateado()}">Score: 0.85</span>
+                                    <span th:if="${p.scorePorcentaje() != null}" class="chip"
+                                          th:text="${p.scorePorcentaje()}">85%</span>
+                                </span>
+                                <span class="card-subtitle" style="display:block; margin-top: var(--space-2);">
+                                    <span th:text="${p.descripcion()}">Leche en polvo</span>
+                                    <span th:if="${p.cantidadSolicitada() != null}">
+                                        · pidió <span th:text="${p.cantidadSolicitada()}">10</span> unidades
+                                    </span>
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- Sección 2: Subatendidos -->
+                <section style="margin-bottom: var(--space-6);">
+                    <h2 class="heading-md" style="margin-bottom: var(--space-1);">Ranking por Entidades Subatendidas (Top 10)</h2>
+                    <p class="card-subtitle" style="margin-bottom: var(--space-3);">
+                        Prioriza organizaciones que hayan recibido menos donaciones en el último trimestre.
+                    </p>
+                    <div th:if="${#lists.isEmpty(propuestas.subatendidosSegura)}" class="card" style="padding:var(--space-3); background:var(--bg-subtle, #f8f9fa);">
+                        <p class="card-subtitle" style="margin:0;">Sin propuestas por entidades subatendidas.</p>
+                    </div>
+                    <div th:unless="${#lists.isEmpty(propuestas.subatendidosSegura)}" class="flex flex-col gap-2">
+                        <label class="card radio-option" th:each="p, iterStat : ${propuestas.subatendidosSegura}"
+                               style="align-items: flex-start; padding: var(--space-4); cursor:pointer;">
+                            <input type="radio" name="necesidadId" th:value="${p.necesidadId()}" required>
+                            <span style="min-width:0; flex:1;">
+                                <span style="display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap;">
+                                    <span class="chip font-mono" style="font-weight:700;" th:text="${iterStat.count} + 'º'">1º</span>
+                                    <strong th:text="${p.nombreEntidad()}">Merendero El Alba</strong>
+                                    <span class="chip" th:text="${p.subcategoria()}">Alimentos</span>
+                                    <span th:if="${p.esExtraordinaria() != null and p.esExtraordinaria()}"
+                                          class="badge badge-warning">Extraordinaria</span>
+                                    <span th:if="${p.score() != null}" class="badge badge-info"
+                                          th:text="'Score: ' + ${p.scoreFormateado()}">Score: 0.91</span>
+                                    <span th:if="${p.scorePorcentaje() != null}" class="chip"
+                                          th:text="${p.scorePorcentaje()}">91%</span>
+                                </span>
+                                <span class="card-subtitle" style="display:block; margin-top: var(--space-2);">
+                                    <span th:text="${p.descripcion()}">Cacao y azúcar</span>
+                                    <span th:if="${p.cantidadSolicitada() != null}">
+                                        · pidió <span th:text="${p.cantidadSolicitada()}">10</span> unidades
+                                    </span>
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                </section>
+            </div>
         </fieldset>
 
         <div class="flex gap-3" style="flex-wrap: wrap;">
