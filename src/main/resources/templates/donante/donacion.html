@@ -29,15 +29,15 @@
     <div class="split-view">
 
         <!-- ============ Mapa, solo si hay una entrega en curso ============ -->
-        <section class="map-canvas" th:if="${entrega != null}" aria-labelledby="titulo-mapa">
+        <section class="map-canvas" data-mapa th:if="${entrega != null}" aria-labelledby="titulo-mapa">
             <h2 id="titulo-mapa" class="visually-hidden">Ubicación del camión</h2>
             <div class="map-legend">
                 <span class="legend-key">
                     <span class="legend-swatch" style="background: var(--color-primary);"></span> Camión
                 </span>
             </div>
-            <span class="map-pin map-pin-active"
-                  th:style="'left:' + ${entrega.posX()} + '%; top:' + ${entrega.posY()} + '%;'">
+            <span class="map-pin map-pin-active" hidden
+                  th:data-lat="${entrega.latitud}" th:data-lon="${entrega.longitud}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                 <span th:text="${entrega.patenteCamion}">AB-123-CD</span>
             </span>
@@ -128,5 +128,6 @@
 </main>
 
 <div th:replace="~{fragments/layout :: scripts}"></div>
+<div th:replace="~{fragments/layout :: mapa}"></div>
 </body>
 </html>
