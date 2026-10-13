@@ -33,26 +33,26 @@
             null, null)}"></div>
     </div>
 
-    <div class="split-view" th:unless="${#lists.isEmpty(camiones)}">
+    <div class="flex flex-col gap-4" th:unless="${#lists.isEmpty(camiones)}">
 
         <!-- ============ Mapa de la flota ============ -->
-        <section class="map-canvas" aria-labelledby="titulo-mapa">
+        <section class="map-canvas map-canvas-ancho" data-mapa aria-labelledby="titulo-mapa">
             <h2 id="titulo-mapa" class="visually-hidden">Ubicación de los camiones</h2>
             <div class="map-legend">
                 <span class="legend-key">
                     <span class="legend-swatch" style="background: var(--color-primary);"></span> Camión
                 </span>
             </div>
-            <span class="map-pin" th:each="c : ${camiones}"
-                  th:style="'left:' + ${c.posX()} + '%; top:' + ${c.posY()} + '%;'">
+            <span class="map-pin" hidden th:each="c : ${camiones}"
+                  th:data-id="${c.id()}" th:data-lat="${c.latitud()}" th:data-lon="${c.longitud()}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                 <span th:text="${c.patente()}">AB-123-CD</span>
             </span>
-            <p class="map-note">Vista esquemática con la última posición informada de cada camión.</p>
+            <p class="map-note">Última posición informada de cada camión.</p>
         </section>
 
         <!-- ============ Tabla, equivalente accesible del mapa ============ -->
-        <aside class="sidebar">
+        <section aria-label="Listado de camiones">
             <div class="card table-wrap">
                 <table>
                     <caption class="visually-hidden">Camiones de la flota y su capacidad</caption>
@@ -68,7 +68,15 @@
                     </thead>
                     <tbody>
                     <tr th:each="c : ${camiones}">
-                        <th scope="row" th:text="${c.patente()}">AB-123-CD</th>
+                        <th scope="row">
+                            <button type="button" class="btn-patente"
+                                    th:if="${c.latitud() != 0.0 or c.longitud() != 0.0}"
+                                    th:data-mapa-enfocar="${c.id()}"
+                                    th:aria-label="'Ver el camión ' + ${c.patente()} + ' en el mapa'"
+                                    th:text="${c.patente()}">AB-123-CD</button>
+                            <span th:unless="${c.latitud() != 0.0 or c.longitud() != 0.0}"
+                                  th:text="${c.patente()}">AB-123-CD</span>
+                        </th>
                         <td th:text="${#numbers.formatDecimal(c.capacidadDeCarga(), 1, 'POINT', 0, 'COMMA')}">4.500</td>
                         <td th:text="${#numbers.formatDecimal(c.volumen(), 1, 1)}">32,0</td>
                         <td th:text="${#numbers.formatDecimal(c.altura(), 1, 1)}">2,6</td>
@@ -118,14 +126,14 @@
                     </tbody>
                 </table>
             </div>
-        </aside>
+        </section>
     </div>
 
     <!-- ============ Modal: alta / edición de camión ============ -->
     <div class="modal-overlay" th:classappend="${editando} ? 'is-open' : ''" id="modal-camion" role="dialog" aria-modal="true"
          aria-labelledby="titulo-modal-camion">
         <div class="modal">
-            <form th:action="${form.id != null && !form.id.isBlank()} ? @{/staff/camiones/{id}(id=${form.id})} : @{/staff/camiones}"
+            <form th:action="@{${form.id != null && !form.id.isBlank() ? '/staff/camiones/' + form.id : '/staff/camiones'}}"
                   th:object="${form}" method="post" novalidate>
                 <input type="hidden" th:field="*{id}" />
                 <div class="modal-header">
@@ -197,5 +205,6 @@
 </main>
 
 <div th:replace="~{fragments/layout :: scripts}"></div>
+<div th:replace="~{fragments/layout :: mapa}"></div>
 </body>
 </html>

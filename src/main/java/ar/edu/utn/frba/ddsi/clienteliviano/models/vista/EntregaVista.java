@@ -11,8 +11,6 @@ import java.time.LocalDateTime;
  * última posición. Ver brecha G3. La posición y la hora vienen de la API:
  * el cliente no las estima.
  */
-import ar.edu.utn.frba.ddsi.clienteliviano.web.ProyeccionMapa;
-
 public record EntregaVista(
     String idEntrega,
     Long donacionId,
@@ -42,14 +40,5 @@ public record EntregaVista(
       case "ENTREGA_FALLIDA" -> "badge-danger";
       default -> "badge-neutral";
     };
-  }
-
-  /** Posición del pin en el mapa esquemático. Ver ProyeccionMapa. */
-  public int posX() {
-    return ProyeccionMapa.x(longitud);
-  }
-
-  public int posY() {
-    return ProyeccionMapa.y(latitud);
   }
 }

@@ -1003,11 +1003,6 @@ tr:last-child td { border-bottom: none; }
     h1 { font-size: var(--text-xl); }
     .toast-region { left: var(--space-4); right: var(--space-4); max-width: none; }
 
-    /* Los marcadores del mapa se reubican para no recortarse en pantallas chicas */
-    .map-pin { font-size: var(--text-xs); max-width: 46vw; }
-    .map-pin[style*="82%"] { left: 52% !important; }
-    .map-pin[style*="42%"] { left: 30% !important; }
-
     /* La barra superior se reordena en dos filas para no comprimir los controles */
     .navbar { height: auto; padding: var(--space-3) var(--space-4); row-gap: var(--space-2); }
     .navbar-actions { gap: var(--space-2); }
@@ -1038,18 +1033,38 @@ tr:last-child td { border-bottom: none; }
     padding: 0;
 }
 
-/* Marcador de mapa (el maquetado no integra un mapa real) */
 .map-canvas {
     position: relative;
     min-height: 480px;
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-border);
     background-color: #F1EFEC;
-    background-image:
-            linear-gradient(rgba(38, 34, 32, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(38, 34, 32, 0.05) 1px, transparent 1px);
-    background-size: 40px 40px;
     overflow: hidden;
+}
+.map-leaflet.leaflet-container {
+    position: absolute;
+    inset: 0;
+    font-family: inherit;
+}
+.map-legend,
+.map-note {
+    z-index: 1000;
+}
+.map-canvas.map-canvas-ancho {
+    min-height: 360px;
+}
+.btn-patente {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: var(--color-link);
+    text-decoration: underline;
+    cursor: pointer;
+}
+.map-marker .map-pin {
+    left: 0;
+    top: 0;
 }
 .map-note {
     position: absolute;
@@ -1465,7 +1480,7 @@ tr:last-child td { border-bottom: none; }
 
 .medal-title {
     font-size: var(--text-xs);
-    font-weight: var(--font-semibold);
+    font-weight: 600;
     color: var(--color-text);
     max-width: 80px;
     white-space: nowrap;
@@ -1535,7 +1550,7 @@ tr:last-child td { border-bottom: none; }
 
 .notif-type-tag {
     font-size: 10px;
-    font-weight: var(--font-semibold);
+    font-weight: 600;
     text-transform: uppercase;
     color: var(--color-text-muted);
     letter-spacing: 0.03em;

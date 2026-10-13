@@ -8,7 +8,6 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionEnCursoResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
-import ar.edu.utn.frba.ddsi.clienteliviano.web.ProyeccionMapa;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
@@ -44,22 +43,6 @@ class PresentacionTest {
   void sabeSiLaDonacionTieneDestino() {
     assertTrue(conEstado("ASIGNADA", 7L).asignada());
     assertFalse(conEstado("EN_DEPOSITO", null).asignada());
-  }
-
-  @Test
-  void laProyeccionDelMapaQuedaDentroDelLienzo() {
-    // La Plata y CABA caen en puntos distintos del recuadro...
-    assertTrue(ProyeccionMapa.x(-57.9877) > ProyeccionMapa.x(-58.3816));
-    assertTrue(ProyeccionMapa.y(-34.9611) > ProyeccionMapa.y(-34.6037));
-    // ...y una coordenada fuera del recuadro se acota, no se sale del cuadro.
-    for (double lon : new double[] {-180, -58.3, 0, 180}) {
-      int x = ProyeccionMapa.x(lon);
-      assertTrue(x >= 5 && x <= 95, "x fuera de rango: " + x);
-    }
-    for (double lat : new double[] {-90, -34.6, 0, 90}) {
-      int y = ProyeccionMapa.y(lat);
-      assertTrue(y >= 5 && y <= 95, "y fuera de rango: " + y);
-    }
   }
 
   @Test

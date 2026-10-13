@@ -33,7 +33,7 @@
     <div class="split-view" th:unless="${#lists.isEmpty(entregas)}">
 
         <!-- ============ Mapa (CU5) ============ -->
-        <section class="map-canvas" aria-labelledby="titulo-mapa">
+        <section class="map-canvas" data-mapa aria-labelledby="titulo-mapa">
             <h2 id="titulo-mapa" class="visually-hidden">Mapa de las entregas en curso</h2>
 
             <div class="map-legend">
@@ -45,20 +45,15 @@
                 </span>
             </div>
 
-            <!--
-              Un pin por camión, ubicado con la coordenada real que informa
-              logistica-service. ProyeccionMapa la convierte a porcentaje:
-              es posicionamiento visual, no cálculo de ruta.
-            -->
-            <span class="map-pin map-pin-active" th:each="e : ${entregas}"
-                  th:if="${e.patenteCamion != null and (e.latitud != 0.0 or e.longitud != 0.0)}"
-                  th:style="'left:' + ${e.posX()} + '%; top:' + ${e.posY()} + '%;'">
+            <span class="map-pin map-pin-active" hidden th:each="e : ${entregas}"
+                  th:if="${e.patenteCamion != null}"
+                  th:data-lat="${e.latitud}" th:data-lon="${e.longitud}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                 <span th:text="${e.patenteCamion}">AB-123-CD</span>
             </span>
 
             <p class="map-note">
-                Vista esquemática. Las posiciones son las últimas que informó cada camión.
+                Las posiciones son las últimas que informó cada camión.
             </p>
         </section>
 
@@ -122,5 +117,6 @@
 </main>
 
 <div th:replace="~{fragments/layout :: scripts}"></div>
+<div th:replace="~{fragments/layout :: mapa}"></div>
 </body>
 </html>
