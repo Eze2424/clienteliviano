@@ -280,6 +280,39 @@ public class StaffControllerTest {
   }
 
   @Test
+  void asignar_get_conCoincidencias_modeloIncluyeScoreYPropuestas() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    DonacionVista d = new DonacionVista(10L, "Fideos", "EN_DEPOSITO", null, null, false, 1L, "Donante", null, null, 1, null, List.of());
+    PropuestaVista p = new PropuestaVista(101L, 5L, "Comedor", "Comedor Los Hornos", "Alimentos", "Fideos", 10.0, false, 0.92);
+    AsignacionResponse resp = new AsignacionResponse(10L, List.of(p), List.of(), List.of(), true);
+
+    when(staffApiService.obtenerDonacionDetalle(10L)).thenReturn(Optional.of(d));
+    when(staffApiService.obtenerPropuestas(10L)).thenReturn(Optional.of(resp));
+
+    mockMvc.perform(get("/staff/donaciones/10/asignar").session(session))
+        .andExpect(status().isOk())
+        .andExpect(view().name("staff/asignar"))
+        .andExpect(model().attribute("propuestas", resp));
+  }
+
+  @Test
+  void asignar_get_sinCoincidencias_separaRankingsSemanticoYSubatendidos() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    DonacionVista d = new DonacionVista(10L, "Fideos", "EN_DEPOSITO", null, null, false, 1L, "Donante", null, null, 1, null, List.of());
+    PropuestaVista pSem = new PropuestaVista(101L, 5L, "Comedor", "Comedor Los Hornos", "Alimentos", "Fideos", 10.0, false, 0.85);
+    PropuestaVista pSub = new PropuestaVista(102L, 6L, "Merendero", "Merendero El Alba", "Alimentos", "Arroz", 20.0, false, 0.91);
+    AsignacionResponse resp = new AsignacionResponse(10L, List.of(), List.of(pSub), List.of(pSem), false);
+
+    when(staffApiService.obtenerDonacionDetalle(10L)).thenReturn(Optional.of(d));
+    when(staffApiService.obtenerPropuestas(10L)).thenReturn(Optional.of(resp));
+
+    mockMvc.perform(get("/staff/donaciones/10/asignar").session(session))
+        .andExpect(status().isOk())
+        .andExpect(view().name("staff/asignar"))
+        .andExpect(model().attribute("propuestas", resp));
+  }
+
+  @Test
   void asignar_get_sinPropuestas_noFallaYRetornaVista() throws Exception {
     MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
     DonacionVista d = new DonacionVista(10L, "Fideos", "EN_DEPOSITO", null, null, false, 1L, "Donante", null, null, 1, null, List.of());
