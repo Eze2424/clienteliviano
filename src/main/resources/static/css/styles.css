@@ -1580,3 +1580,29 @@ tr:last-child td { border-bottom: none; }
     flex-shrink: 0;
     margin-top: 1px;
 }
+
+#mapa-camiones,
+#mapa-entregas,
+#map,
+.mapa-interactivo,
+.leaflet-container {
+    position: relative;
+    z-index: 1 !important;
+    isolation: isolate;
+}
+
+/* 2. Garantizar que cualquier modal o pantalla emergente supere la capa 1000 de Leaflet */
+.modal,
+.modal-backdrop,
+.modal-overlay,
+[role="dialog"],
+[aria-modal="true"] {
+    z-index: 2000 !important;
+}
+
+.modal-content,
+.modal-dialog,
+.modal-card {
+    position: relative;
+    z-index: 2001 !important;
+}
