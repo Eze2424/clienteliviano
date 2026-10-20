@@ -95,22 +95,25 @@ public class EntidadApiServiceTest {
   }
 
   @Test
-  void subcategorias_Respuesta200_RetornaLista() {
+  void categorias_Respuesta200_RetornaListaConSubcategorias() {
     String json = """
         [
-          {"id": 1, "nombre": "Arroz", "categoria": "Alimentos"},
-          {"id": 2, "nombre": "Fideos", "categoria": "Alimentos"}
+          {"id": 10, "nombre": "Alimentos", "subcategorias": [
+            {"id": 1, "nombre": "Arroz", "categoria": "Alimentos"},
+            {"id": 2, "nombre": "Fideos", "categoria": "Alimentos"}
+          ]}
         ]
         """;
 
-    mockServer.expect(requestTo(baseUrl + "/subcategorias"))
+    mockServer.expect(requestTo(baseUrl + "/categorias"))
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
 
-    var lista = entidadApiService.subcategorias();
+    var lista = entidadApiService.categorias();
 
-    assertEquals(2, lista.size());
-    assertEquals("Arroz", lista.get(0).nombre());
+    assertEquals(1, lista.size());
+    assertEquals("Alimentos", lista.get(0).nombre());
+    assertEquals("Arroz", lista.get(0).subcategorias().get(0).nombre());
     mockServer.verify();
   }
 

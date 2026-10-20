@@ -143,7 +143,7 @@ public class EntidadController {
       return "redirect:/login";
     }
     model.addAttribute("necesidades", entidadApiService.necesidades());
-    model.addAttribute("subcategorias", entidadApiService.subcategorias());
+    model.addAttribute("categorias", entidadApiService.categorias());
     if (!model.containsAttribute("form")) {
       model.addAttribute("form", new NecesidadForm());
     }
@@ -162,19 +162,19 @@ public class EntidadController {
 
     if (form.getDescripcion() == null || form.getDescripcion().isBlank()) {
       model.addAttribute("necesidades", entidadApiService.necesidades());
-      model.addAttribute("subcategorias", entidadApiService.subcategorias());
+      model.addAttribute("categorias", entidadApiService.categorias());
       model.addAttribute("error", "Contanos qué necesitás: la descripción no puede quedar vacía.");
       return "entidad/necesidades";
     }
     if (form.getSubcategoriaId() == null) {
       model.addAttribute("necesidades", entidadApiService.necesidades());
-      model.addAttribute("subcategorias", entidadApiService.subcategorias());
+      model.addAttribute("categorias", entidadApiService.categorias());
       model.addAttribute("error", "Debes seleccionar una subcategoría de la lista.");
       return "entidad/necesidades";
     }
     if (form.getCantidadSolicitada() == null || form.getCantidadSolicitada() <= 0) {
       model.addAttribute("necesidades", entidadApiService.necesidades());
-      model.addAttribute("subcategorias", entidadApiService.subcategorias());
+      model.addAttribute("categorias", entidadApiService.categorias());
       model.addAttribute("error", "La cantidad solicitada debe ser mayor a cero.");
       return "entidad/necesidades";
     }
@@ -185,7 +185,7 @@ public class EntidadController {
       return "redirect:/entidad/necesidades";
     } else {
       model.addAttribute("necesidades", entidadApiService.necesidades());
-      model.addAttribute("subcategorias", entidadApiService.subcategorias());
+      model.addAttribute("categorias", entidadApiService.categorias());
       model.addAttribute("error", res.mensaje());
       return "entidad/necesidades";
     }

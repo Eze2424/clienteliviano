@@ -139,14 +139,14 @@ public class StaffControllerTest {
   @Test
   void nuevaDonacion_get_retornaVistaConCategorias() throws Exception {
     MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
-    when(staffApiService.subcategorias()).thenReturn(List.of());
+    when(staffApiService.categorias()).thenReturn(List.of());
     when(staffApiService.buscarDonantes(anyInt(), anyInt(), any()))
         .thenReturn(new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PageResponse<>(List.of(), 0, 20, 0, 0));
 
     mockMvc.perform(get("/staff/donaciones/nueva").session(session))
         .andExpect(status().isOk())
         .andExpect(view().name("staff/nueva-donacion"))
-        .andExpect(model().attributeExists("form", "subcategorias", "donantes"));
+        .andExpect(model().attributeExists("form", "categorias", "donantes"));
   }
 
   @Test

@@ -49,21 +49,17 @@ public class EntidadApiService {
     }
   }
 
-  /**
-   * Catálogo de subcategorías disponibles para asociar a una necesidad.
-   * Consume GET /donaciones-service/subcategorias
-   */
-  public java.util.List<ar.edu.utn.frba.ddsi.clienteliviano.models.dto.SubcategoriaResponse> subcategorias() {
+  public java.util.List<ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaResponse> categorias() {
     try {
       var respuesta = restTemplate.getForEntity(
-          backendApiUrl + "/subcategorias",
-          ar.edu.utn.frba.ddsi.clienteliviano.models.dto.SubcategoriaResponse[].class);
+          backendApiUrl + "/categorias",
+          ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaResponse[].class);
       if (respuesta.getStatusCode().is2xxSuccessful() && respuesta.getBody() != null) {
         return java.util.Arrays.asList(respuesta.getBody());
       }
       return java.util.List.of();
     } catch (Exception e) {
-      log.warn("No se pudo obtener el catálogo de subcategorías ({}): {}", backendApiUrl, e.getMessage());
+      log.warn("No se pudo obtener el catálogo de categorías ({}): {}", backendApiUrl, e.getMessage());
       return java.util.List.of();
     }
   }

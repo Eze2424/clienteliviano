@@ -3,13 +3,13 @@ package ar.edu.utn.frba.ddsi.clienteliviano;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.BienForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionIndependienteResumenResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteAltaForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PageResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
-import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.SubcategoriaResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.services.StaffApiService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -383,22 +383,26 @@ public class StaffApiServiceTest {
   }
 
   @Test
-  void subcategorias_200_retornaLista() {
+  void categorias_200_retornaListaConSubcategorias() {
     String json = """
         [
-          {"id": 1, "nombre": "Arroz", "categoriaId": 10},
-          {"id": 2, "nombre": "Fideos", "categoriaId": 10}
+          {"id": 10, "nombre": "Alimentos", "subcategorias": [
+            {"id": 1, "nombre": "Arroz", "categoria": "Alimentos"},
+            {"id": 2, "nombre": "Fideos", "categoria": "Alimentos"}
+          ]}
         ]
         """;
 
-    mockServer.expect(requestTo("http://localhost:8080/donaciones-service/subcategorias"))
+    mockServer.expect(requestTo("http://localhost:8080/donaciones-service/categorias"))
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
 
-    List<SubcategoriaResponse> res = staffApiService.subcategorias();
+    List<CategoriaResponse> res = staffApiService.categorias();
 
-    assertEquals(2, res.size());
-    assertEquals("Arroz", res.get(0).nombre());
+    assertEquals(1, res.size());
+    assertEquals("Alimentos", res.get(0).nombre());
+    assertEquals(2, res.get(0).subcategorias().size());
+    assertEquals("Arroz", res.get(0).subcategorias().get(0).nombre());
     mockServer.verify();
   }
 

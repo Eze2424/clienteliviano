@@ -36,14 +36,25 @@
             <form th:action="@{/entidad/necesidades}" th:object="${form}" method="post" novalidate>
 
                 <div class="field">
-                    <label for="subcategoriaId">Categoría del bien</label>
-                    <select id="subcategoriaId" th:field="*{subcategoriaId}" aria-describedby="hint-subcategoria">
-                        <option value="" th:selected="*{subcategoriaId == null}">Seleccioná una subcategoría</option>
-                        <option th:each="sub : ${subcategorias}"
-                                th:value="${sub.id}"
-                                th:text="${sub.categoria != null ? sub.categoria + ' — ' + sub.nombre : sub.nombre}">
-                            Alimentos — Arroz
-                        </option>
+                    <label for="categoriaId">Categoría del bien</label>
+                    <select id="categoriaId" th:field="*{categoriaId}" data-categoria>
+                        <option value="">Elegí una categoría</option>
+                        <option th:each="c : ${categorias}"
+                                th:value="${c.id()}"
+                                th:text="${c.nombre()}">Alimentos</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="subcategoriaId">Subcategoría</label>
+                    <select id="subcategoriaId" th:field="*{subcategoriaId}" data-subcategoria
+                            th:disabled="*{categoriaId == null}" aria-describedby="hint-subcategoria">
+                        <option value="">Elegí una subcategoría</option>
+                        <th:block th:each="c : ${categorias}" th:if="${c.id() == form.categoriaId}">
+                            <option th:each="sub : ${c.subcategorias()}"
+                                    th:value="${sub.id()}"
+                                    th:text="${sub.nombre()}">Arroz</option>
+                        </th:block>
                     </select>
                     <span class="hint" id="hint-subcategoria">Elegí la subcategoría que mejor encaja con el bien.</span>
                 </div>
@@ -124,5 +135,9 @@
 </main>
 
 <div th:replace="~{fragments/layout :: scripts}"></div>
+<script th:inline="javascript">
+    window.CATEGORIAS = /*[[${categorias}]]*/ [];
+</script>
+<script th:src="@{/js/categorias.js}"></script>
 </body>
 </html>

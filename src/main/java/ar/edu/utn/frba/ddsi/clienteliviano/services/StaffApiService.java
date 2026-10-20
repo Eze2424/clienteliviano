@@ -12,7 +12,7 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteAltaForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PageResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
-import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.SubcategoriaResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.AsignacionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ConfirmarAsignacionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionDetalleResponse;
@@ -347,20 +347,20 @@ public class StaffApiService {
      Módulo Donaciones e Independientes (donaciones-service)
      ========================================================= */
 
-  public List<SubcategoriaResponse> subcategorias() {
+  public List<CategoriaResponse> categorias() {
     try {
       var respuesta = restTemplate.exchange(
-          donacionesUrl + "/subcategorias",
+          donacionesUrl + "/categorias",
           HttpMethod.GET,
           null,
-          new ParameterizedTypeReference<List<SubcategoriaResponse>>() {}
+          new ParameterizedTypeReference<List<CategoriaResponse>>() {}
       );
       if (respuesta.getStatusCode().is2xxSuccessful() && respuesta.getBody() != null) {
         return respuesta.getBody();
       }
       return List.of();
     } catch (Exception e) {
-      log.warn("Error al listar subcategorías desde {}: {}", donacionesUrl, e.getMessage());
+      log.warn("Error al listar categorías desde {}: {}", donacionesUrl, e.getMessage());
       return List.of();
     }
   }
