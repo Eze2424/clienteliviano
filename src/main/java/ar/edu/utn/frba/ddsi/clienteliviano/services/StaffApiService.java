@@ -125,7 +125,9 @@ public class StaffApiService {
         form.getPatente().trim().toUpperCase(),
         form.getVolumen(),
         form.getAltura(),
-        form.getCapacidadDeCarga()
+        form.getCapacidadDeCarga(),
+        form.getLatitud() != null ? form.getLatitud() : 0.0,
+        form.getLongitud() != null ? form.getLongitud() : 0.0
     );
 
     try {
