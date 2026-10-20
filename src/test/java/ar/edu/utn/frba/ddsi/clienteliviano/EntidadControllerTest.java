@@ -6,6 +6,7 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.SubcategoriaResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.services.EntidadApiService;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
@@ -84,15 +85,15 @@ public class EntidadControllerTest {
     when(entidadApiService.necesidades()).thenReturn(List.of(
         new NecesidadResponse(1L, "Alimentos", "Arroz", 10.0, false)
     ));
-    when(entidadApiService.subcategorias()).thenReturn(List.of(
-        new SubcategoriaResponse(1L, "Arroz", "Alimentos")
+    when(entidadApiService.categorias()).thenReturn(List.of(
+        new CategoriaResponse(10L, "Alimentos", List.of(new SubcategoriaResponse(1L, "Arroz", "Alimentos")))
     ));
 
     mockMvc.perform(get("/entidad/necesidades").session(session))
         .andExpect(status().isOk())
         .andExpect(view().name("entidad/necesidades"))
         .andExpect(model().attributeExists("necesidades"))
-        .andExpect(model().attributeExists("subcategorias"))
+        .andExpect(model().attributeExists("categorias"))
         .andExpect(model().attributeExists("form"));
   }
 

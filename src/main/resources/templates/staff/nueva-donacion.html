@@ -84,23 +84,34 @@
                     <div id="lista-bienes">
                         <div class="card" data-bloque="bien" th:each="bien, it : *{bienes}"
                              style="background: var(--color-bg); margin-bottom: var(--space-3);">
+                            <div class="field">
+                                <label th:for="'bien-desc-' + ${it.index}">Descripción del bien</label>
+                                <input type="text" th:id="'bien-desc-' + ${it.index}"
+                                       th:field="*{bienes[__${it.index}__].descripcion}"
+                                       placeholder="Arroz largo fino 1 kg">
+                            </div>
                             <div class="field-row">
                                 <div class="field">
-                                    <label th:for="'bien-desc-' + ${it.index}">Descripción del bien</label>
-                                    <input type="text" th:id="'bien-desc-' + ${it.index}"
-                                           th:field="*{bienes[__${it.index}__].descripcion}"
-                                           placeholder="Arroz largo fino 1 kg">
+                                    <label th:for="'bien-cat-' + ${it.index}">Categoría *</label>
+                                    <select th:id="'bien-cat-' + ${it.index}" data-categoria
+                                            th:field="*{bienes[__${it.index}__].categoriaId}" required>
+                                        <option value="">Elegí una categoría</option>
+                                        <option th:each="c : ${categorias}"
+                                                th:value="${c.id()}"
+                                                th:text="${c.nombre()}">Alimentos</option>
+                                    </select>
                                 </div>
                                 <div class="field">
                                     <label th:for="'bien-sub-' + ${it.index}">Subcategoría *</label>
-                                    <select th:id="'bien-sub-' + ${it.index}"
-                                            th:field="*{bienes[__${it.index}__].subcategoriaId}" required>
+                                    <select th:id="'bien-sub-' + ${it.index}" data-subcategoria
+                                            th:field="*{bienes[__${it.index}__].subcategoriaId}"
+                                            th:disabled="${bien.categoriaId == null}" required>
                                         <option value="">Elegí una subcategoría</option>
-                                        <option th:each="s : ${subcategorias}"
-                                                th:value="${s.id()}"
-                                                th:text="${s.nombre()} + (${s.categoria() != null and !s.categoria().isBlank()} ? ' (' + ${s.categoria()} + ')' : '')">
-                                            Alimentos
-                                        </option>
+                                        <th:block th:each="c : ${categorias}" th:if="${c.id() == bien.categoriaId}">
+                                            <option th:each="s : ${c.subcategorias()}"
+                                                    th:value="${s.id()}"
+                                                    th:text="${s.nombre()}">Alimentos no perecederos</option>
+                                        </th:block>
                                     </select>
                                 </div>
                             </div>
@@ -181,6 +192,11 @@
 
 <div th:replace="~{fragments/layout :: scripts}"></div>
 
+<script th:inline="javascript">
+    window.CATEGORIAS = /*[[${categorias}]]*/ [];
+</script>
+<script th:src="@{/js/categorias.js}"></script>
+
 <script th:inline="none">
     /* Autocomplete interactivo de donantes */
     (function () {
@@ -239,6 +255,7 @@
         copia.querySelectorAll('input[type=hidden]').forEach((oculto) => {
             if (oculto.name) oculto.name = oculto.name.replace(/bienes\[\d+\]/, 'bienes[' + nuevo + ']');
         });
+        cargarSubcategorias(copia);
 
         lista.appendChild(copia);
         const primero = copia.querySelector('input');

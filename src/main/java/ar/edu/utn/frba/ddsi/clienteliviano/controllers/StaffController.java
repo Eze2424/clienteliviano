@@ -6,6 +6,7 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.AsignacionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionIndependienteResumenResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteAltaForm;
@@ -13,7 +14,6 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ImportacionJobResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PageResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
-import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.SubcategoriaResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.entities.TipoOrganizacion;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
@@ -217,8 +217,8 @@ public class StaffController {
   }
 
   private void cargarDatosNuevaDonacion(Model model) {
-    List<SubcategoriaResponse> subcategorias = staffApiService.subcategorias();
-    model.addAttribute("subcategorias", subcategorias != null ? subcategorias : List.of());
+    List<CategoriaResponse> categorias = staffApiService.categorias();
+    model.addAttribute("categorias", categorias != null ? categorias : List.of());
 
     PageResponse<DonanteResponse> primeraPaginaDonantes = staffApiService.buscarDonantes(0, 20, null);
     model.addAttribute("donantes", primeraPaginaDonantes != null ? primeraPaginaDonantes.content() : List.of());

@@ -8,6 +8,7 @@ import lombok.Data;
 public class BienForm {
 
   private String descripcion;
+  private Long categoriaId;
   private Long subcategoriaId;
   private String foto;
   private Double cantidad;
