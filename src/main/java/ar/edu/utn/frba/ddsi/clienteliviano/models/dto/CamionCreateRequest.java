@@ -4,5 +4,7 @@ public record CamionCreateRequest(
     String patente,
     double volumen,
     double altura,
-    double capacidadDeCarga
+    double capacidadDeCarga,
+    double latitud,
+    double longitud
 ) {}
