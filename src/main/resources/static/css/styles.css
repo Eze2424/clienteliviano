@@ -707,6 +707,18 @@ input:focus, select:focus, textarea:focus {
     border-radius: var(--radius-full);
     transition: width var(--transition-base);
 }
+.necesidad-etiquetas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+.necesidad-etiquetas .chip {
+    white-space: nowrap;
+}
+.progress-fill.progress-fill-completo {
+    background: var(--color-success);
+}
 
 /* =========================================================
    Modal
