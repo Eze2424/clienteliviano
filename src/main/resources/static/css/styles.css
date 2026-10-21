@@ -559,6 +559,11 @@ textarea:focus-visible,
     border: 1px solid var(--color-border);
     color: var(--color-text-muted);
 }
+.chip-primary {
+    background: var(--color-primary-light);
+    color: var(--color-primary-ink);
+    border-color: var(--color-accent);
+}
 
 /* =========================================================
    Badges de estado
@@ -917,6 +922,9 @@ td {
     vertical-align: middle;
 }
 tr:last-child td { border-bottom: none; }
+tr.table-active td, tr.table-active th {
+    background-color: var(--color-primary-light, #FFE8DA) !important;
+}
 
 /* =========================================================
    Footer público
