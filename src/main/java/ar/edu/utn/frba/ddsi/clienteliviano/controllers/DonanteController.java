@@ -3,6 +3,7 @@ package ar.edu.utn.frba.ddsi.clienteliviano.controllers;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
 import ar.edu.utn.frba.ddsi.clienteliviano.services.DonanteApiService;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
 import jakarta.servlet.http.HttpSession;
@@ -241,14 +242,27 @@ public class DonanteController {
   }
 
   @GetMapping("/ranking")
-  public String ranking(HttpSession session, Model model) {
-    if (exigirDonante(session) == null) {
+  public String ranking(HttpSession session, Model model,
+                        @RequestParam(required = false) String periodo) {
+    UsuarioActual yo = exigirDonante(session);
+    if (yo == null) {
       return "redirect:/login";
     }
-    // Ranking se puede poblar cuando expongan el endpoint de incentivos
-    model.addAttribute("ranking", List.of());
-    model.addAttribute("periodos", List.of("2026-10"));
-    model.addAttribute("periodoActual", "2026-10");
+
+    List<String> periodosDeRanking = api.obtenerPeriodosRanking();
+    String periodoElegido = (periodo != null && !periodo.isBlank())
+        ? periodo.trim()
+        : (periodosDeRanking != null && !periodosDeRanking.isEmpty()
+            ? periodosDeRanking.get(0)
+            : java.time.YearMonth.now().toString());
+
+    List<RankingFila> ranking = api.obtenerRanking(periodoElegido, 10);
+
+    model.addAttribute("ranking", ranking != null ? ranking : List.of());
+    model.addAttribute("periodos", periodosDeRanking != null ? periodosDeRanking : List.of());
+    model.addAttribute("periodoActual", periodoElegido);
+    model.addAttribute("yo", yo);
+
     return "donante/ranking";
   }
 }
