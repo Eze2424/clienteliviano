@@ -20,6 +20,7 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -95,6 +96,13 @@ public class EntidadControllerTest {
         .andExpect(model().attributeExists("necesidades"))
         .andExpect(model().attributeExists("categorias"))
         .andExpect(model().attributeExists("form"));
+  }
+
+  @Test
+  void necesidad_PorcentajeCubierto_SeCalculaYSeTopeaEn100() {
+    assertEquals(25, new NecesidadResponse(1L, "Higiene", "Pañales", 40.0, false, 10.0, false).porcentajeCubierto());
+    assertEquals(100, new NecesidadResponse(2L, "Alimentos", "Arroz", 50.0, false, 70.0, true).porcentajeCubierto());
+    assertEquals(0, new NecesidadResponse(3L, "Alimentos", "Arroz", 0.0, false).porcentajeCubierto());
   }
 
   @Test

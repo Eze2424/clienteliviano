@@ -243,8 +243,8 @@
                            required data-autofocus aria-describedby="hint-csv"
                            onchange="if(this.files[0] && this.files[0].size > 10*1024*1024) { alert('El archivo seleccionado supera el límite de 10 MB.'); this.value = ''; }">
                     <span class="hint" id="hint-csv">
-                        Una fila por donante, separador pipe (|), con o sin cabecera:
-                        <br><code>TipoPersona|TipoDoc|Documento|Nombre o Razón Social|Email|Teléfono</code>
+                        Una fila por donante, separado por coma (,) o pipe (|), con o sin cabecera:
+                        <br><code>TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono</code>
                         <br>Tipos soportados: <code>HUMANA</code> o <code>JURIDICA</code>. Máx. 10 MB.
                     </span>
                 </div>
