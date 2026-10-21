@@ -104,6 +104,10 @@
                 </li>
             </ol>
 
+            <p style="margin-top: var(--space-4);" th:if="${entrega != null}">
+                <a th:href="@{/donante/entregas}" class="btn btn-secondary btn-sm">Ver mapa de entregas</a>
+            </p>
+
             <!-- Entidad destinataria -->
             <div class="detail-section" th:if="${entidad != null}" style="margin-top: var(--space-5);">
                 <h2 class="heading-md" style="margin-bottom: var(--space-3);">Quién la recibe</h2>
