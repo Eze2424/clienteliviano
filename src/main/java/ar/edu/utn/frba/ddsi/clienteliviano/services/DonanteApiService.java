@@ -4,11 +4,14 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DashboardDonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionResumenDTO;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.EntidadResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.RankingMensualResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.BienDetalleVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntidadVista;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.SubdonacionVista;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -17,9 +20,13 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Servicio cliente del donante: aisla el consumo HTTP para que los controllers
@@ -38,6 +45,9 @@ public class DonanteApiService {
 
   @Value("${backend.api.url.donaciones}")
   private String backendApiUrl;
+
+  @Value("${backend.api.url.incentivos:http://localhost:8082/incentivos-service}")
+  private String incentivosUrl;
 
   public DonanteApiService(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
@@ -217,6 +227,77 @@ public class DonanteApiService {
       } catch (DateTimeParseException e2) {
         return null;
       }
+    }
+  }
+
+  /* =========================================================
+     Módulo Ranking (incentivos-service)
+     ========================================================= */
+
+  public List<String> obtenerPeriodosRanking() {
+    try {
+      var respuesta = restTemplate.exchange(
+          incentivosUrl + "/ranking/periodos",
+          HttpMethod.GET,
+          null,
+          new ParameterizedTypeReference<List<String>>() {}
+      );
+      if (respuesta.getStatusCode().is2xxSuccessful() && respuesta.getBody() != null && !respuesta.getBody().isEmpty()) {
+        return respuesta.getBody();
+      }
+      return List.of(YearMonth.now().toString());
+    } catch (Exception e) {
+      log.warn("Error al listar periodos de ranking desde {}: {}", incentivosUrl, e.getMessage());
+      return List.of(YearMonth.now().toString());
+    }
+  }
+
+  public List<RankingFila> obtenerRanking(String periodo, int top) {
+    try {
+      var uriBuilder = UriComponentsBuilder.fromUriString(incentivosUrl + "/ranking")
+          .queryParam("top", top > 0 ? top : 10);
+      if (periodo != null && !periodo.isBlank()) {
+        uriBuilder.queryParam("periodo", periodo.trim());
+      }
+      var uri = uriBuilder.toUriString();
+
+      var respuesta = restTemplate.exchange(
+          uri,
+          HttpMethod.GET,
+          null,
+          new ParameterizedTypeReference<List<RankingMensualResponse>>() {}
+      );
+
+      if (respuesta.getStatusCode().is2xxSuccessful() && respuesta.getBody() != null) {
+        List<RankingFila> filas = new ArrayList<>();
+        for (var r : respuesta.getBody()) {
+          int pos = r.posicion() != null ? r.posicion() : (filas.size() + 1);
+          long misiones = r.misionesCumplidas() != null ? r.misionesCumplidas() : 0L;
+          int insignias = r.insignias() != null ? r.insignias() : 0;
+          String tipo = r.tipoDonante() != null ? r.tipoDonante() : "HUMANA";
+          String cat = r.categoria() != null ? r.categoria() : "Colaborador";
+          long impacto = (misiones * 100) + (insignias * 50);
+
+          filas.add(new RankingFila(
+              pos,
+              r.idDonante(),
+              r.nombre(),
+              tipo,
+              cat,
+              misiones,
+              insignias,
+              impacto
+          ));
+        }
+        return filas;
+      }
+      return List.of();
+    } catch (HttpStatusCodeException e) {
+      log.warn("Error HTTP al obtener ranking desde {}: {} - {}", incentivosUrl, e.getStatusCode(), e.getResponseBodyAsString());
+      return List.of();
+    } catch (Exception e) {
+      log.error("Error al obtener ranking desde {}: {}", incentivosUrl, e.getMessage());
+      return List.of();
     }
   }
 }

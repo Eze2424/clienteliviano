@@ -5,6 +5,7 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntidadVista;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
 import ar.edu.utn.frba.ddsi.clienteliviano.services.DonanteApiService;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
 import org.junit.jupiter.api.BeforeEach;
@@ -97,5 +98,46 @@ public class DonanteControllerTest {
         .andExpect(model().attribute("entidades", List.of(e2)));
 
     verify(donanteApiService).obtenerEntidades("Escuela");
+  }
+
+  @Test
+  void ranking_SinSesion_RedirigeALogin() throws Exception {
+    mockMvc.perform(get("/donante/ranking"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/login"));
+  }
+
+  @Test
+  void ranking_ConSesionDonante_CargaRankingYPeriodos() throws Exception {
+    when(donanteApiService.obtenerPeriodosRanking()).thenReturn(List.of("2026-10", "2026-09"));
+    RankingFila f1 = new RankingFila(1, 1L, "Carlos Donante", "HUMANA", "Colaborador", 5L, 2, 600L);
+    when(donanteApiService.obtenerRanking("2026-10", 10)).thenReturn(List.of(f1));
+
+    mockMvc.perform(get("/donante/ranking").session(sesionDonante()))
+        .andExpect(status().isOk())
+        .andExpect(view().name("donante/ranking"))
+        .andExpect(model().attributeExists("ranking", "periodos", "periodoActual", "yo"))
+        .andExpect(model().attribute("periodoActual", "2026-10"))
+        .andExpect(model().attribute("ranking", List.of(f1)));
+
+    verify(donanteApiService).obtenerPeriodosRanking();
+    verify(donanteApiService).obtenerRanking("2026-10", 10);
+  }
+
+  @Test
+  void ranking_ConParamPeriodo_PasaPeriodoAApi() throws Exception {
+    when(donanteApiService.obtenerPeriodosRanking()).thenReturn(List.of("2026-10", "2026-09"));
+    RankingFila f2 = new RankingFila(1, 2L, "Elena Donante", "HUMANA", "Sostenedor", 10L, 3, 1150L);
+    when(donanteApiService.obtenerRanking("2026-09", 10)).thenReturn(List.of(f2));
+
+    mockMvc.perform(get("/donante/ranking")
+            .param("periodo", "2026-09")
+            .session(sesionDonante()))
+        .andExpect(status().isOk())
+        .andExpect(view().name("donante/ranking"))
+        .andExpect(model().attribute("periodoActual", "2026-09"))
+        .andExpect(model().attribute("ranking", List.of(f2)));
+
+    verify(donanteApiService).obtenerRanking("2026-09", 10);
   }
 }
