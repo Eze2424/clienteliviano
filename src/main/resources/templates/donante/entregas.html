@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Entregas en curso',
+        'Seguí en el mapa la ubicación en tiempo real de los camiones asignados a tus donaciones en traslado.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: donante('entregas')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+    <nav th:replace="~{fragments/componentes :: breadcrumb(
+            'Mis donaciones', @{/donante/dashboard},
+            'Entregas en curso')}"></nav>
+
+    <div class="card-title-row" style="margin: var(--space-4) 0 var(--space-5);">
+        <div style="min-width:0;">
+            <h1 style="margin-bottom: var(--space-1);">Entregas en curso</h1>
+            <p class="card-subtitle" style="margin:0;">
+                Seguí en el mapa la ubicación de los camiones asignados al traslado de tus donaciones.
+            </p>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(entregas)}">
+        <div th:replace="~{fragments/componentes :: estado-vacio(
+            'No hay entregas en camino',
+            'Cuando se despachen tus donaciones vas a poder seguir los camiones en tiempo real.',
+            'Volver a mis donaciones', @{/donante/dashboard})}"></div>
+    </div>
+
+    <div class="flex flex-col gap-4" th:unless="${#lists.isEmpty(entregas)}">
+
+        <!-- ============ Mapa de entregas ============ -->
+        <section class="map-canvas map-canvas-ancho" data-mapa aria-labelledby="titulo-mapa">
+            <h2 id="titulo-mapa" class="visually-hidden">Ubicación de los camiones en camino</h2>
+            <div class="map-legend">
+                <span class="legend-key">
+                    <span class="legend-swatch" style="background: var(--color-primary);"></span> Camión
+                </span>
+            </div>
+            <span class="map-pin" hidden th:each="e : ${entregas}"
+                  th:data-id="${e.idEntrega()}" th:data-lat="${e.latitud()}" th:data-lon="${e.longitud()}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                <span th:text="${e.patenteCamion()}">AB-123-CD</span>
+            </span>
+            <p class="map-note">Última posición informada de cada camión.</p>
+        </section>
+
+        <!-- ============ Tabla, equivalente accesible del mapa ============ -->
+        <section aria-label="Listado de entregas en curso">
+            <div class="card table-wrap">
+                <table>
+                    <caption class="visually-hidden">Entregas en camino y ubicación informada</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Patente</th>
+                        <th scope="col">Donación</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Última act.</th>
+                        <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="e : ${entregas}">
+                        <th scope="row">
+                            <button type="button" class="btn-patente"
+                                    th:if="${e.latitud() != 0.0 or e.longitud() != 0.0}"
+                                    th:data-mapa-enfocar="${e.idEntrega()}"
+                                    th:aria-label="'Ver el camión ' + ${e.patenteCamion()} + ' en el mapa'"
+                                    th:text="${e.patenteCamion()}">AB-123-CD</button>
+                            <span th:unless="${e.latitud() != 0.0 or e.longitud() != 0.0}"
+                                  th:text="${e.patenteCamion()}">AB-123-CD</span>
+                        </th>
+                        <td>
+                            <span th:text="${e.descripcionDonacion()}">Alimentos</span>
+                        </td>
+                        <td>
+                            <span class="badge" th:classappend="${e.claseBadge()}"
+                                  th:text="${e.etiquetaEstado()}">En traslado</span>
+                        </td>
+                        <td th:text="${e.ultimaActualizacion() != null ? #temporals.format(e.ultimaActualizacion(), 'dd/MM/yyyy HH:mm') : '-'}">-</td>
+                        <td>
+                            <a th:href="@{/donante/donaciones/{id}(id=${e.donacionId()})}"
+                               class="btn btn-ghost btn-sm"
+                               th:aria-label="'Ver detalle de la donación #' + ${e.donacionId()}">
+                                Ver detalle
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+<div th:replace="~{fragments/layout :: mapa}"></div>
+</body>
+</html>

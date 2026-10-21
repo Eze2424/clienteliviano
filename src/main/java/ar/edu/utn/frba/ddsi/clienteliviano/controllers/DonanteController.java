@@ -3,6 +3,7 @@ package ar.edu.utn.frba.ddsi.clienteliviano.controllers;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntregaVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
 import ar.edu.utn.frba.ddsi.clienteliviano.services.DonanteApiService;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
@@ -219,7 +220,8 @@ public class DonanteController {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Donación no encontrada");
       }
       model.addAttribute("donacion", donacion);
-      model.addAttribute("entrega", null);
+      EntregaVista entrega = api.obtenerEntregaPorDonacion(id).orElse(null);
+      model.addAttribute("entrega", entrega);
       model.addAttribute("entidad", null);
     } catch (Exception e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Donación inexistente o error en backend");
@@ -264,5 +266,17 @@ public class DonanteController {
     model.addAttribute("yo", yo);
 
     return "donante/ranking";
+  }
+
+  @GetMapping("/entregas")
+  public String entregas(HttpSession session, Model model) {
+    UsuarioActual yo = exigirDonante(session);
+    if (yo == null) {
+      return "redirect:/login";
+    }
+
+    List<EntregaVista> entregas = api.obtenerEntregasActivasDonante();
+    model.addAttribute("entregas", entregas);
+    return "donante/entregas";
   }
 }
