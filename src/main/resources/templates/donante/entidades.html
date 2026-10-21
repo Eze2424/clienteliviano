@@ -14,50 +14,55 @@
 
     <!-- ============ Filtros ============ -->
     <aside class="sidebar" aria-labelledby="titulo-filtros">
-            <div class="card" style="border:none; box-shadow:none; padding:0;">
-                <h2 id="titulo-filtros" class="heading-sm">Filtros</h2>
-                <p class="card-subtitle" style="margin-top:-4px;">Encontrá la entidad que buscás.</p>
+        <div class="card" style="border:none; box-shadow:none; padding:0;">
+            <h2 id="titulo-filtros" class="heading-sm">Búsqueda </h2>
+            <p class="card-subtitle" style="margin-top:-4px;">Encontrá la entidad que buscás.</p>
 
-                <!--
-                  Filtro por GET: la búsqueda queda en la URL y se puede compartir
-                  y volver atrás. El filtrado lo resuelve la API, no el cliente.
-                -->
-                <form th:action="@{/donante/entidades}" method="get">
-                    <div class="field">
-                        <label for="nombre">Buscar por nombre</label>
-                        <input type="search" id="nombre" name="nombre" th:value="${nombre}"
-                               placeholder="Ej: Escuela Rural…">
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-sm btn-block"
-                            data-loading-on-submit data-loading-texto="Buscando…">Buscar</button>
-                    <a th:href="@{/donante/entidades}" class="btn btn-secondary btn-sm btn-block"
-                       style="margin-top: var(--space-2);">Limpiar</a>
-                </form>
+            <!--
+              Filtro por GET: la búsqueda queda en la URL y se puede compartir
+              y volver atrás. El filtrado lo resuelve la API, no el cliente.
+            -->
+            <form th:action="@{/donante/entidades}" method="get">
+                <div class="field">
+                    <label for="nombre">Buscar por nombre</label>
+                    <input type="search" id="nombre" name="nombre" th:value="${nombre}"
+                           placeholder="Ej: Escuela Rural…">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm btn-block"
+                        data-loading-on-submit data-loading-texto="Buscando…">Buscar</button>
+                <a th:href="@{/donante/entidades}" class="btn btn-secondary btn-sm btn-block"
+                   style="margin-top: var(--space-2);">Limpiar</a>
+            </form>
 
+            <!--
+              BRECHA G6: EntidadResponse no trae tipo de entidad ni nivel de
+              urgencia, que son los dos filtros que pide la maqueta. Quedan
+              deshabilitados y anunciados como tales hasta que la API los exponga.
+            -->
+
+            <fieldset disabled style="border:none; padding:0; margin-top: var(--space-5);"
+                      aria-describedby="filtros-pendientes">
                 <!--
-                  BRECHA G6: EntidadResponse no trae tipo de entidad ni nivel de
-                  urgencia, que son los dos filtros que pide la maqueta. Quedan
-                  deshabilitados y anunciados como tales hasta que la API los exponga.
+                <legend class="field-label">Tipo de entidad</legend>
+                <div class="flex flex-col">
+                    <label class="checkbox-option"><input type="checkbox"> Escuela</label>
+                    <label class="checkbox-option"><input type="checkbox"> Comedor</label>
+                    <label class="checkbox-option"><input type="checkbox"> Hogar de niños</label>
+                </div>
+                <legend class="field-label" style="margin-top: var(--space-4);">Nivel de urgencia</legend>
+                <div class="flex flex-col">
+                    <label class="checkbox-option"><input type="checkbox"> Recurrentes</label>
+                    <label class="checkbox-option"><input type="checkbox"> Extraordinarias</label>
+                </div>
                 -->
-                <fieldset disabled style="border:none; padding:0; margin-top: var(--space-5);"
-                          aria-describedby="filtros-pendientes">
-                    <legend class="field-label">Tipo de entidad</legend>
-                    <div class="flex flex-col">
-                        <label class="checkbox-option"><input type="checkbox"> Escuela</label>
-                        <label class="checkbox-option"><input type="checkbox"> Comedor</label>
-                        <label class="checkbox-option"><input type="checkbox"> Hogar de niños</label>
-                    </div>
-                    <legend class="field-label" style="margin-top: var(--space-4);">Nivel de urgencia</legend>
-                    <div class="flex flex-col">
-                        <label class="checkbox-option"><input type="checkbox"> Recurrentes</label>
-                        <label class="checkbox-option"><input type="checkbox"> Extraordinarias</label>
-                    </div>
-                </fieldset>
-                <p class="hint" id="filtros-pendientes">
-                    Estos filtros se habilitan cuando el servicio de donaciones exponga
-                    el tipo y la urgencia de cada entidad.
-                </p>
-            </div>
+            </fieldset>
+            <!--
+            <p class="hint" id="filtros-pendientes">
+                Estos filtros se habilitan cuando el servicio de donaciones exponga
+                el tipo y la urgencia de cada entidad.
+            </p>
+            -->
+        </div>
     </aside>
 
     <!-- ============ Catálogo ============ -->
