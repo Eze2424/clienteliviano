@@ -79,6 +79,9 @@
         <a th:href="@{/donante/entidades}"
            th:classappend="${activo == 'entidades'} ? 'active'"
            th:aria-current="${activo == 'entidades'} ? 'page'">Entidades beneficiarias</a>
+        <a th:href="@{/donante/entregas}"
+           th:classappend="${activo == 'entregas'} ? 'active'"
+           th:aria-current="${activo == 'entregas'} ? 'page'">Entregas en curso</a>
         <a th:href="@{/donante/ranking}"
            th:classappend="${activo == 'ranking'} ? 'active'"
            th:aria-current="${activo == 'ranking'} ? 'page'">Ranking</a>

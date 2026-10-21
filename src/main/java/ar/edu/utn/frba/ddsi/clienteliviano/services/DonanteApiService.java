@@ -3,20 +3,26 @@ package ar.edu.utn.frba.ddsi.clienteliviano.services;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DashboardDonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionResumenDTO;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.EntidadResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.EntregaSeguimientoDTO;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.RankingMensualResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.BienDetalleVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntidadVista;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntregaVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.SubdonacionVista;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +54,9 @@ public class DonanteApiService {
 
   @Value("${backend.api.url.incentivos:http://localhost:8082/incentivos-service}")
   private String incentivosUrl;
+
+  @Value("${backend.api.url.logistica:http://localhost:8083}")
+  private String logisticaUrl;
 
   public DonanteApiService(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
@@ -297,6 +306,114 @@ public class DonanteApiService {
       return List.of();
     } catch (Exception e) {
       log.error("Error al obtener ranking desde {}: {}", incentivosUrl, e.getMessage());
+      return List.of();
+    }
+  }
+
+  /* =========================================================
+     Módulo Entregas / Seguimiento (logistica-service)
+     ========================================================= */
+
+  public Optional<EntregaVista> obtenerEntregaPorDonacion(Long donacionId) {
+    if (donacionId == null) {
+      return Optional.empty();
+    }
+    try {
+      var respuesta = restTemplate.exchange(
+          logisticaUrl + "/entregas/por-donaciones?ids=" + donacionId,
+          HttpMethod.GET,
+          null,
+          new ParameterizedTypeReference<List<EntregaSeguimientoDTO>>() {}
+      );
+      if (respuesta.getStatusCode().is2xxSuccessful() && respuesta.getBody() != null && !respuesta.getBody().isEmpty()) {
+        var dto = respuesta.getBody().get(0);
+        return Optional.of(new EntregaVista(
+            dto.idEntrega(),
+            dto.donacionId(),
+            null,
+            dto.patenteCamion() != null ? dto.patenteCamion() : "S/D",
+            null,
+            dto.estadoActual(),
+            dto.latitud() != null ? dto.latitud() : -34.6037,
+            dto.longitud() != null ? dto.longitud() : -58.3816,
+            dto.ultimaActualizacion() != null ? dto.ultimaActualizacion() : LocalDateTime.now(),
+            "En camino"
+        ));
+      }
+    } catch (Exception e) {
+      log.warn("No se pudo obtener seguimiento de entrega para la donacion {} desde logistica: {}", donacionId, e.getMessage());
+    }
+    return Optional.empty();
+  }
+
+  public List<EntregaVista> obtenerEntregasActivasDonante() {
+    var dashboardOpt = dashboard();
+    if (dashboardOpt.isEmpty() || dashboardOpt.get().getDonacionesRecientes() == null || dashboardOpt.get().getDonacionesRecientes().isEmpty()) {
+      return List.of();
+    }
+
+    List<Long> ids = new ArrayList<>();
+    Map<Long, String> descripcionMap = new HashMap<>();
+
+    for (var d : dashboardOpt.get().getDonacionesRecientes()) {
+      if (d.getId() != null) {
+        ids.add(d.getId());
+        String desc = (d.getDescripcionBreve() != null && !d.getDescripcionBreve().isBlank())
+            ? d.getDescripcionBreve()
+            : (d.getTitulo() != null && !d.getTitulo().isBlank() ? d.getTitulo() : "Donación #" + d.getId());
+        descripcionMap.put(d.getId(), desc);
+      }
+      if (d.getSubdonaciones() != null) {
+        for (var sub : d.getSubdonaciones()) {
+          if (sub.getId() != null) {
+            ids.add(sub.getId());
+            String subDesc = (sub.getSubcategoria() != null && !sub.getSubcategoria().isBlank())
+                ? sub.getSubcategoria()
+                : ((d.getDescripcionBreve() != null && !d.getDescripcionBreve().isBlank())
+                    ? d.getDescripcionBreve()
+                    : (d.getTitulo() != null && !d.getTitulo().isBlank() ? d.getTitulo() : "Donación #" + sub.getId()));
+            descripcionMap.put(sub.getId(), subDesc);
+          }
+        }
+      }
+    }
+
+    if (ids.isEmpty()) {
+      return List.of();
+    }
+
+    try {
+      String idsParam = ids.stream().map(String::valueOf).collect(Collectors.joining(","));
+      var respuesta = restTemplate.exchange(
+          logisticaUrl + "/entregas/por-donaciones?ids=" + idsParam,
+          HttpMethod.GET,
+          null,
+          new ParameterizedTypeReference<List<EntregaSeguimientoDTO>>() {}
+      );
+
+      if (respuesta.getStatusCode().is2xxSuccessful() && respuesta.getBody() != null) {
+        List<EntregaVista> entregas = new ArrayList<>();
+        for (var dto : respuesta.getBody()) {
+          if (dto.patenteCamion() != null && !dto.patenteCamion().isBlank()) {
+            entregas.add(new EntregaVista(
+                dto.idEntrega(),
+                dto.donacionId(),
+                descripcionMap.getOrDefault(dto.donacionId(), "Donación #" + dto.donacionId()),
+                dto.patenteCamion(),
+                null,
+                dto.estadoActual() != null ? dto.estadoActual() : "EN_TRASLADO",
+                dto.latitud() != null ? dto.latitud() : -34.6037,
+                dto.longitud() != null ? dto.longitud() : -58.3816,
+                dto.ultimaActualizacion() != null ? dto.ultimaActualizacion() : LocalDateTime.now(),
+                "En camino"
+            ));
+          }
+        }
+        return entregas;
+      }
+      return List.of();
+    } catch (Exception e) {
+      log.warn("Error al obtener entregas activas del donante desde logistica ({}): {}", logisticaUrl, e.getMessage());
       return List.of();
     }
   }

@@ -4,6 +4,8 @@ import ar.edu.utn.frba.ddsi.clienteliviano.controllers.DonanteController;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntregaVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntidadVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
 import ar.edu.utn.frba.ddsi.clienteliviano.services.DonanteApiService;
@@ -11,12 +13,16 @@ import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -36,6 +42,7 @@ public class DonanteControllerTest {
     donanteApiService = mock(DonanteApiService.class);
     restTemplate = mock(RestTemplate.class);
     donanteController = new DonanteController(sesion, donanteApiService, restTemplate);
+    ReflectionTestUtils.setField(donanteController, "donacionesUrl", "http://localhost:8080/donaciones-service");
 
     InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
     viewResolver.setPrefix("/templates/");
@@ -139,5 +146,65 @@ public class DonanteControllerTest {
         .andExpect(model().attribute("ranking", List.of(f2)));
 
     verify(donanteApiService).obtenerRanking("2026-09", 10);
+  }
+
+  @Test
+  void donacion_SinSesion_RedirigeALogin() throws Exception {
+    mockMvc.perform(get("/donante/donaciones/10"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/login"));
+  }
+
+  @Test
+  void donacion_ConSesion_ConEntrega_CargaDonacionYEntregaEnModelo() throws Exception {
+    DonacionVista d = new DonacionVista(10L, "Alimentos", "EN_TRASLADO", LocalDate.now(), null, false, 1L, "Carlos Donante", null, null, 5, null, List.of());
+    when(restTemplate.getForObject("http://localhost:8080/donaciones-service/donaciones/10", DonacionVista.class)).thenReturn(d);
+
+    EntregaVista entrega = new EntregaVista("ent-1", 10L, "Alimentos", "AA123BB", null, "EN_TRASLADO", -34.6037, -58.3816, LocalDateTime.now(), "En camino");
+    when(donanteApiService.obtenerEntregaPorDonacion(10L)).thenReturn(Optional.of(entrega));
+
+    mockMvc.perform(get("/donante/donaciones/10").session(sesionDonante()))
+        .andExpect(status().isOk())
+        .andExpect(view().name("donante/donacion"))
+        .andExpect(model().attribute("donacion", d))
+        .andExpect(model().attribute("entrega", entrega));
+
+    verify(donanteApiService).obtenerEntregaPorDonacion(10L);
+  }
+
+  @Test
+  void donacion_ConSesion_SinEntrega_CargaDonacionYEntregaNull() throws Exception {
+    DonacionVista d = new DonacionVista(10L, "Alimentos", "EN_DEPOSITO", LocalDate.now(), null, false, 1L, "Carlos Donante", null, null, 5, null, List.of());
+    when(restTemplate.getForObject("http://localhost:8080/donaciones-service/donaciones/10", DonacionVista.class)).thenReturn(d);
+
+    when(donanteApiService.obtenerEntregaPorDonacion(10L)).thenReturn(Optional.empty());
+
+    mockMvc.perform(get("/donante/donaciones/10").session(sesionDonante()))
+        .andExpect(status().isOk())
+        .andExpect(view().name("donante/donacion"))
+        .andExpect(model().attribute("donacion", d))
+        .andExpect(model().attribute("entrega", (Object) null));
+
+    verify(donanteApiService).obtenerEntregaPorDonacion(10L);
+  }
+
+  @Test
+  void entregas_SinSesion_RedirigeALogin() throws Exception {
+    mockMvc.perform(get("/donante/entregas"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/login"));
+  }
+
+  @Test
+  void entregas_ConSesion_RetornaVistaConEntregas() throws Exception {
+    EntregaVista e = new EntregaVista("ent-1", 10L, "Alimentos", "AA123BB", null, "EN_TRASLADO", -34.6037, -58.3816, LocalDateTime.now(), "En camino");
+    when(donanteApiService.obtenerEntregasActivasDonante()).thenReturn(List.of(e));
+
+    mockMvc.perform(get("/donante/entregas").session(sesionDonante()))
+        .andExpect(status().isOk())
+        .andExpect(view().name("donante/entregas"))
+        .andExpect(model().attribute("entregas", List.of(e)));
+
+    verify(donanteApiService).obtenerEntregasActivasDonante();
   }
 }
