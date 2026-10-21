@@ -19,4 +19,8 @@ public record RankingFila(
   public boolean esTop3() {
     return posicion >= 1 && posicion <= 3;
   }
+
+  public Long idDonante() {
+    return donanteId;
+  }
 }
