@@ -106,27 +106,46 @@
 
             <div class="flex flex-col gap-3" th:unless="${#lists.isEmpty(necesidades)}">
                 <article class="card" th:each="n : ${necesidades}" style="padding: var(--space-4);">
-                    <div class="card-title-row">
-                        <div style="min-width:0;">
-                            <div style="display: flex; gap: var(--space-2); align-items: center; margin-bottom: var(--space-1);">
-                                <span class="chip" th:text="${n.subcategoria}">Alimentos</span>
-                                <span class="chip" th:if="${n.esExtraordinaria}" style="background-color: #fef3c7; color: #92400e;">Urgente</span>
-                            </div>
-                            <p style="margin: var(--space-2) 0 0;" th:text="${n.descripcion}">
-                                Aceite, harina y fideos
-                            </p>
-                            <p th:if="${n.cantidadSolicitada != null}" style="margin: var(--space-1) 0 0; font-size: 0.875rem; color: var(--color-text-muted);">
-                                Cantidad solicitada: <strong th:text="${n.cantidadSolicitada}">40</strong>
-                            </p>
+                    <div class="card-title-row" style="margin-bottom: var(--space-2);">
+                        <div class="necesidad-etiquetas" style="flex: 1; min-width: 0;">
+                            <span class="chip" th:text="${n.subcategoria}">Alimentos</span>
+                            <span class="chip" th:if="${n.esExtraordinaria}" style="background-color: #fef3c7; color: #92400e;">Urgente</span>
+                            <span class="badge badge-success" th:if="${n.satisfecha}"
+                                  th:text="${n.esExtraordinaria} ? 'Cubierta' : 'Cubierta este mes'">Cubierta este mes</span>
+                            <span class="badge badge-neutral" th:unless="${n.satisfecha}">Abierta</span>
                         </div>
                         <!-- Baja por POST: cambia estado en el servidor, no puede ser un enlace -->
                         <form th:action="@{/entidad/necesidades/{id}/eliminar(id=${n.id})}" method="post"
-                              style="margin:0;">
+                              style="margin:0; flex-shrink: 0;">
                             <button type="submit" class="btn btn-ghost btn-sm"
                                     th:aria-label="'Dar de baja la necesidad: ' + ${n.descripcion}"
                                     data-loading-on-submit data-loading-texto="Dando de baja…">Dar de baja</button>
                         </form>
                     </div>
+                    <p style="margin: 0;" th:text="${n.descripcion}">
+                        Aceite, harina y fideos
+                    </p>
+                    <th:block th:if="${n.cantidadSolicitada != null and n.cantidadSolicitada > 0}">
+                        <p style="margin: var(--space-1) 0 var(--space-2); font-size: 0.875rem; color: var(--color-text-muted);">
+                            Cubierto: <strong th:text="${#numbers.formatDecimal((n.cantidadCubierta != null ? n.cantidadCubierta : 0), 1, 'POINT', 0, 'COMMA')}">30</strong>
+                            de <strong th:text="${#numbers.formatDecimal(n.cantidadSolicitada, 1, 'POINT', 0, 'COMMA')}">40</strong>
+                            <span th:unless="${n.esExtraordinaria}">este mes</span>
+                        </p>
+                        <div class="progress-track" role="progressbar"
+                             th:aria-valuenow="${n.porcentajeCubierto()}" aria-valuemin="0" aria-valuemax="100"
+                             th:aria-label="'Cubierto: ' + ${n.porcentajeCubierto()} + '%'">
+                            <div class="progress-fill" th:style="'width:' + ${n.porcentajeCubierto()} + '%'"
+                                 th:classappend="${n.satisfecha} ? 'progress-fill-completo' : ''"></div>
+                        </div>
+                        <p th:if="${n.satisfecha and !n.esExtraordinaria}"
+                           style="margin: var(--space-2) 0 0; font-size: 0.875rem; color: var(--color-text-muted);">
+                            No vas a recibir más propuestas para esta necesidad hasta el 1° del mes próximo.
+                        </p>
+                        <p th:if="${n.satisfecha and n.esExtraordinaria}"
+                           style="margin: var(--space-2) 0 0; font-size: 0.875rem; color: var(--color-text-muted);">
+                            Ya se cubrió todo lo pedido: no vas a recibir más propuestas para esta necesidad.
+                        </p>
+                    </th:block>
                 </article>
             </div>
 
