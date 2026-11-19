@@ -134,6 +134,9 @@
         <a th:href="@{/staff/ranking}"
            th:classappend="${activo == 'ranking'} ? 'active'"
            th:aria-current="${activo == 'ranking'} ? 'page'">Ranking</a>
+        <a th:href="@{/staff/misiones}"
+           th:classappend="${activo == 'misiones'} ? 'active'"
+           th:aria-current="${activo == 'misiones'} ? 'page'">Misiones</a>
     </nav>
     <div class="navbar-actions">
         <a th:href="@{/staff/donaciones/nueva}" class="btn btn-primary btn-sm">Registrar donación</a>

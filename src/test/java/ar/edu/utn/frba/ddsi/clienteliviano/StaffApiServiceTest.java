@@ -4,6 +4,9 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.BienForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaMisionesResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionForm;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionIndependienteResumenResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteAltaForm;
@@ -795,6 +798,190 @@ public class StaffApiServiceTest {
     var jobOpt = staffApiService.consultarEstadoImportacion("job-inexistente");
 
     assertTrue(jobOpt.isEmpty());
+    mockServer.verify();
+  }
+
+  /* =========================================================
+     Misiones por Categoría Tests
+     ========================================================= */
+
+  @Test
+  void obtenerCategoriasMisiones_200_retornaLista() {
+    String json = """
+        [
+          {
+            "id": 1,
+            "nombreCategoria": "COLABORADOR",
+            "siguienteCategoria": "SOSTENEDOR",
+            "misiones": [
+              {
+                "id": 10,
+                "tipo": "HABIL_DONADOR",
+                "nombre": "Hábil donador",
+                "objetivo": 5.0,
+                "descripcionInsignia": "Insignia de bronce"
+              }
+            ]
+          }
+        ]
+        """;
+
+    mockServer.expect(requestTo("http://localhost:8082/incentivos-service/categorias"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+    List<CategoriaMisionesResponse> cats = staffApiService.obtenerCategoriasMisiones();
+
+    assertNotNull(cats);
+    assertEquals(1, cats.size());
+    assertEquals("COLABORADOR", cats.get(0).nombreCategoria());
+    assertEquals("SOSTENEDOR", cats.get(0).siguienteCategoria());
+    assertEquals(1, cats.get(0).misiones().size());
+    assertEquals("Hábil donador", cats.get(0).misiones().get(0).nombre());
+    assertEquals("5", cats.get(0).misiones().get(0).objetivoFormateado());
+    assertEquals("bienes", cats.get(0).misiones().get(0).unidadObjetivo());
+    assertEquals("Cantidad de bienes donados", cats.get(0).misiones().get(0).etiquetaTipo());
+    mockServer.verify();
+  }
+
+  @Test
+  void obtenerCategoriasMisiones_500_retornaVacio() {
+    mockServer.expect(requestTo("http://localhost:8082/incentivos-service/categorias"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withServerError());
+
+    List<CategoriaMisionesResponse> cats = staffApiService.obtenerCategoriasMisiones();
+
+    assertNotNull(cats);
+    assertTrue(cats.isEmpty());
+    mockServer.verify();
+  }
+
+  @Test
+  void agregarMision_exito() {
+    MisionForm form = new MisionForm("DONACIONES_EXITOSAS", "Cinco entregas", 5.0);
+
+    mockServer.expect(requestTo("http://localhost:8082/incentivos-service/categorias/1/misiones"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withStatus(HttpStatus.CREATED));
+
+    ResultadoOperacion resultado = staffApiService.agregarMision(1L, form);
+
+    assertTrue(resultado.exito());
+    assertTrue(resultado.mensaje().contains("correctamente"));
+    mockServer.verify();
+  }
+
+  @Test
+  void agregarMision_errorValidacion() {
+    ResultadoOperacion rNullCat = staffApiService.agregarMision(null, new MisionForm("RACHA", "Racha", 3.0));
+    assertFalse(rNullCat.exito());
+
+    ResultadoOperacion rNullForm = staffApiService.agregarMision(1L, null);
+    assertFalse(rNullForm.exito());
+
+    ResultadoOperacion rTipoVacio = staffApiService.agregarMision(1L, new MisionForm("", "Racha", 3.0));
+    assertFalse(rTipoVacio.exito());
+
+    ResultadoOperacion rObjInvalido = staffApiService.agregarMision(1L, new MisionForm("RACHA", "Racha", 0.0));
+    assertFalse(rObjInvalido.exito());
+  }
+
+  @Test
+  void agregarMision_errorBackend() {
+    MisionForm form = new MisionForm("RACHA", "Racha", 3.0);
+
+    mockServer.expect(requestTo("http://localhost:8082/incentivos-service/categorias/1/misiones"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withStatus(HttpStatus.BAD_REQUEST).body("{\"message\":\"Tipo de misión no soportado\"}"));
+
+    ResultadoOperacion resultado = staffApiService.agregarMision(1L, form);
+
+    assertFalse(resultado.exito());
+    assertEquals("Tipo de misión no soportado", resultado.mensaje());
+    mockServer.verify();
+  }
+
+  @Test
+  void actualizarMision_exito() {
+    MisionForm form = new MisionForm("COMPLETITUD", "Tres categorías", 3.0);
+
+    mockServer.expect(requestTo("http://localhost:8082/incentivos-service/categorias/1/misiones/10"))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(withSuccess());
+
+    ResultadoOperacion resultado = staffApiService.actualizarMision(1L, 10L, form);
+
+    assertTrue(resultado.exito());
+    assertTrue(resultado.mensaje().contains("correctamente"));
+    mockServer.verify();
+  }
+
+  @Test
+  void actualizarMision_errorValidacion() {
+    ResultadoOperacion rNullCat = staffApiService.actualizarMision(null, 10L, new MisionForm("RACHA", "Racha", 3.0));
+    assertFalse(rNullCat.exito());
+
+    ResultadoOperacion rNullMision = staffApiService.actualizarMision(1L, null, new MisionForm("RACHA", "Racha", 3.0));
+    assertFalse(rNullMision.exito());
+
+    ResultadoOperacion rNullForm = staffApiService.actualizarMision(1L, 10L, null);
+    assertFalse(rNullForm.exito());
+
+    ResultadoOperacion rTipoVacio = staffApiService.actualizarMision(1L, 10L, new MisionForm(" ", "Racha", 3.0));
+    assertFalse(rTipoVacio.exito());
+
+    ResultadoOperacion rObjInvalido = staffApiService.actualizarMision(1L, 10L, new MisionForm("RACHA", "Racha", -1.0));
+    assertFalse(rObjInvalido.exito());
+  }
+
+  @Test
+  void actualizarMision_errorBackend() {
+    MisionForm form = new MisionForm("COMPLETITUD", "Tres categorías", 3.0);
+
+    mockServer.expect(requestTo("http://localhost:8082/incentivos-service/categorias/1/misiones/10"))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    ResultadoOperacion resultado = staffApiService.actualizarMision(1L, 10L, form);
+
+    assertFalse(resultado.exito());
+    assertTrue(resultado.mensaje().contains("no fue encontrado"));
+    mockServer.verify();
+  }
+
+  @Test
+  void eliminarMision_exito() {
+    mockServer.expect(requestTo("http://localhost:8082/incentivos-service/categorias/1/misiones/10"))
+        .andExpect(method(HttpMethod.DELETE))
+        .andRespond(withStatus(HttpStatus.NO_CONTENT));
+
+    ResultadoOperacion resultado = staffApiService.eliminarMision(1L, 10L);
+
+    assertTrue(resultado.exito());
+    assertTrue(resultado.mensaje().contains("correctamente"));
+    mockServer.verify();
+  }
+
+  @Test
+  void eliminarMision_errorValidacion() {
+    ResultadoOperacion rNullCat = staffApiService.eliminarMision(null, 10L);
+    assertFalse(rNullCat.exito());
+
+    ResultadoOperacion rNullMision = staffApiService.eliminarMision(1L, null);
+    assertFalse(rNullMision.exito());
+  }
+
+  @Test
+  void eliminarMision_errorBackend() {
+    mockServer.expect(requestTo("http://localhost:8082/incentivos-service/categorias/1/misiones/10"))
+        .andExpect(method(HttpMethod.DELETE))
+        .andRespond(withStatus(HttpStatus.BAD_REQUEST).body("{\"message\":\"La categoría debe conservar al menos una misión\"}"));
+
+    ResultadoOperacion resultado = staffApiService.eliminarMision(1L, 10L);
+
+    assertFalse(resultado.exito());
+    assertEquals("La categoría debe conservar al menos una misión", resultado.mensaje());
     mockServer.verify();
   }
 }

@@ -6,7 +6,9 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.AsignacionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaMisionesResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionIndependienteResumenResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteAltaForm;
@@ -425,5 +427,68 @@ public class StaffController {
     model.addAttribute("periodoActual", periodoElegido);
 
     return "staff/ranking";
+  }
+
+  /* ---------- CU: misiones por categoría ---------- */
+
+  @GetMapping("/misiones")
+  public String misiones(HttpSession session, Model model) {
+    if (exigirAdmin(session) == null) return "redirect:/login";
+
+    List<CategoriaMisionesResponse> categorias = staffApiService.obtenerCategoriasMisiones();
+    model.addAttribute("categorias", categorias != null ? categorias : List.of());
+    return "staff/misiones";
+  }
+
+  @PostMapping("/misiones/categorias/{idCategoria}")
+  public String agregarMision(@PathVariable Long idCategoria,
+                              @ModelAttribute("form") MisionForm form,
+                              HttpSession session,
+                              RedirectAttributes redirect) {
+    if (exigirAdmin(session) == null) return "redirect:/login";
+
+    ResultadoOperacion resultado = staffApiService.agregarMision(idCategoria, form);
+    if (resultado.exito()) {
+      redirect.addFlashAttribute("toast", Toast.exito(resultado.mensaje()));
+    } else {
+      redirect.addFlashAttribute("toast", Toast.error(resultado.mensaje()));
+    }
+
+    return "redirect:/staff/misiones";
+  }
+
+  @PostMapping("/misiones/categorias/{idCategoria}/{idMision}/editar")
+  public String actualizarMision(@PathVariable Long idCategoria,
+                                 @PathVariable Long idMision,
+                                 @ModelAttribute("form") MisionForm form,
+                                 HttpSession session,
+                                 RedirectAttributes redirect) {
+    if (exigirAdmin(session) == null) return "redirect:/login";
+
+    ResultadoOperacion resultado = staffApiService.actualizarMision(idCategoria, idMision, form);
+    if (resultado.exito()) {
+      redirect.addFlashAttribute("toast", Toast.exito(resultado.mensaje()));
+    } else {
+      redirect.addFlashAttribute("toast", Toast.error(resultado.mensaje()));
+    }
+
+    return "redirect:/staff/misiones";
+  }
+
+  @PostMapping("/misiones/categorias/{idCategoria}/{idMision}/eliminar")
+  public String eliminarMision(@PathVariable Long idCategoria,
+                               @PathVariable Long idMision,
+                               HttpSession session,
+                               RedirectAttributes redirect) {
+    if (exigirAdmin(session) == null) return "redirect:/login";
+
+    ResultadoOperacion resultado = staffApiService.eliminarMision(idCategoria, idMision);
+    if (resultado.exito()) {
+      redirect.addFlashAttribute("toast", Toast.exito(resultado.mensaje()));
+    } else {
+      redirect.addFlashAttribute("toast", Toast.error(resultado.mensaje()));
+    }
+
+    return "redirect:/staff/misiones";
   }
 }

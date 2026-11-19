@@ -5,6 +5,9 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.AsignacionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaMisionesResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionForm;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PropuestaVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
@@ -467,6 +470,134 @@ public class StaffControllerTest {
         .andExpect(jsonPath("$.jobId").value("job-xyz"))
         .andExpect(jsonPath("$.estado").value("FINALIZADO"))
         .andExpect(jsonPath("$.creados").value(80));
+  }
+
+  /* =========================================================
+     Misiones por Categoría Controller Tests
+     ========================================================= */
+
+  @Test
+  void misiones_sinSesion_redirigeALogin() throws Exception {
+    mockMvc.perform(get("/staff/misiones"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/login"));
+  }
+
+  @Test
+  void misiones_rolDonante_redirigeALogin() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.DONANTE, 10L);
+
+    mockMvc.perform(get("/staff/misiones").session(session))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/login"));
+  }
+
+  @Test
+  void misiones_admin_cargaCategoriasYRetornaVista() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    var mision = new MisionResponse(10L, "HABIL_DONADOR", "Hábil donador", 5.0, "Insignia");
+    var cat = new CategoriaMisionesResponse(1L, "COLABORADOR", "SOSTENEDOR", List.of(mision));
+    when(staffApiService.obtenerCategoriasMisiones()).thenReturn(List.of(cat));
+
+    mockMvc.perform(get("/staff/misiones").session(session))
+        .andExpect(status().isOk())
+        .andExpect(view().name("staff/misiones"))
+        .andExpect(model().attribute("categorias", List.of(cat)));
+
+    verify(staffApiService).obtenerCategoriasMisiones();
+  }
+
+  @Test
+  void agregarMision_sinSesion_redirigeALogin() throws Exception {
+    mockMvc.perform(post("/staff/misiones/categorias/1")
+            .param("tipo", "HABIL_DONADOR")
+            .param("objetivo", "5"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/login"));
+  }
+
+  @Test
+  void agregarMision_admin_exito_redirigeYSeteaToast() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    when(staffApiService.agregarMision(eq(1L), any(MisionForm.class)))
+        .thenReturn(ResultadoOperacion.ok("Misión agregada"));
+
+    mockMvc.perform(post("/staff/misiones/categorias/1")
+            .session(session)
+            .param("tipo", "HABIL_DONADOR")
+            .param("nombre", "Hábil donador")
+            .param("objetivo", "5"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/staff/misiones"))
+        .andExpect(flash().attributeExists("toast"));
+
+    verify(staffApiService).agregarMision(eq(1L), any(MisionForm.class));
+  }
+
+  @Test
+  void agregarMision_admin_error_redirigeYSeteaToastError() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    when(staffApiService.agregarMision(eq(1L), any(MisionForm.class)))
+        .thenReturn(ResultadoOperacion.error("Error al agregar"));
+
+    mockMvc.perform(post("/staff/misiones/categorias/1")
+            .session(session)
+            .param("tipo", "HABIL_DONADOR")
+            .param("objetivo", "0"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/staff/misiones"))
+        .andExpect(flash().attributeExists("toast"));
+
+    verify(staffApiService).agregarMision(eq(1L), any(MisionForm.class));
+  }
+
+  @Test
+  void actualizarMision_sinSesion_redirigeALogin() throws Exception {
+    mockMvc.perform(post("/staff/misiones/categorias/1/10/editar")
+            .param("tipo", "HABIL_DONADOR")
+            .param("objetivo", "5"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/login"));
+  }
+
+  @Test
+  void actualizarMision_admin_exito_redirigeYSeteaToast() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    when(staffApiService.actualizarMision(eq(1L), eq(10L), any(MisionForm.class)))
+        .thenReturn(ResultadoOperacion.ok("Misión actualizada"));
+
+    mockMvc.perform(post("/staff/misiones/categorias/1/10/editar")
+            .session(session)
+            .param("tipo", "DONACIONES_EXITOSAS")
+            .param("nombre", "Cinco entregas")
+            .param("objetivo", "5"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/staff/misiones"))
+        .andExpect(flash().attributeExists("toast"));
+
+    verify(staffApiService).actualizarMision(eq(1L), eq(10L), any(MisionForm.class));
+  }
+
+  @Test
+  void eliminarMision_sinSesion_redirigeALogin() throws Exception {
+    mockMvc.perform(post("/staff/misiones/categorias/1/10/eliminar"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/login"));
+  }
+
+  @Test
+  void eliminarMision_admin_exito_redirigeYSeteaToast() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    when(staffApiService.eliminarMision(1L, 10L))
+        .thenReturn(ResultadoOperacion.ok("Misión eliminada"));
+
+    mockMvc.perform(post("/staff/misiones/categorias/1/10/eliminar")
+            .session(session))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/staff/misiones"))
+        .andExpect(flash().attributeExists("toast"));
+
+    verify(staffApiService).eliminarMision(1L, 10L);
   }
 }
 

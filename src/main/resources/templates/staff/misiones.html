@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Misiones por categoría',
+        'Configurá las misiones e insignias para cada nivel en la escala de reconocimiento.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: staff('misiones')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <div class="card-title-row" style="margin-bottom: var(--space-5);">
+        <div style="min-width:0;">
+            <h1 style="margin-bottom: var(--space-1);">Misiones por categoría</h1>
+            <p class="card-subtitle" style="margin:0;">
+                Definí los desafíos e insignias requeridos para ascender en la escala de reconocimiento:
+                <strong>Colaborador → Sostenedor → Transformador</strong>.
+            </p>
+        </div>
+    </div>
+
+    <!-- Estado vacío si no hay categorías devueltas por el servicio -->
+    <div th:if="${#lists.isEmpty(categorias)}">
+        <div th:replace="~{fragments/componentes :: estado-vacio(
+            'No hay categorías configuradas',
+            'El servicio de incentivos no tiene categorías de misiones disponibles en este momento.',
+            null, null)}"></div>
+    </div>
+
+    <!-- Listado de categorías con sus respectivas misiones -->
+    <div class="flex flex-col gap-5" th:unless="${#lists.isEmpty(categorias)}">
+
+        <section class="card" th:each="cat : ${categorias}" th:aria-labelledby="'cat-title-' + ${cat.id()}">
+            <div class="card-title-row" style="margin-bottom: var(--space-3);">
+                <div>
+                    <div style="display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;">
+                        <h2 class="heading-md" th:id="'cat-title-' + ${cat.id()}" style="margin:0;"
+                            th:text="${cat.nombreCategoria()}">COLABORADOR</h2>
+                        <span class="badge badge-info" th:if="${cat.siguienteCategoria() != null}"
+                              th:text="'Asciende a ' + ${cat.siguienteCategoria()}">Asciende a SOSTENEDOR</span>
+                        <span class="badge badge-neutral" th:unless="${cat.siguienteCategoria() != null}">Categoría máxima</span>
+                    </div>
+                    <p class="card-subtitle" style="margin: var(--space-1) 0 0;"
+                       th:text="'Misiones requeridas para los donantes de nivel ' + ${cat.nombreCategoria()} + '.'">
+                        Misiones requeridas para los donantes de este nivel.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm"
+                        th:data-open-modal="'modal-agregar-' + ${cat.id()}">
+                    + Agregar misión
+                </button>
+            </div>
+
+            <!-- Tabla de misiones -->
+            <div class="table-wrap" th:unless="${#lists.isEmpty(cat.misiones())}">
+                <table>
+                    <caption class="visually-hidden"
+                             th:text="'Misiones configuradas para ' + ${cat.nombreCategoria()}">
+                        Misiones de la categoría
+                    </caption>
+                    <thead>
+                    <tr>
+                        <th scope="col" style="width: 80px;">Orden</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Criterio</th>
+                        <th scope="col">Meta</th>
+                        <th scope="col">Insignia generada</th>
+                        <th scope="col" style="text-align: right;"><span class="visually-hidden">Acciones</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="m, iterStat : ${cat.misiones()}">
+                        <th scope="row">
+                            <span class="badge badge-neutral" th:text="'#' + ${iterStat.count}">#1</span>
+                        </th>
+                        <td>
+                            <strong th:text="${m.nombre() != null && !m.nombre().isBlank() ? m.nombre() : m.etiquetaTipo()}">Hábil donador</strong>
+                        </td>
+                        <td th:text="${m.etiquetaTipo()}">Cantidad de bienes donados</td>
+                        <td>
+                            <span th:text="${m.objetivoFormateado()} + ' ' + ${m.unidadObjetivo()}">5 bienes</span>
+                        </td>
+                        <td>
+                            <span class="chip" th:text="${m.descripcionInsignia() != null && !m.descripcionInsignia().isBlank() ? m.descripcionInsignia() : 'Insignia de ' + (m.nombre() != null && !m.nombre().isBlank() ? m.nombre() : cat.nombreCategoria())}">Insignia</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="display:flex; gap: var(--space-2); justify-content: flex-end; align-items:center;">
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        th:data-open-modal="'modal-editar-' + ${cat.id()} + '-' + ${m.id()}"
+                                        th:aria-label="'Editar misión ' + ${m.nombre()}">
+                                    Editar
+                                </button>
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        th:if="${#lists.size(cat.misiones()) > 1}"
+                                        th:data-open-modal="'modal-eliminar-' + ${cat.id()} + '-' + ${m.id()}"
+                                        th:aria-label="'Quitar misión ' + ${m.nombre()}">
+                                    Quitar
+                                </button>
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        th:unless="${#lists.size(cat.misiones()) > 1}"
+                                        disabled
+                                        title="La categoría debe conservar al menos una misión">
+                                    Quitar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Caso sin misiones para la categoría -->
+            <p th:if="${#lists.isEmpty(cat.misiones())}" class="card-subtitle" style="padding: var(--space-3) 0;">
+                No hay misiones configuradas para esta categoría. Podés agregar la primera con el botón superior.
+            </p>
+
+            <!-- ============ Modal: Agregar misión ============ -->
+            <div class="modal-overlay" th:id="'modal-agregar-' + ${cat.id()}" role="dialog" aria-modal="true"
+                 th:aria-labelledby="'titulo-modal-agregar-' + ${cat.id()}">
+                <div class="modal">
+                    <form th:action="@{/staff/misiones/categorias/{idCategoria}(idCategoria=${cat.id()})}"
+                          method="post" novalidate>
+                        <div class="modal-header">
+                            <div>
+                                <h2 th:id="'titulo-modal-agregar-' + ${cat.id()}" style="margin:0;">
+                                    Agregar misión a <span th:text="${cat.nombreCategoria()}">COLABORADOR</span>
+                                </h2>
+                                <p class="modal-desc" style="margin-top: var(--space-2);">
+                                    La misión se sumará a los requisitos que deben cumplir los donantes de esta categoría.
+                                </p>
+                            </div>
+                            <button type="button" class="modal-close" data-close-modal
+                                    aria-label="Cerrar el diálogo">✕</button>
+                        </div>
+
+                        <div class="field">
+                            <label th:for="'tipo-agregar-' + ${cat.id()}">Tipo de misión (criterio)</label>
+                            <select th:id="'tipo-agregar-' + ${cat.id()}" name="tipo" required data-autofocus>
+                                <option value="HABIL_DONADOR">Cantidad de bienes donados (HABIL_DONADOR)</option>
+                                <option value="DONACIONES_EXITOSAS">Donaciones entregadas (DONACIONES_EXITOSAS)</option>
+                                <option value="COMPLETITUD">Categorías distintas donadas (COMPLETITUD)</option>
+                                <option value="RACHA">Meses consecutivos con donación (RACHA)</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label th:for="'nombre-agregar-' + ${cat.id()}">Nombre de la misión (opcional)</label>
+                            <input type="text" th:id="'nombre-agregar-' + ${cat.id()}" name="nombre"
+                                   placeholder="Ej: Hábil donador">
+                        </div>
+
+                        <div class="field">
+                            <label th:for="'objetivo-agregar-' + ${cat.id()}">Objetivo / Meta requerida</label>
+                            <input type="number" th:id="'objetivo-agregar-' + ${cat.id()}" name="objetivo"
+                                   min="1" step="1" placeholder="Ej: 5" required>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                            <button type="submit" class="btn btn-primary"
+                                    data-loading-on-submit data-loading-texto="Agregando…">
+                                Agregar misión
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ============ Modales: Editar y Confirmar eliminación por cada misión ============ -->
+            <th:block th:each="m : ${cat.misiones()}">
+                <!-- Modal Editar misión -->
+                <div class="modal-overlay" th:id="'modal-editar-' + ${cat.id()} + '-' + ${m.id()}"
+                     role="dialog" aria-modal="true"
+                     th:aria-labelledby="'titulo-modal-editar-' + ${cat.id()} + '-' + ${m.id()}">
+                    <div class="modal">
+                        <form th:action="@{/staff/misiones/categorias/{idCategoria}/{idMision}/editar(idCategoria=${cat.id()}, idMision=${m.id()})}"
+                              method="post" novalidate>
+                            <div class="modal-header">
+                                <div>
+                                    <h2 th:id="'titulo-modal-editar-' + ${cat.id()} + '-' + ${m.id()}" style="margin:0;">
+                                        Editar misión en <span th:text="${cat.nombreCategoria()}">COLABORADOR</span>
+                                    </h2>
+                                    <p class="modal-desc" style="margin-top: var(--space-2);">
+                                        Modificá los parámetros y la meta de la misión seleccionada.
+                                    </p>
+                                </div>
+                                <button type="button" class="modal-close" data-close-modal
+                                        aria-label="Cerrar el diálogo">✕</button>
+                            </div>
+
+                            <div class="field">
+                                <label th:for="'tipo-editar-' + ${cat.id()} + '-' + ${m.id()}">Tipo de misión (criterio)</label>
+                                <select th:id="'tipo-editar-' + ${cat.id()} + '-' + ${m.id()}" name="tipo" required data-autofocus>
+                                    <option value="HABIL_DONADOR" th:selected="${m.tipo() == 'HABIL_DONADOR'}">Cantidad de bienes donados (HABIL_DONADOR)</option>
+                                    <option value="DONACIONES_EXITOSAS" th:selected="${m.tipo() == 'DONACIONES_EXITOSAS'}">Donaciones entregadas (DONACIONES_EXITOSAS)</option>
+                                    <option value="COMPLETITUD" th:selected="${m.tipo() == 'COMPLETITUD'}">Categorías distintas donadas (COMPLETITUD)</option>
+                                    <option value="RACHA" th:selected="${m.tipo() == 'RACHA'}">Meses consecutivos con donación (RACHA)</option>
+                                </select>
+                            </div>
+
+                            <div class="field">
+                                <label th:for="'nombre-editar-' + ${cat.id()} + '-' + ${m.id()}">Nombre de la misión</label>
+                                <input type="text" th:id="'nombre-editar-' + ${cat.id()} + '-' + ${m.id()}" name="nombre"
+                                       th:value="${m.nombre()}" placeholder="Ej: Hábil donador">
+                            </div>
+
+                            <div class="field">
+                                <label th:for="'objetivo-editar-' + ${cat.id()} + '-' + ${m.id()}">Objetivo / Meta requerida</label>
+                                <input type="number" th:id="'objetivo-editar-' + ${cat.id()} + '-' + ${m.id()}" name="objetivo"
+                                       min="0.1" step="any" th:value="${m.objetivoFormateado()}" required>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                                <button type="submit" class="btn btn-primary"
+                                        data-loading-on-submit data-loading-texto="Guardando…">
+                                    Guardar cambios
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Modal Confirmar Eliminación -->
+                <div class="modal-overlay" th:if="${#lists.size(cat.misiones()) > 1}"
+                     th:id="'modal-eliminar-' + ${cat.id()} + '-' + ${m.id()}"
+                     role="dialog" aria-modal="true"
+                     th:aria-labelledby="'titulo-modal-eliminar-' + ${cat.id()} + '-' + ${m.id()}">
+                    <div class="modal">
+                        <div class="modal-header">
+                            <div>
+                                <h2 th:id="'titulo-modal-eliminar-' + ${cat.id()} + '-' + ${m.id()}" style="margin:0;">
+                                    Confirmar eliminación
+                                </h2>
+                                <p class="modal-desc" style="margin-top: var(--space-2);">
+                                    ¿Estás seguro de que deseás quitar la misión
+                                    <strong th:text="${m.nombre() != null && !m.nombre().isBlank() ? m.nombre() : m.etiquetaTipo()}">Hábil donador</strong>
+                                    de la categoría <strong th:text="${cat.nombreCategoria()}">COLABORADOR</strong>?
+                                </p>
+                                <p class="modal-desc" style="margin-top: var(--space-1); font-size: var(--text-xs); color: var(--color-danger);">
+                                    Atención: los donantes que estén progresando en esta misión serán reasignados automáticamente a otra misión disponible de la categoría.
+                                </p>
+                            </div>
+                            <button type="button" class="modal-close" data-close-modal
+                                    aria-label="Cerrar el diálogo">✕</button>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                            <form method="post" style="margin:0;"
+                                  th:action="@{/staff/misiones/categorias/{idCategoria}/{idMision}/eliminar(idCategoria=${cat.id()}, idMision=${m.id()})}">
+                                <button type="submit" class="btn btn-danger"
+                                        data-loading-on-submit data-loading-texto="Eliminando…">
+                                    Confirmar eliminación
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
+
+        </section>
+
+    </div>
+
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

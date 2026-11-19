@@ -13,6 +13,9 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PageResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaMisionesResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionForm;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.AsignacionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ConfirmarAsignacionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionDetalleResponse;
@@ -629,6 +632,123 @@ public class StaffApiService {
     } catch (Exception e) {
       log.error("Error al obtener ranking desde {}: {}", incentivosUrl, e.getMessage());
       return List.of();
+    }
+  }
+
+  /* =========================================================
+     Módulo Misiones por Categoría (incentivos-service)
+     ========================================================= */
+
+  public List<CategoriaMisionesResponse> obtenerCategoriasMisiones() {
+    try {
+      var respuesta = restTemplate.exchange(
+          incentivosUrl + "/categorias",
+          HttpMethod.GET,
+          null,
+          new ParameterizedTypeReference<List<CategoriaMisionesResponse>>() {}
+      );
+      if (respuesta.getStatusCode().is2xxSuccessful() && respuesta.getBody() != null) {
+        return respuesta.getBody();
+      }
+      return List.of();
+    } catch (HttpStatusCodeException e) {
+      log.warn("Error HTTP al obtener categorías de misiones desde {}: {} - {}", incentivosUrl, e.getStatusCode(), e.getResponseBodyAsString());
+      return List.of();
+    } catch (Exception e) {
+      log.warn("Error al obtener categorías de misiones desde {}: {}", incentivosUrl, e.getMessage());
+      return List.of();
+    }
+  }
+
+  public ResultadoOperacion agregarMision(Long idCategoria, MisionForm form) {
+    if (idCategoria == null) {
+      return ResultadoOperacion.error("Identificador de categoría inválido.");
+    }
+    if (form == null) {
+      return ResultadoOperacion.error("Formulario de misión no provisto.");
+    }
+    if (form.getTipo() == null || form.getTipo().isBlank()) {
+      return ResultadoOperacion.error("El tipo de misión es obligatorio.");
+    }
+    if (form.getObjetivo() == null || form.getObjetivo() <= 0) {
+      return ResultadoOperacion.error("El objetivo debe ser mayor a 0.");
+    }
+
+    try {
+      var request = new HttpEntity<>(form);
+      var respuesta = restTemplate.postForEntity(
+          incentivosUrl + "/categorias/" + idCategoria + "/misiones",
+          request,
+          Void.class
+      );
+      if (respuesta.getStatusCode().is2xxSuccessful()) {
+        return ResultadoOperacion.ok("Agregamos la misión correctamente a la categoría.");
+      }
+      return ResultadoOperacion.error("No se pudo agregar la misión a la categoría.");
+    } catch (HttpStatusCodeException e) {
+      log.warn("Error HTTP al agregar misión a categoría {}: {} - {}", idCategoria, e.getStatusCode(), e.getResponseBodyAsString());
+      return ResultadoOperacion.error(extraerMensajeError(e, "Error al agregar la misión."));
+    } catch (Exception e) {
+      log.error("Error inesperado al agregar misión a categoría {}: {}", idCategoria, e.getMessage());
+      return ResultadoOperacion.error("No se pudo conectar con el servicio de incentivos.");
+    }
+  }
+
+  public ResultadoOperacion actualizarMision(Long idCategoria, Long idMision, MisionForm form) {
+    if (idCategoria == null) {
+      return ResultadoOperacion.error("Identificador de categoría inválido.");
+    }
+    if (idMision == null) {
+      return ResultadoOperacion.error("Identificador de misión inválido.");
+    }
+    if (form == null) {
+      return ResultadoOperacion.error("Formulario de misión no provisto.");
+    }
+    if (form.getTipo() == null || form.getTipo().isBlank()) {
+      return ResultadoOperacion.error("El tipo de misión es obligatorio.");
+    }
+    if (form.getObjetivo() == null || form.getObjetivo() <= 0) {
+      return ResultadoOperacion.error("El objetivo debe ser mayor a 0.");
+    }
+
+    try {
+      var request = new HttpEntity<>(form);
+      var respuesta = restTemplate.exchange(
+          incentivosUrl + "/categorias/" + idCategoria + "/misiones/" + idMision,
+          HttpMethod.PUT,
+          request,
+          Void.class
+      );
+      if (respuesta.getStatusCode().is2xxSuccessful()) {
+        return ResultadoOperacion.ok("Actualizamos la misión correctamente.");
+      }
+      return ResultadoOperacion.error("No se pudo actualizar la misión.");
+    } catch (HttpStatusCodeException e) {
+      log.warn("Error HTTP al actualizar misión {} en categoría {}: {} - {}", idMision, idCategoria, e.getStatusCode(), e.getResponseBodyAsString());
+      return ResultadoOperacion.error(extraerMensajeError(e, "Error al actualizar la misión."));
+    } catch (Exception e) {
+      log.error("Error inesperado al actualizar misión {} en categoría {}: {}", idMision, idCategoria, e.getMessage());
+      return ResultadoOperacion.error("No se pudo conectar con el servicio de incentivos.");
+    }
+  }
+
+  public ResultadoOperacion eliminarMision(Long idCategoria, Long idMision) {
+    if (idCategoria == null) {
+      return ResultadoOperacion.error("Identificador de categoría inválido.");
+    }
+    if (idMision == null) {
+      return ResultadoOperacion.error("Identificador de misión inválido.");
+    }
+
+    try {
+      restTemplate.delete(incentivosUrl + "/categorias/" + idCategoria + "/misiones/" + idMision);
+      return ResultadoOperacion.ok("Eliminamos la misión correctamente de la categoría.");
+    } catch (HttpStatusCodeException e) {
+      log.warn("Error HTTP al eliminar misión {} en categoría {}: {} - {}", idMision, idCategoria, e.getStatusCode(), e.getResponseBodyAsString());
+      return ResultadoOperacion.error(extraerMensajeError(e, "No se pudo eliminar la misión."));
+    } catch (Exception e) {
+      log.error("Error inesperado al eliminar misión {} en categoría {}: {}", idMision, idCategoria, e.getMessage());
+      return ResultadoOperacion.error("No se pudo conectar con el servicio de incentivos.");
     }
   }
 
