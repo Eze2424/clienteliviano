@@ -23,6 +23,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 public class PublicoController {
 
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PublicoController.class);
+
   private final RegistroService registroService;
   private final RestTemplate restTemplate;
 
@@ -50,6 +52,7 @@ public class PublicoController {
         }
       }
     } catch (Exception e) {
+      log.warn("No se pudieron obtener las entregas públicas desde donaciones-service: {}", e.getMessage(), e);
       entregasPublicas = List.of();
     }
     model.addAttribute("entregasPublicas", entregasPublicas);

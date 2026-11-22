@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -138,5 +140,38 @@ public class PublicoControllerTest {
         .andExpect(flash().attributeExists("toast"));
 
     verify(registroService).procesarRegistro(any(RegistroForm.class));
+  }
+
+  @Test
+  void deserializacionJsonExactoDonacionesService() throws Exception {
+    String jsonExacto = """
+        {
+          "id": 1,
+          "subcategoria": "Alimentos no perecederos",
+          "entidadNombre": "Fundacion Medrano",
+          "entidadLatitud": -34.59868,
+          "entidadLongitud": -58.41995,
+          "entidadDireccion": "Medrano 951, Almagro",
+          "fechaEntrega": "2026-11-22",
+          "cantidadBienes": 5,
+          "fotosComprobante": [
+            "http://localhost:8086/uploads/recepciones/comprobante1.jpg"
+          ]
+        }
+        """;
+
+    tools.jackson.databind.json.JsonMapper mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+    DonacionPublicaResponse res = mapper.readValue(jsonExacto, DonacionPublicaResponse.class);
+
+    assertEquals(1L, res.id());
+    assertEquals("Alimentos no perecederos", res.subcategoria());
+    assertEquals("Alimentos no perecederos", res.descripcion());
+    assertEquals("Fundacion Medrano", res.entidadNombre());
+    assertEquals("Medrano 951, Almagro", res.entidadDireccion());
+    assertEquals(-34.59868, res.latitud(), 0.0001);
+    assertEquals(-58.41995, res.longitud(), 0.0001);
+    assertEquals(5, res.cantidadBienes());
+    assertEquals(1, res.fotos().size());
+    assertEquals("http://localhost:8086/uploads/recepciones/comprobante1.jpg", res.fotos().get(0));
   }
 }

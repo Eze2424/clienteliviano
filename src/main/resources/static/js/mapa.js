@@ -13,6 +13,93 @@
             && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
     }
 
+    function crearContenidoPopup(dataset) {
+        const wrap = document.createElement('div');
+        wrap.className = 'map-popup-content';
+        wrap.style.fontFamily = 'var(--font-body, sans-serif)';
+        wrap.style.fontSize = 'var(--text-sm, 14px)';
+        wrap.style.color = 'var(--color-text, #262220)';
+        wrap.style.lineHeight = '1.4';
+
+        if (dataset.popupFoto) {
+            const imgWrap = document.createElement('div');
+            imgWrap.style.width = '100%';
+            imgWrap.style.height = '120px';
+            imgWrap.style.borderRadius = 'var(--radius-sm, 6px)';
+            imgWrap.style.overflow = 'hidden';
+            imgWrap.style.marginBottom = '8px';
+            imgWrap.style.background = '#e2e8f0';
+
+            const img = document.createElement('img');
+            img.src = dataset.popupFoto;
+            img.alt = dataset.popupTitulo || 'Comprobante';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.style.display = 'block';
+            imgWrap.appendChild(img);
+            wrap.appendChild(imgWrap);
+        }
+
+        if (dataset.popupTitulo) {
+            const h = document.createElement('strong');
+            h.style.display = 'block';
+            h.style.fontSize = 'var(--text-base, 15px)';
+            h.style.marginBottom = '2px';
+            h.textContent = dataset.popupTitulo;
+            wrap.appendChild(h);
+        }
+
+        if (dataset.popupSubtitulo) {
+            const p = document.createElement('p');
+            p.style.margin = '0 0 4px 0';
+            p.style.color = 'var(--color-text-muted, #6B6560)';
+            p.textContent = dataset.popupSubtitulo;
+            wrap.appendChild(p);
+        }
+
+        if (dataset.popupDireccion) {
+            const dir = document.createElement('p');
+            dir.style.margin = '0 0 4px 0';
+            dir.style.fontSize = 'var(--text-xs, 12px)';
+            dir.style.color = 'var(--color-text-faint, #7B726B)';
+            dir.textContent = dataset.popupDireccion;
+            wrap.appendChild(dir);
+        }
+
+        const metaRow = document.createElement('div');
+        metaRow.style.display = 'flex';
+        metaRow.style.justifyContent = 'space-between';
+        metaRow.style.alignItems = 'center';
+        metaRow.style.gap = '8px';
+        metaRow.style.marginTop = '6px';
+        metaRow.style.fontSize = 'var(--text-xs, 12px)';
+
+        if (dataset.popupBienes) {
+            const badge = document.createElement('span');
+            badge.style.background = 'var(--color-success-bg, #E7F6EC)';
+            badge.style.color = 'var(--color-success, #267E49)';
+            badge.style.padding = '2px 6px';
+            badge.style.borderRadius = '4px';
+            badge.style.fontWeight = '600';
+            badge.textContent = dataset.popupBienes;
+            metaRow.appendChild(badge);
+        }
+
+        if (dataset.popupFecha) {
+            const fecha = document.createElement('span');
+            fecha.style.color = 'var(--color-text-faint, #7B726B)';
+            fecha.textContent = dataset.popupFecha;
+            metaRow.appendChild(fecha);
+        }
+
+        if (metaRow.hasChildNodes()) {
+            wrap.appendChild(metaRow);
+        }
+
+        return wrap;
+    }
+
     function iniciarMapa(contenedor) {
         const pines = Array.from(contenedor.querySelectorAll('.map-pin[data-lat][data-lon]'));
 
@@ -42,10 +129,21 @@
             }
 
             pinClone.hidden = false;
+            const tienePopup = Boolean(pinClone.dataset.popupTitulo);
             const icono = L.divIcon({ className: 'map-marker', html: pinClone.outerHTML, iconSize: [0, 0] });
-            const marcador = L.marker([lat, lon], { icon: icono, interactive: false, keyboard: false }).addTo(mapa);
+            const marcador = L.marker([lat, lon], {
+                icon: icono,
+                interactive: tienePopup,
+                keyboard: tienePopup
+            }).addTo(mapa);
+
+            if (tienePopup) {
+                const popupContent = crearContenidoPopup(pinClone.dataset);
+                marcador.bindPopup(popupContent, { maxWidth: 280 });
+            }
+
             if (pin.dataset.id) {
-                marcadores.set(pin.dataset.id, { mapa, marcador, contenedor });
+                marcadores.set(pin.dataset.id, { mapa, marcador, contenedor, tienePopup });
             }
             puntos.push([lat, lon]);
         });
@@ -80,6 +178,10 @@
         } else {
             destino.mapa.flyTo(destino.marcador.getLatLng(), ZOOM_ENFOCADO, { duration: 0.6 });
         }
+
+        if (destino.tienePopup && destino.marcador.getPopup()) {
+            destino.marcador.openPopup();
+        }
     }
 
     function actualizarElemento(id, lat, lon, textoFecha) {
@@ -90,9 +192,20 @@
         if (!registro && marcadoresPendientes.has(idStr) && posicionValida(lat, lon)) {
             const pend = marcadoresPendientes.get(idStr);
             pend.pinElement.hidden = false;
+            const tienePopup = Boolean(pend.pinElement.dataset.popupTitulo);
             const icono = L.divIcon({ className: 'map-marker', html: pend.pinElement.outerHTML, iconSize: [0, 0] });
-            const marcador = L.marker([lat, lon], { icon: icono, interactive: false, keyboard: false }).addTo(pend.mapa);
-            registro = { mapa: pend.mapa, marcador, contenedor: pend.contenedor };
+            const marcador = L.marker([lat, lon], {
+                icon: icono,
+                interactive: tienePopup,
+                keyboard: tienePopup
+            }).addTo(pend.mapa);
+
+            if (tienePopup) {
+                const popupContent = crearContenidoPopup(pend.pinElement.dataset);
+                marcador.bindPopup(popupContent, { maxWidth: 280 });
+            }
+
+            registro = { mapa: pend.mapa, marcador, contenedor: pend.contenedor, tienePopup };
             marcadores.set(idStr, registro);
             marcadoresPendientes.delete(idStr);
         }

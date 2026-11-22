@@ -38,15 +38,20 @@ public class RestClientConfig {
     RestTemplate restTemplate = new RestTemplate(new org.springframework.http.client.JdkClientHttpRequestFactory());
 
     ClientHttpRequestInterceptor interceptor = (request, body, execution) -> {
-      ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-      if (attributes != null) {
-        HttpServletRequest httpRequest = attributes.getRequest();
-        HttpSession session = httpRequest.getSession(false);
+      String path = request.getURI().getPath();
+      boolean esPublico = path != null && path.contains("/publico/");
 
-        if (session != null) {
-          String token = obtenerTokenValido(session);
-          if (token != null && request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION) == null) {
-            request.getHeaders().setBearerAuth(token);
+      if (!esPublico) {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+          HttpServletRequest httpRequest = attributes.getRequest();
+          HttpSession session = httpRequest.getSession(false);
+
+          if (session != null) {
+            String token = obtenerTokenValido(session);
+            if (token != null && request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION) == null) {
+              request.getHeaders().setBearerAuth(token);
+            }
           }
         }
       }
