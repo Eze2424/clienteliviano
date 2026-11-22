@@ -155,7 +155,10 @@
 
         try {
             const host = window.location.hostname || 'localhost';
-            const wsUrl = `ws://${host}:8083/logistica`;
+            const wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            const wsUrl = window.location.port === '8086'
+                ? `ws://${host}:8083/logistica`
+                : `${wsProto}://${window.location.host}/logistica`;
             const ws = new WebSocket(wsUrl);
 
             ws.onopen = () => {
