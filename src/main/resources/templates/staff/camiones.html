@@ -36,7 +36,7 @@
     <div class="flex flex-col gap-4" th:unless="${#lists.isEmpty(camiones)}">
 
         <!-- ============ Mapa de la flota ============ -->
-        <section class="map-canvas map-canvas-ancho" data-mapa aria-labelledby="titulo-mapa">
+        <section class="map-canvas map-canvas-ancho" data-mapa th:data-mapa-url="@{/staff/api/camiones}" aria-labelledby="titulo-mapa">
             <h2 id="titulo-mapa" class="visually-hidden">Ubicación de los camiones</h2>
             <div class="map-legend">
                 <span class="legend-key">
@@ -80,7 +80,7 @@
                         <td th:text="${#numbers.formatDecimal(c.capacidadDeCarga(), 1, 'POINT', 0, 'COMMA')}">4.500</td>
                         <td th:text="${#numbers.formatDecimal(c.volumen(), 1, 1)}">32,0</td>
                         <td th:text="${#numbers.formatDecimal(c.altura(), 1, 1)}">2,6</td>
-                        <td th:text="${c.ultimaActualizacion() != null ? #temporals.format(c.ultimaActualizacion(), 'dd/MM/yyyy HH:mm') : '-'}">-</td>
+                        <td th:data-mapa-actualizacion="${c.id()}" th:text="${c.ultimaActualizacion() != null ? #temporals.format(c.ultimaActualizacion(), 'dd/MM/yyyy HH:mm') : '-'}">-</td>
                         <td>
                             <div style="display:flex; gap: var(--space-2); align-items:center;">
                                 <a th:href="@{/staff/camiones(editarId=${c.id()})}"
@@ -121,6 +121,94 @@
                                     </div>
                                 </div>
                             </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ============ Modo Demostración ============ -->
+        <section aria-labelledby="titulo-demo" class="card" style="margin-top: var(--space-4); border: 2px dashed var(--color-warning);">
+            <div style="display:flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4);">
+                <div>
+                    <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1);">
+                        <span class="badge badge-warning">🧪 Modo Demostración</span>
+                        <h2 id="titulo-demo" class="heading-sm" style="margin:0;">Simulación de Logística y Chofer</h2>
+                    </div>
+                    <p class="card-subtitle" style="margin:0; max-width: 760px;">
+                        Las acciones del chofer (iniciar viaje, registrar llegada a parada) se realizan habitualmente a través de la API externa (Postman). Desde este panel podés disparar la planificación de rutas (Disilab o Demo local) e iniciar el traslado para probar el monitoreo en tiempo real.
+                    </p>
+                </div>
+                <div style="display:flex; gap: var(--space-2); flex-wrap: wrap;">
+                    <form th:action="@{/staff/camiones/planificar}" method="post" style="margin:0;">
+                        <button type="submit" class="btn btn-secondary btn-sm"
+                                data-loading-on-submit data-loading-texto="Planificando…">
+                            Planificar rutas (Disilab)
+                        </button>
+                    </form>
+                    <form th:action="@{/staff/camiones/planificar-demo}" method="post" style="margin:0;">
+                        <button type="submit" class="btn btn-primary btn-sm"
+                                data-loading-on-submit data-loading-texto="Generando…">
+                            Generar rutas demo locales (offline)
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div th:if="${rutas == null || #lists.isEmpty(rutas)}" style="padding: var(--space-4); background: var(--color-bg); border-radius: var(--radius-md); text-align: center; color: var(--color-text-muted);">
+                <p style="margin:0;">No hay rutas planificadas activas actualmente. Podés generarlas con los botones superiores.</p>
+            </div>
+
+            <div th:unless="${rutas == null || #lists.isEmpty(rutas)}" class="table-wrap">
+                <table>
+                    <caption class="visually-hidden">Rutas planificadas de entrega</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">ID Ruta</th>
+                        <th scope="col">Camión</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Paradas programadas</th>
+                        <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="r : ${rutas}">
+                        <td>
+                            <code th:text="${r.idExterno()}">RUTA-001</code>
+                        </td>
+                        <td>
+                            <strong th:text="${r.patenteCamion() != null ? r.patenteCamion() : ('Camión #' + r.camionId())}">AB-123-CD</strong>
+                        </td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${r.estado() == 'PENDIENTE' ? 'badge-warning' : (r.estado() == 'EN_CURSO' or r.estado() == 'EN_TRASLADO' ? 'badge-info' : 'badge-success')}"
+                                  th:text="${r.estado()}">PENDIENTE</span>
+                        </td>
+                        <td>
+                            <ul style="margin:0; padding-left: 1.2rem; font-size: var(--text-sm);">
+                                <li th:each="p : ${r.paradas()}" style="margin-bottom: var(--space-1);">
+                                    <strong>Parada <span th:text="${p.numeroParada()}">1</span>:</strong>
+                                    Donación #<span th:text="${p.donacionId()}">10</span>
+                                    <span th:if="${p.direccionDestino() != null}"> - <span th:text="${p.direccionDestino()}">Destino</span></span>
+                                    (<span class="text-muted" th:text="${p.estadoEntrega()}">ASIGNADA</span>)
+                                </li>
+                            </ul>
+                        </td>
+                        <td>
+                            <form th:if="${r.estado() == 'PENDIENTE'}"
+                                  th:action="@{/staff/camiones/rutas/{id}/en-traslado(id=${r.idExterno()})}"
+                                  method="post" style="margin:0;">
+                                <button type="submit" class="btn btn-primary btn-sm"
+                                        title="Dispara el envío de posiciones GPS simuladas en tiempo real"
+                                        data-loading-on-submit data-loading-texto="Iniciando…">
+                                    Iniciar traslado (Demo)
+                                </button>
+                                <span class="hint" style="display:block; margin-top:var(--space-1); font-size:var(--text-xs);">Dispara GPS simulado</span>
+                            </form>
+                            <span th:unless="${r.estado() == 'PENDIENTE'}" class="text-muted" style="font-size: var(--text-sm);">
+                                En viaje o completada
+                            </span>
                         </td>
                     </tr>
                     </tbody>

@@ -5,6 +5,7 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.Toast;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ConfirmacionRecepcionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadForm;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PosicionCamionLiveDTO;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
 import jakarta.servlet.http.HttpSession;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -252,6 +254,43 @@ public class EntidadController {
 
     model.addAttribute("entregas", entregasVista);
     return "entidad/entregas";
+  }
+
+  @GetMapping("/api/entregas")
+  @ResponseBody
+  public java.util.List<PosicionCamionLiveDTO> apiEntregas(HttpSession session) {
+    UsuarioActual yo = exigirEntidad(session);
+    if (yo == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autorizado");
+    }
+
+    var optDash = entidadApiService.dashboard();
+    if (optDash.isEmpty()) {
+      return java.util.List.of();
+    }
+
+    var activas = optDash.get().donaciones().stream()
+        .filter(d -> "EN_TRASLADO".equalsIgnoreCase(d.estado()) || "LISTA".equalsIgnoreCase(d.estado()) || "ASIGNADA".equalsIgnoreCase(d.estado()))
+        .toList();
+
+    if (activas.isEmpty()) {
+      return java.util.List.of();
+    }
+
+    java.util.List<Long> ids = activas.stream()
+        .map(ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionAsignadaDTO::id)
+        .toList();
+
+    java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    return entidadApiService.entregas(ids).stream()
+        .map(s -> new PosicionCamionLiveDTO(
+            s.idEntrega(),
+            s.patenteCamion() != null ? s.patenteCamion() : "S/D",
+            s.latitud() != null ? s.latitud() : -34.6037,
+            s.longitud() != null ? s.longitud() : -58.3816,
+            s.ultimaActualizacion() != null ? s.ultimaActualizacion().format(fmt) : "-"
+        ))
+        .toList();
   }
 
   /* ---------- CU3: detalle y confirmación de recepción (nivel 3) ---------- */

@@ -4,6 +4,7 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Toast;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.AsignacionResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.BienForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CamionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaMisionesResponse;
@@ -15,14 +16,20 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteAltaForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ImportacionJobResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PageResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PosicionCamionLiveDTO;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.RutaResumenResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.entities.TipoOrganizacion;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
+import ar.edu.utn.frba.ddsi.clienteliviano.services.FotoRecepcionStorage;
 import ar.edu.utn.frba.ddsi.clienteliviano.services.StaffApiService;
 import ar.edu.utn.frba.ddsi.clienteliviano.web.Sesion;
 import jakarta.servlet.http.HttpSession;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -52,6 +59,7 @@ public class StaffController {
   private final Sesion sesion;
   private final RestTemplate restTemplate;
   private final StaffApiService staffApiService;
+  private final FotoRecepcionStorage fotoRecepcionStorage;
 
   @Value("${backend.api.url.donaciones}")
   private String donacionesUrl;
@@ -59,10 +67,16 @@ public class StaffController {
   @Value("${backend.api.url.logistica}")
   private String logisticaUrl;
 
-  public StaffController(Sesion sesion, RestTemplate restTemplate, StaffApiService staffApiService) {
+  @Autowired
+  public StaffController(Sesion sesion, RestTemplate restTemplate, StaffApiService staffApiService, FotoRecepcionStorage fotoRecepcionStorage) {
     this.sesion = sesion;
     this.restTemplate = restTemplate;
     this.staffApiService = staffApiService;
+    this.fotoRecepcionStorage = fotoRecepcionStorage;
+  }
+
+  public StaffController(Sesion sesion, RestTemplate restTemplate, StaffApiService staffApiService) {
+    this(sesion, restTemplate, staffApiService, null);
   }
 
   /**
@@ -207,12 +221,35 @@ public class StaffController {
                                   RedirectAttributes redirect) {
     if (exigirAdmin(session) == null) return "redirect:/login";
 
+    List<String> fotosGuardadas = new ArrayList<>();
+    if (form.getBienes() != null && fotoRecepcionStorage != null) {
+      try {
+        for (BienForm b : form.getBienes()) {
+          if (b.getArchivoFoto() != null && !b.getArchivoFoto().isEmpty()) {
+            List<String> urls = fotoRecepcionStorage.guardarFotos(new MultipartFile[]{ b.getArchivoFoto() });
+            if (urls != null && !urls.isEmpty()) {
+              b.setFoto(urls.get(0));
+              fotosGuardadas.add(urls.get(0));
+            }
+          }
+        }
+      } catch (Exception e) {
+        fotoRecepcionStorage.eliminarFotos(fotosGuardadas);
+        model.addAttribute("error", e.getMessage() != null ? e.getMessage() : "Error al procesar la fotografía del bien.");
+        cargarDatosNuevaDonacion(model);
+        return "staff/nueva-donacion";
+      }
+    }
+
     ResultadoOperacion resultado = staffApiService.crearDonacion(form);
     if (resultado.exito()) {
       redirect.addFlashAttribute("toast", Toast.exito(resultado.mensaje()));
       return "redirect:/staff/dashboard";
     }
 
+    if (fotoRecepcionStorage != null && !fotosGuardadas.isEmpty()) {
+      fotoRecepcionStorage.eliminarFotos(fotosGuardadas);
+    }
     model.addAttribute("error", resultado.mensaje());
     cargarDatosNuevaDonacion(model);
     return "staff/nueva-donacion";
@@ -341,6 +378,7 @@ public class StaffController {
 
     List<CamionResponse> camiones = staffApiService.camiones();
     model.addAttribute("camiones", camiones);
+    model.addAttribute("rutas", staffApiService.obtenerRutas());
 
     if (editarId != null && !editarId.isBlank()) {
       var camionOpt = staffApiService.camionPorId(editarId);
@@ -404,6 +442,63 @@ public class StaffController {
     }
 
     return "redirect:/staff/camiones";
+  }
+
+  @PostMapping("/camiones/planificar")
+  public String planificarRutas(HttpSession session, RedirectAttributes redirect) {
+    if (exigirAdmin(session) == null) return "redirect:/login";
+
+    ResultadoOperacion resultado = staffApiService.planificarRutas();
+    if (resultado.exito()) {
+      redirect.addFlashAttribute("toast", Toast.exito(resultado.mensaje()));
+    } else {
+      redirect.addFlashAttribute("toast", Toast.error(resultado.mensaje()));
+    }
+    return "redirect:/staff/camiones";
+  }
+
+  @PostMapping("/camiones/planificar-demo")
+  public String planificarRutasDemo(HttpSession session, RedirectAttributes redirect) {
+    if (exigirAdmin(session) == null) return "redirect:/login";
+
+    ResultadoOperacion resultado = staffApiService.planificarRutasDemo();
+    if (resultado.exito()) {
+      redirect.addFlashAttribute("toast", Toast.exito(resultado.mensaje()));
+    } else {
+      redirect.addFlashAttribute("toast", Toast.error(resultado.mensaje()));
+    }
+    return "redirect:/staff/camiones";
+  }
+
+  @PostMapping("/camiones/rutas/{id}/en-traslado")
+  public String iniciarRutaDemo(@PathVariable String id, HttpSession session, RedirectAttributes redirect) {
+    if (exigirAdmin(session) == null) return "redirect:/login";
+
+    ResultadoOperacion resultado = staffApiService.iniciarRuta(id);
+    if (resultado.exito()) {
+      redirect.addFlashAttribute("toast", Toast.exito(resultado.mensaje()));
+    } else {
+      redirect.addFlashAttribute("toast", Toast.error(resultado.mensaje()));
+    }
+    return "redirect:/staff/camiones";
+  }
+
+  @GetMapping("/api/camiones")
+  @ResponseBody
+  public List<PosicionCamionLiveDTO> apiCamiones(HttpSession session) {
+    if (exigirAdmin(session) == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autorizado");
+    }
+    DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    return staffApiService.camiones().stream()
+        .map(c -> new PosicionCamionLiveDTO(
+            c.id(),
+            c.patente(),
+            c.latitud(),
+            c.longitud(),
+            c.ultimaActualizacion() != null ? c.ultimaActualizacion().format(fmt) : "-"
+        ))
+        .toList();
   }
 
   /* ---------- CU5: ranking ---------- */

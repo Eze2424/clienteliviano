@@ -16,6 +16,8 @@ import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CategoriaMisionesResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.MisionResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ParadaResumenResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.RutaResumenResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.AsignacionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ConfirmarAsignacionResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionDetalleResponse;
@@ -212,6 +214,79 @@ public class StaffApiService {
   }
 
   /* =========================================================
+     Módulo Rutas y Demostración (logistica-service)
+     ========================================================= */
+
+  public List<RutaResumenResponse> obtenerRutas() {
+    try {
+      var respuesta = restTemplate.exchange(
+          logisticaUrl + "/rutas",
+          HttpMethod.GET,
+          null,
+          new ParameterizedTypeReference<List<RutaResumenResponse>>() {}
+      );
+      if (respuesta.getStatusCode().is2xxSuccessful() && respuesta.getBody() != null) {
+        return respuesta.getBody();
+      }
+      return List.of();
+    } catch (Exception e) {
+      log.warn("Error al obtener rutas desde {}: {}", logisticaUrl, e.getMessage());
+      return List.of();
+    }
+  }
+
+  public ResultadoOperacion planificarRutas() {
+    try {
+      var respuesta = restTemplate.postForEntity(logisticaUrl + "/rutas/planificacion", null, Void.class);
+      if (respuesta.getStatusCode().is2xxSuccessful()) {
+        return ResultadoOperacion.ok("Rutas planificadas correctamente con Disilab.");
+      }
+      return ResultadoOperacion.error("No se pudieron planificar las rutas con Disilab.");
+    } catch (HttpStatusCodeException e) {
+      log.warn("Error HTTP al planificar rutas: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+      return ResultadoOperacion.error(extraerMensajeError(e, "Error al planificar rutas."));
+    } catch (Exception e) {
+      log.error("Error inesperado al planificar rutas: {}", e.getMessage());
+      return ResultadoOperacion.error("No se pudo conectar con el servicio de logística.");
+    }
+  }
+
+  public ResultadoOperacion planificarRutasDemo() {
+    try {
+      var respuesta = restTemplate.postForEntity(logisticaUrl + "/rutas/planificacion-demo", null, Void.class);
+      if (respuesta.getStatusCode().is2xxSuccessful()) {
+        return ResultadoOperacion.ok("Rutas demo locales generadas exitosamente (modo offline).");
+      }
+      return ResultadoOperacion.error("No se pudieron generar las rutas demo.");
+    } catch (HttpStatusCodeException e) {
+      log.warn("Error HTTP al generar rutas demo: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+      return ResultadoOperacion.error(extraerMensajeError(e, "Error al generar rutas demo."));
+    } catch (Exception e) {
+      log.error("Error inesperado al generar rutas demo: {}", e.getMessage());
+      return ResultadoOperacion.error("No se pudo conectar con el servicio de logística.");
+    }
+  }
+
+  public ResultadoOperacion iniciarRuta(String idExterno) {
+    if (idExterno == null || idExterno.isBlank()) {
+      return ResultadoOperacion.error("Identificador de ruta inválido.");
+    }
+    try {
+      var respuesta = restTemplate.postForEntity(logisticaUrl + "/rutas/" + idExterno + "/en-traslado", null, Void.class);
+      if (respuesta.getStatusCode().is2xxSuccessful()) {
+        return ResultadoOperacion.ok("Ruta " + idExterno + " iniciada. Camión en traslado.");
+      }
+      return ResultadoOperacion.error("No se pudo iniciar la ruta " + idExterno + ".");
+    } catch (HttpStatusCodeException e) {
+      log.warn("Error HTTP al iniciar ruta {}: {} - {}", idExterno, e.getStatusCode(), e.getResponseBodyAsString());
+      return ResultadoOperacion.error(extraerMensajeError(e, "Error al iniciar el traslado de la ruta."));
+    } catch (Exception e) {
+      log.error("Error inesperado al iniciar ruta {}: {}", idExterno, e.getMessage());
+      return ResultadoOperacion.error("No se pudo conectar con el servicio de logística.");
+    }
+  }
+
+  /* =========================================================
      Módulo Donantes (donaciones-service)
      ========================================================= */
 
@@ -387,6 +462,9 @@ public class StaffApiService {
       }
       if (b.getCantidad() == null || b.getCantidad() <= 0) {
         return ResultadoOperacion.error("La cantidad de cada bien debe ser mayor a 0 (bien #" + (i + 1) + ").");
+      }
+      if (b.getFechaDeVencimiento() != null && b.getFechaDeVencimiento().isBefore(LocalDate.now())) {
+        return ResultadoOperacion.error("La fecha de vencimiento no puede ser anterior a hoy (bien #" + (i + 1) + ").");
       }
       double peso = b.getPeso() != null && b.getPeso() >= 0 ? b.getPeso() : 0.0;
       double volumen = b.getVolumen() != null && b.getVolumen() >= 0 ? b.getVolumen() : 0.0;

@@ -984,5 +984,121 @@ public class StaffApiServiceTest {
     assertEquals("La categoría debe conservar al menos una misión", resultado.mensaje());
     mockServer.verify();
   }
+
+  @Test
+  void crearDonacion_fechaCaducidadPasada_fallaValidacion() {
+    DonacionForm form = new DonacionForm();
+    form.setDonanteId(1L);
+    form.setDescripcion("Alimentos varios");
+
+    BienForm bien = new BienForm();
+    bien.setCategoriaId(1L);
+    bien.setSubcategoriaId(2L);
+    bien.setCantidad(2.0);
+    bien.setFechaDeVencimiento(java.time.LocalDate.now().minusDays(1));
+    form.setBienes(List.of(bien));
+
+    ResultadoOperacion resultado = staffApiService.crearDonacion(form);
+
+    assertFalse(resultado.exito());
+    assertTrue(resultado.mensaje().contains("vencimiento"));
+  }
+
+  @Test
+  void obtenerRutas_200_retornaLista() {
+    String json = """
+        [
+          {
+            "idExterno": "RUTA-100",
+            "estado": "PENDIENTE",
+            "patenteCamion": "AA123BB",
+            "camionId": 1,
+            "paradas": [
+              {
+                "numeroParada": 1,
+                "entregaId": 10,
+                "donacionId": 5,
+                "direccionDestino": "Calle Falsa 123",
+                "estadoEntrega": "ASIGNADA",
+                "latitud": -34.6,
+                "longitud": -58.4
+              }
+            ]
+          }
+        ]
+        """;
+
+    mockServer.expect(requestTo(logisticaUrl + "/rutas"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+    List<ar.edu.utn.frba.ddsi.clienteliviano.models.dto.RutaResumenResponse> rutas = staffApiService.obtenerRutas();
+
+    assertEquals(1, rutas.size());
+    assertEquals("RUTA-100", rutas.get(0).idExterno());
+    assertEquals("AA123BB", rutas.get(0).patenteCamion());
+    assertEquals(1, rutas.get(0).paradas().size());
+    mockServer.verify();
+  }
+
+  @Test
+  void obtenerRutas_error_retornaListaVacia() {
+    mockServer.expect(requestTo(logisticaUrl + "/rutas"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withServerError());
+
+    List<ar.edu.utn.frba.ddsi.clienteliviano.models.dto.RutaResumenResponse> rutas = staffApiService.obtenerRutas();
+
+    assertTrue(rutas.isEmpty());
+    mockServer.verify();
+  }
+
+  @Test
+  void planificarRutas_exito() {
+    mockServer.expect(requestTo(logisticaUrl + "/rutas/planificacion"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withSuccess());
+
+    ResultadoOperacion resultado = staffApiService.planificarRutas();
+
+    assertTrue(resultado.exito());
+    assertTrue(resultado.mensaje().contains("correctamente"));
+    mockServer.verify();
+  }
+
+  @Test
+  void planificarRutasDemo_exito() {
+    mockServer.expect(requestTo(logisticaUrl + "/rutas/planificacion-demo"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withSuccess());
+
+    ResultadoOperacion resultado = staffApiService.planificarRutasDemo();
+
+    assertTrue(resultado.exito());
+    assertTrue(resultado.mensaje().contains("demo"));
+    mockServer.verify();
+  }
+
+  @Test
+  void iniciarRuta_exito() {
+    mockServer.expect(requestTo(logisticaUrl + "/rutas/RUTA-100/en-traslado"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withSuccess());
+
+    ResultadoOperacion resultado = staffApiService.iniciarRuta("RUTA-100");
+
+    assertTrue(resultado.exito());
+    assertTrue(resultado.mensaje().contains("iniciada"));
+    mockServer.verify();
+  }
+
+  @Test
+  void iniciarRuta_idInvalido() {
+    ResultadoOperacion rNull = staffApiService.iniciarRuta(null);
+    assertFalse(rNull.exito());
+
+    ResultadoOperacion rBlank = staffApiService.iniciarRuta("   ");
+    assertFalse(rBlank.exito());
+  }
 }
 

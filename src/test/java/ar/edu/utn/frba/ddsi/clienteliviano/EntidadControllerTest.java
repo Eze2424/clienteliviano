@@ -464,5 +464,32 @@ public class EntidadControllerTest {
 
     verify(fotoRecepcionStorage).eliminarFotos(List.of("http://localhost:8086/uploads/recepciones/recibo.jpg"));
   }
+
+  @Test
+  void apiEntregas_ConSesion_RetornaListaLive() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ENTIDAD, 10L);
+    var donacionDTO = new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionAsignadaDTO(
+        100L, "Alimentos", "EN_TRASLADO", java.time.LocalDate.now(), null, "Donante", 1L, 5, List.of()
+    );
+    var dashResponse = new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DashboardEntidadResponse(
+        "Hogar", 1, 0, 1, 2, List.of(donacionDTO)
+    );
+    when(entidadApiService.dashboard()).thenReturn(java.util.Optional.of(dashResponse));
+
+    var seguimiento = new ar.edu.utn.frba.ddsi.clienteliviano.models.dto.EntregaSeguimientoDTO(
+        "uuid-1", 100L, "EN_TRASLADO", "AB123CD", -34.60, -58.38, java.time.LocalDateTime.now()
+    );
+    when(entidadApiService.entregas(List.of(100L))).thenReturn(List.of(seguimiento));
+    when(entidadApiService.mapearEntrega(any(), any())).thenReturn(
+        new ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntregaVista(
+            "uuid-1", 100L, "Alimentos", "AB123CD", "Conductor", "EN_TRASLADO", -34.60, -58.38, java.time.LocalDateTime.now(), null
+        )
+    );
+
+    mockMvc.perform(get("/entidad/api/entregas").session(session))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value("uuid-1"))
+        .andExpect(jsonPath("$[0].patente").value("AB123CD"));
+  }
 }
 

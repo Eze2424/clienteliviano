@@ -95,6 +95,74 @@
         </div>
     </section>
 
+    <!-- ============ Entregas realizadas — Impacto transparente ============ -->
+    <section id="mapa-entregas" class="container" style="padding-bottom: var(--space-7);" aria-labelledby="titulo-mapa-publico">
+        <div style="margin-bottom: var(--space-4);">
+            <h2 id="titulo-mapa-publico" class="heading-lg" style="margin-bottom: var(--space-1);">
+                Entregas realizadas — Impacto transparente
+            </h2>
+            <p class="card-subtitle" style="margin:0;">
+                Conocé en el mapa las donaciones que ya llegaron a destino con su comprobante fotográfico.
+            </p>
+        </div>
+
+        <div th:if="${#lists.isEmpty(entregasPublicas)}">
+            <div th:replace="~{fragments/componentes :: estado-vacio(
+                'Aún no hay entregas registradas en el mapa',
+                'A medida que las entidades beneficiarias confirmen la recepción de las donaciones con fotos, se publicarán automáticamente acá.',
+                null, null)}"></div>
+        </div>
+
+        <div class="flex flex-col gap-4" th:unless="${#lists.isEmpty(entregasPublicas)}">
+            <!-- Mapa Leaflet público -->
+            <section class="map-canvas map-canvas-ancho" data-mapa aria-labelledby="titulo-mapa-canvas">
+                <h3 id="titulo-mapa-canvas" class="visually-hidden">Mapa de entregas completadas</h3>
+                <div class="map-legend">
+                    <span class="legend-key">
+                        <span class="legend-swatch" style="background: var(--color-success, #10b981);"></span> Entrega confirmada
+                    </span>
+                </div>
+                <span class="map-pin" hidden th:each="e : ${entregasPublicas}"
+                      th:data-id="${e.id()}" th:data-lat="${e.latitud()}" th:data-lon="${e.longitud()}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+                    <span th:text="${e.entidadNombre()}">Entidad</span>
+                </span>
+                <p class="map-note">Ubicación de las organizaciones que recibieron donaciones.</p>
+            </section>
+
+            <!-- Grilla de tarjetas con fotos -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-4);">
+                <article class="card" th:each="e : ${entregasPublicas}" style="display:flex; flex-direction:column; justify-content:space-between; overflow:hidden;">
+                    <div>
+                        <div th:if="${e.fotos() != null && !#lists.isEmpty(e.fotos())}" style="margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-3) calc(-1 * var(--space-4)); height: 180px; overflow: hidden; background: #e2e8f0;">
+                            <img th:src="${e.fotos().get(0)}"
+                                 th:alt="'Foto de recepción de ' + ${e.descripcion()}"
+                                 style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                                 loading="lazy">
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: var(--space-2); margin-bottom: var(--space-2);">
+                            <span class="badge badge-success" th:text="${e.subcategoria() != null ? e.subcategoria() : 'Donación'}">Alimentos</span>
+                            <span class="card-subtitle" style="font-size: var(--text-xs);" th:if="${e.fechaEntrega() != null}" th:text="${#temporals.format(e.fechaEntrega(), 'dd/MM/yyyy')}">22/11/2026</span>
+                        </div>
+                        <h4 class="heading-sm" style="margin: 0 0 var(--space-1);" th:text="${e.descripcion()}">Alimentos no perecederos</h4>
+                        <p class="card-subtitle" style="margin: 0 0 var(--space-2);">
+                            Destino: <strong th:text="${e.entidadNombre()}">Comedor Los Hornos</strong>
+                        </p>
+                        <p class="card-subtitle" style="margin:0; font-size: var(--text-xs);" th:if="${e.entidadDireccion() != null && !e.entidadDireccion().isBlank()}" th:text="${e.entidadDireccion()}">Calle 137 y 66</p>
+                    </div>
+                    <div style="margin-top: var(--space-3); padding-top: var(--space-2); display:flex; justify-content:space-between; align-items:center;">
+                        <span class="chip" th:text="${e.cantidadBienes()} + ' bienes'">10 bienes</span>
+                        <button type="button" class="btn btn-ghost btn-sm"
+                                th:data-mapa-enfocar="${e.id()}"
+                                th:aria-label="'Ver entrega de ' + ${e.entidadNombre()} + ' en el mapa'">
+                            Ver en mapa
+                        </button>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
     <!-- ============ Llamado a la acción ============ -->
     <section id="impacto" class="container" style="padding-bottom: var(--space-7);">
         <div class="card banner-brand" style="display:flex; align-items:center; justify-content:space-between; gap: var(--space-4); flex-wrap: wrap;">
@@ -116,5 +184,6 @@
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>
 <div th:replace="~{fragments/layout :: scripts}"></div>
+<div th:replace="~{fragments/layout :: mapa}"></div>
 </body>
 </html>

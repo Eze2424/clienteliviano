@@ -2,6 +2,7 @@ package ar.edu.utn.frba.ddsi.clienteliviano.controllers;
 
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PosicionCamionLiveDTO;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntregaVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
@@ -278,5 +279,23 @@ public class DonanteController {
     List<EntregaVista> entregas = api.obtenerEntregasActivasDonante();
     model.addAttribute("entregas", entregas);
     return "donante/entregas";
+  }
+
+  @GetMapping("/api/entregas")
+  @ResponseBody
+  public List<PosicionCamionLiveDTO> apiEntregas(HttpSession session) {
+    if (exigirDonante(session) == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autorizado");
+    }
+    java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    return api.obtenerEntregasActivasDonante().stream()
+        .map(e -> new PosicionCamionLiveDTO(
+            e.idEntrega(),
+            e.patenteCamion(),
+            e.latitud(),
+            e.longitud(),
+            e.ultimaActualizacion() != null ? e.ultimaActualizacion().format(fmt) : "-"
+        ))
+        .toList();
   }
 }

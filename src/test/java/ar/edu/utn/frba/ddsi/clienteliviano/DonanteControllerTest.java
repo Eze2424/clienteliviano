@@ -207,4 +207,15 @@ public class DonanteControllerTest {
 
     verify(donanteApiService).obtenerEntregasActivasDonante();
   }
+
+  @Test
+  void apiEntregas_ConSesion_RetornaListaLive() throws Exception {
+    EntregaVista e = new EntregaVista("101", 10L, "Alimentos", "AA123BB", null, "EN_TRASLADO", -34.6037, -58.3816, LocalDateTime.now(), "En camino");
+    when(donanteApiService.obtenerEntregasActivasDonante()).thenReturn(List.of(e));
+
+    mockMvc.perform(get("/donante/api/entregas").session(sesionDonante()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(101))
+        .andExpect(jsonPath("$[0].patente").value("AA123BB"));
+  }
 }

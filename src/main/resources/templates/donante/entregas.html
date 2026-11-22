@@ -32,7 +32,7 @@
     <div class="flex flex-col gap-4" th:unless="${#lists.isEmpty(entregas)}">
 
         <!-- ============ Mapa de entregas ============ -->
-        <section class="map-canvas map-canvas-ancho" data-mapa aria-labelledby="titulo-mapa">
+        <section class="map-canvas map-canvas-ancho" data-mapa th:data-mapa-url="@{/donante/api/entregas}" aria-labelledby="titulo-mapa">
             <h2 id="titulo-mapa" class="visually-hidden">Ubicación de los camiones en camino</h2>
             <div class="map-legend">
                 <span class="legend-key">
@@ -79,7 +79,7 @@
                             <span class="badge" th:classappend="${e.claseBadge()}"
                                   th:text="${e.etiquetaEstado()}">En traslado</span>
                         </td>
-                        <td th:text="${e.ultimaActualizacion() != null ? #temporals.format(e.ultimaActualizacion(), 'dd/MM/yyyy HH:mm') : '-'}">-</td>
+                        <td th:data-mapa-actualizacion="${e.idEntrega()}" th:text="${e.ultimaActualizacion() != null ? #temporals.format(e.ultimaActualizacion(), 'dd/MM/yyyy HH:mm') : '-'}">-</td>
                         <td>
                             <a th:href="@{/donante/donaciones/{id}(id=${e.donacionId()})}"
                                class="btn btn-ghost btn-sm"

@@ -1,30 +1,58 @@
 package ar.edu.utn.frba.ddsi.clienteliviano.controllers;
 
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Toast;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionPublicaResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.RegistroForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.entities.TipoOrganizacion;
+import ar.edu.utn.frba.ddsi.clienteliviano.services.RegistroService;
+import java.util.Arrays;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import ar.edu.utn.frba.ddsi.clienteliviano.services.RegistroService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
  * Vistas abiertas: portada, alta de cuenta y textos legales.
  */
 @Controller
-@RequiredArgsConstructor
 public class PublicoController {
 
   private final RegistroService registroService;
+  private final RestTemplate restTemplate;
+
+  @Value("${backend.api.url.donaciones:http://localhost:8080/donaciones-service}")
+  private String donacionesUrl;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public PublicoController(RegistroService registroService, RestTemplate restTemplate) {
+    this.registroService = registroService;
+    this.restTemplate = restTemplate;
+  }
+
+  public PublicoController(RegistroService registroService) {
+    this(registroService, new RestTemplate());
+  }
 
   @GetMapping("/")
-  public String portada() {
+  public String portada(Model model) {
+    List<DonacionPublicaResponse> entregasPublicas = List.of();
+    try {
+      if (restTemplate != null && donacionesUrl != null) {
+        var resp = restTemplate.getForEntity(donacionesUrl + "/publico/entregadas", DonacionPublicaResponse[].class);
+        if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
+          entregasPublicas = Arrays.asList(resp.getBody());
+        }
+      }
+    } catch (Exception e) {
+      entregasPublicas = List.of();
+    }
+    model.addAttribute("entregasPublicas", entregasPublicas);
     return "publico/index";
   }
 

@@ -26,7 +26,7 @@
         <p><span th:text="${error}">Falta un dato.</span></p>
     </div>
 
-    <form th:action="@{/staff/donaciones/nueva}" th:object="${form}" method="post" novalidate>
+    <form th:action="@{/staff/donaciones/nueva}" th:object="${form}" method="post" enctype="multipart/form-data" novalidate>
         <div class="split-view">
 
             <div>
@@ -146,6 +146,14 @@
                                         <span>Es usado</span>
                                     </label>
                                 </div>
+                            </div>
+                            <div class="field">
+                                <label th:for="'bien-foto-' + ${it.index}">
+                                    Fotografía del bien <span class="field-optional">(opcional)</span>
+                                </label>
+                                <input type="file" accept="image/jpeg,image/png,image/webp"
+                                       th:id="'bien-foto-' + ${it.index}"
+                                       th:field="*{bienes[__${it.index}__].archivoFoto}">
                             </div>
                         </div>
                     </div>

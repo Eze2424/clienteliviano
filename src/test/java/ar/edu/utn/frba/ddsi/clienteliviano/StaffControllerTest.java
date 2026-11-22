@@ -599,5 +599,62 @@ public class StaffControllerTest {
 
     verify(staffApiService).eliminarMision(1L, 10L);
   }
+
+  @Test
+  void camiones_conRutas_muestraVistaConRutas() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    when(staffApiService.camiones()).thenReturn(List.of());
+    when(staffApiService.obtenerRutas()).thenReturn(List.of());
+
+    mockMvc.perform(get("/staff/camiones").session(session))
+        .andExpect(status().isOk())
+        .andExpect(view().name("staff/camiones"))
+        .andExpect(model().attributeExists("camiones", "rutas", "editando", "form"));
+  }
+
+  @Test
+  void planificarRutas_admin_exito() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    when(staffApiService.planificarRutas()).thenReturn(ResultadoOperacion.ok("Rutas planificadas"));
+
+    mockMvc.perform(post("/staff/camiones/planificar").session(session))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/staff/camiones"))
+        .andExpect(flash().attributeExists("toast"));
+  }
+
+  @Test
+  void planificarRutasDemo_admin_exito() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    when(staffApiService.planificarRutasDemo()).thenReturn(ResultadoOperacion.ok("Rutas demo generadas"));
+
+    mockMvc.perform(post("/staff/camiones/planificar-demo").session(session))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/staff/camiones"))
+        .andExpect(flash().attributeExists("toast"));
+  }
+
+  @Test
+  void iniciarRuta_admin_exito() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    when(staffApiService.iniciarRuta("RUTA-1")).thenReturn(ResultadoOperacion.ok("Ruta iniciada"));
+
+    mockMvc.perform(post("/staff/camiones/rutas/RUTA-1/en-traslado").session(session))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/staff/camiones"))
+        .andExpect(flash().attributeExists("toast"));
+  }
+
+  @Test
+  void apiCamiones_admin_retornaLista() throws Exception {
+    MockHttpSession session = sesionConUsuario(Rol.ADMIN, 99L);
+    CamionResponse camion = new CamionResponse("1", "AB123CD", 10.0, 2.0, 1000.0, -34.6, -58.4, LocalDateTime.now());
+    when(staffApiService.camiones()).thenReturn(List.of(camion));
+
+    mockMvc.perform(get("/staff/api/camiones").session(session))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value("1"))
+        .andExpect(jsonPath("$[0].patente").value("AB123CD"));
+  }
 }
 
