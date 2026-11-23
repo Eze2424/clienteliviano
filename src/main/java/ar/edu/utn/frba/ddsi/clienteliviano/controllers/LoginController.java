@@ -121,12 +121,30 @@ public class LoginController {
               ResponseEntity<Map> resDonante = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
 
               if (resDonante.getStatusCode().is2xxSuccessful() && resDonante.getBody() != null) {
-                Object rawId = resDonante.getBody().get("donanteId");
+                Map donanteBody = resDonante.getBody();
+                Object rawId = donanteBody.get("donanteId");
                 if (rawId == null) {
-                  rawId = resDonante.getBody().get("id");
+                  rawId = donanteBody.get("id");
                 }
                 if (rawId instanceof Number numId) {
                   idUsuario = numId.longValue();
+                }
+
+                Object rawJuridico = donanteBody.get("esJuridico");
+                boolean esJuridico = Boolean.TRUE.equals(rawJuridico);
+                Object rawRazon = donanteBody.get("razonSocial");
+                if (esJuridico && rawRazon instanceof String rs && !rs.isBlank()) {
+                  nombre = rs.trim();
+                } else {
+                  Object rawNom = donanteBody.get("nombre");
+                  if (rawNom instanceof String nom && !nom.isBlank()) {
+                    Object rawApe = donanteBody.get("apellido");
+                    if (rawApe instanceof String ape && !ape.isBlank()) {
+                      nombre = nom.trim() + " " + ape.trim();
+                    } else {
+                      nombre = nom.trim();
+                    }
+                  }
                 }
               }
             } catch (Exception ex) {

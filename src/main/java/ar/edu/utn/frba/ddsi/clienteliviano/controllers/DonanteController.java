@@ -1,8 +1,15 @@
 package ar.edu.utn.frba.ddsi.clienteliviano.controllers;
 
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.Toast;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CambioPasswordForm;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CambioPasswordRequest;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonantePerfilUpdateRequest;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PerfilDonanteForm;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.PosicionCamionLiveDTO;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntregaVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
@@ -16,6 +23,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -297,5 +305,143 @@ public class DonanteController {
             e.ultimaActualizacion() != null ? e.ultimaActualizacion().format(fmt) : "-"
         ))
         .toList();
+  }
+
+  /* ---------- CU: Mi Perfil ---------- */
+
+  @GetMapping("/perfil")
+  public String perfil(HttpSession session, Model model) {
+    UsuarioActual yo = exigirDonante(session);
+    if (yo == null) return "redirect:/login";
+
+    if (!model.containsAttribute("perfilForm")) {
+      PerfilDonanteForm form = new PerfilDonanteForm();
+      var optPerfil = api.obtenerMiPerfil();
+      if (optPerfil.isPresent()) {
+        DonanteResponse d = optPerfil.get();
+        form.setNombre(d.nombre());
+        form.setApellido(d.apellido());
+        form.setRazonSocial(d.razonSocial());
+        form.setEsJuridico(Boolean.TRUE.equals(d.esJuridico()));
+        form.setDireccion(d.direccion());
+        form.setTelefono(d.telefono());
+        form.setEmail(d.email() != null && !d.email().isBlank() ? d.email() : yo.email());
+      } else {
+        model.addAttribute("bannerError", "No pudimos cargar algunos datos de tu perfil desde el servidor. Podés intentar nuevamente.");
+        form.setNombre(yo.nombre());
+        form.setEmail(yo.email());
+        form.setEsJuridico(false);
+      }
+      model.addAttribute("perfilForm", form);
+    }
+
+    if (!model.containsAttribute("passwordForm")) {
+      model.addAttribute("passwordForm", new CambioPasswordForm());
+    }
+
+    return "donante/perfil";
+  }
+
+  @PostMapping("/perfil/datos")
+  public String actualizarDatos(@ModelAttribute("perfilForm") PerfilDonanteForm form,
+                                HttpSession session,
+                                RedirectAttributes redirect) {
+    UsuarioActual yo = exigirDonante(session);
+    if (yo == null) return "redirect:/login";
+
+    boolean esJuridico = Boolean.TRUE.equals(form.getEsJuridico());
+    if (esJuridico) {
+      if (form.getRazonSocial() == null || form.getRazonSocial().isBlank()) {
+        redirect.addFlashAttribute("toast", Toast.error("La razón social es obligatoria para personas jurídicas."));
+        redirect.addFlashAttribute("errorDatos", "La razón social es obligatoria.");
+        redirect.addFlashAttribute("perfilForm", form);
+        return "redirect:/donante/perfil";
+      }
+    } else {
+      if (form.getNombre() == null || form.getNombre().isBlank()) {
+        redirect.addFlashAttribute("toast", Toast.error("El nombre es obligatorio."));
+        redirect.addFlashAttribute("errorDatos", "El nombre es obligatorio.");
+        redirect.addFlashAttribute("perfilForm", form);
+        return "redirect:/donante/perfil";
+      }
+    }
+
+    DonantePerfilUpdateRequest request = new DonantePerfilUpdateRequest(
+        form.getNombre() != null ? form.getNombre().trim() : null,
+        form.getApellido() != null ? form.getApellido().trim() : null,
+        form.getRazonSocial() != null ? form.getRazonSocial().trim() : null,
+        form.getDireccion() != null ? form.getDireccion().trim() : null,
+        form.getTelefono() != null ? form.getTelefono().trim() : null
+    );
+
+    ResultadoOperacion resultado = api.actualizarMiPerfil(request);
+    if (resultado.exito()) {
+      String nuevoNombreVisible;
+      if (esJuridico) {
+        nuevoNombreVisible = form.getRazonSocial().trim();
+      } else {
+        String n = form.getNombre().trim();
+        String a = form.getApellido() != null ? form.getApellido().trim() : "";
+        nuevoNombreVisible = a.isEmpty() ? n : (n + " " + a);
+      }
+      UsuarioActual actualizado = new UsuarioActual(yo.id(), nuevoNombreVisible, yo.email(), yo.rol());
+      sesion.iniciar(session, actualizado);
+      session.setAttribute("USUARIO", actualizado);
+
+      redirect.addFlashAttribute("toast", Toast.exito("Datos de perfil actualizados correctamente."));
+    } else {
+      redirect.addFlashAttribute("toast", Toast.error(resultado.mensaje()));
+      redirect.addFlashAttribute("errorDatos", resultado.mensaje());
+      redirect.addFlashAttribute("perfilForm", form);
+    }
+
+    return "redirect:/donante/perfil";
+  }
+
+  @PostMapping("/perfil/password")
+  public String cambiarPassword(@ModelAttribute("passwordForm") CambioPasswordForm form,
+                                HttpSession session,
+                                RedirectAttributes redirect) {
+    UsuarioActual yo = exigirDonante(session);
+    if (yo == null) return "redirect:/login";
+
+    String passActual = form.getPasswordActual();
+    String nuevaPass = form.getNuevaPassword();
+    String confPass = form.getConfirmacionPassword();
+
+    if (passActual == null || passActual.isBlank()) {
+      redirect.addFlashAttribute("toast", Toast.error("Debes ingresar tu contraseña actual."));
+      redirect.addFlashAttribute("errorPassword", "Debes ingresar tu contraseña actual.");
+      return "redirect:/donante/perfil#seguridad";
+    }
+
+    if (nuevaPass == null || nuevaPass.length() < 8) {
+      redirect.addFlashAttribute("toast", Toast.error("La nueva contraseña debe tener al menos 8 caracteres."));
+      redirect.addFlashAttribute("errorPassword", "La nueva contraseña debe tener al menos 8 caracteres.");
+      return "redirect:/donante/perfil#seguridad";
+    }
+
+    if (!nuevaPass.equals(confPass)) {
+      redirect.addFlashAttribute("toast", Toast.error("La confirmación de la nueva contraseña no coincide."));
+      redirect.addFlashAttribute("errorPassword", "La confirmación de la nueva contraseña no coincide.");
+      return "redirect:/donante/perfil#seguridad";
+    }
+
+    if (passActual.equals(nuevaPass)) {
+      redirect.addFlashAttribute("toast", Toast.error("La nueva contraseña no puede ser igual a la contraseña actual."));
+      redirect.addFlashAttribute("errorPassword", "La nueva contraseña debe ser distinta a la actual.");
+      return "redirect:/donante/perfil#seguridad";
+    }
+
+    ResultadoOperacion resultado = api.cambiarMiPassword(new CambioPasswordRequest(passActual, nuevaPass));
+    if (resultado.exito()) {
+      redirect.addFlashAttribute("toast", Toast.exito(resultado.mensaje()));
+      redirect.addFlashAttribute("exitoPassword", resultado.mensaje());
+    } else {
+      redirect.addFlashAttribute("toast", Toast.error(resultado.mensaje()));
+      redirect.addFlashAttribute("errorPassword", resultado.mensaje());
+    }
+
+    return "redirect:/donante/perfil#seguridad";
   }
 }

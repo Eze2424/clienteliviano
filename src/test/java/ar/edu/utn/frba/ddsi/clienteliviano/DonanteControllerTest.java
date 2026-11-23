@@ -3,7 +3,11 @@ package ar.edu.utn.frba.ddsi.clienteliviano;
 import ar.edu.utn.frba.ddsi.clienteliviano.controllers.DonanteController;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.Rol;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.UsuarioActual;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CambioPasswordRequest;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonantePerfilUpdateRequest;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntregaVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntidadVista;
@@ -24,8 +28,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 public class DonanteControllerTest {
@@ -217,5 +225,124 @@ public class DonanteControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(101))
         .andExpect(jsonPath("$[0].patente").value("AA123BB"));
+  }
+
+  /* ---------- Tests Mi Perfil ---------- */
+
+  @Test
+  void perfil_SinSesion_RedirigeALogin() throws Exception {
+    mockMvc.perform(get("/donante/perfil"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/login"));
+  }
+
+  @Test
+  void perfil_ConSesion_CargaPerfilYPasswordForm() throws Exception {
+    DonanteResponse resp = new DonanteResponse(
+        1L, "Carlos", "Donante", 30, "12345678", "M", "Calle Falsa 123", false, null, null, null, "carlos@tango.com", "11223344"
+    );
+    when(donanteApiService.obtenerMiPerfil()).thenReturn(Optional.of(resp));
+
+    mockMvc.perform(get("/donante/perfil").session(sesionDonante()))
+        .andExpect(status().isOk())
+        .andExpect(view().name("donante/perfil"))
+        .andExpect(model().attributeExists("perfilForm", "passwordForm"));
+
+    verify(donanteApiService).obtenerMiPerfil();
+  }
+
+  @Test
+  void actualizarDatos_Exito_ActualizaSesionYRedirigeConToast() throws Exception {
+    MockHttpSession session = sesionDonante();
+    when(donanteApiService.actualizarMiPerfil(any(DonantePerfilUpdateRequest.class)))
+        .thenReturn(ResultadoOperacion.ok("Perfil actualizado correctamente."));
+
+    mockMvc.perform(post("/donante/perfil/datos")
+            .session(session)
+            .param("esJuridico", "false")
+            .param("nombre", "Carlos Alberto")
+            .param("apellido", "Gomez")
+            .param("direccion", "Av. San Martin 500")
+            .param("telefono", "1199887766"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/donante/perfil"))
+        .andExpect(flash().attributeExists("toast"));
+
+    verify(donanteApiService).actualizarMiPerfil(any(DonantePerfilUpdateRequest.class));
+
+    // Verificar que la sesión se actualizó con el nuevo nombre
+    UsuarioActual usuarioActual = (UsuarioActual) session.getAttribute("usuarioActual");
+    assertNotNull(usuarioActual);
+    assertEquals("Carlos Alberto Gomez", usuarioActual.nombre());
+
+    UsuarioActual usuarioUSUARIO = (UsuarioActual) session.getAttribute("USUARIO");
+    assertNotNull(usuarioUSUARIO);
+    assertEquals("Carlos Alberto Gomez", usuarioUSUARIO.nombre());
+  }
+
+  @Test
+  void actualizarDatos_NombreVacio_RechazaSinLlamarApi() throws Exception {
+    MockHttpSession session = sesionDonante();
+
+    mockMvc.perform(post("/donante/perfil/datos")
+            .session(session)
+            .param("esJuridico", "false")
+            .param("nombre", "   ")
+            .param("apellido", "Gomez"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/donante/perfil"))
+        .andExpect(flash().attributeExists("toast", "errorDatos", "perfilForm"));
+
+    verify(donanteApiService, never()).actualizarMiPerfil(any());
+  }
+
+  @Test
+  void cambiarPassword_Exito_LlamaApiYRedirigeConToast() throws Exception {
+    MockHttpSession session = sesionDonante();
+    when(donanteApiService.cambiarMiPassword(any(CambioPasswordRequest.class)))
+        .thenReturn(ResultadoOperacion.ok("Contraseña actualizada correctamente."));
+
+    mockMvc.perform(post("/donante/perfil/password")
+            .session(session)
+            .param("passwordActual", "Actual1234")
+            .param("nuevaPassword", "NuevaPassword88")
+            .param("confirmacionPassword", "NuevaPassword88"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/donante/perfil#seguridad"))
+        .andExpect(flash().attributeExists("toast", "exitoPassword"));
+
+    verify(donanteApiService).cambiarMiPassword(any(CambioPasswordRequest.class));
+  }
+
+  @Test
+  void cambiarPassword_ConfirmacionDistinta_RechazaSinLlamarApi() throws Exception {
+    MockHttpSession session = sesionDonante();
+
+    mockMvc.perform(post("/donante/perfil/password")
+            .session(session)
+            .param("passwordActual", "Actual1234")
+            .param("nuevaPassword", "NuevaPassword88")
+            .param("confirmacionPassword", "OtraPassword99"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/donante/perfil#seguridad"))
+        .andExpect(flash().attributeExists("toast", "errorPassword"));
+
+    verify(donanteApiService, never()).cambiarMiPassword(any());
+  }
+
+  @Test
+  void cambiarPassword_CortaMenorA8Caracteres_RechazaSinLlamarApi() throws Exception {
+    MockHttpSession session = sesionDonante();
+
+    mockMvc.perform(post("/donante/perfil/password")
+            .session(session)
+            .param("passwordActual", "Actual1234")
+            .param("nuevaPassword", "Corta7")
+            .param("confirmacionPassword", "Corta7"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/donante/perfil#seguridad"))
+        .andExpect(flash().attributeExists("toast", "errorPassword"));
+
+    verify(donanteApiService, never()).cambiarMiPassword(any());
   }
 }

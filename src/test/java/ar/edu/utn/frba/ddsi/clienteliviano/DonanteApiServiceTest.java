@@ -1,21 +1,29 @@
 package ar.edu.utn.frba.ddsi.clienteliviano;
 
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CambioPasswordRequest;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonantePerfilUpdateRequest;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.RankingFila;
 import ar.edu.utn.frba.ddsi.clienteliviano.services.DonanteApiService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withBadRequest;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 public class DonanteApiServiceTest {
@@ -271,6 +279,120 @@ public class DonanteApiServiceTest {
     var entregas = donanteApiService.obtenerEntregasActivasDonante();
 
     assertTrue(entregas.isEmpty());
+    mockServer.verify();
+  }
+
+  @Test
+  void obtenerMiPerfil_200_retornaDonante() {
+    String json = """
+        {
+          "donanteId": 15,
+          "nombre": "Carlos",
+          "apellido": "Gomez",
+          "email": "carlos@test.com",
+          "direccion": "Av. Corrientes 1234",
+          "telefono": "11223344",
+          "esJuridico": false
+        }
+        """;
+
+    mockServer.expect(requestTo("http://localhost:8080/donaciones-service/donantes/me"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+    Optional<DonanteResponse> opt = donanteApiService.obtenerMiPerfil();
+
+    assertTrue(opt.isPresent());
+    assertEquals(15L, opt.get().donanteId());
+    assertEquals("Carlos", opt.get().nombre());
+    assertEquals("Gomez", opt.get().apellido());
+    assertEquals("carlos@test.com", opt.get().email());
+    mockServer.verify();
+  }
+
+  @Test
+  void obtenerMiPerfil_500_retornaEmpty() {
+    mockServer.expect(requestTo("http://localhost:8080/donaciones-service/donantes/me"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withServerError());
+
+    Optional<DonanteResponse> opt = donanteApiService.obtenerMiPerfil();
+
+    assertTrue(opt.isEmpty());
+    mockServer.verify();
+  }
+
+  @Test
+  void actualizarMiPerfil_200_retornaOk() {
+    String responseJson = """
+        {
+          "donanteId": 15,
+          "nombre": "Carlos",
+          "apellido": "Perez",
+          "email": "carlos@test.com",
+          "esJuridico": false
+        }
+        """;
+
+    mockServer.expect(requestTo("http://localhost:8080/donaciones-service/donantes/me"))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
+
+    DonantePerfilUpdateRequest req = new DonantePerfilUpdateRequest("Carlos", "Perez", null, "Calle 1", "1234");
+    ResultadoOperacion res = donanteApiService.actualizarMiPerfil(req);
+
+    assertTrue(res.exito());
+    assertTrue(res.mensaje().contains("correctamente"));
+    mockServer.verify();
+  }
+
+  @Test
+  void actualizarMiPerfil_400_retornaErrorConMensajeBackend() {
+    String errorJson = """
+        {"message": "La razón social es inválida"}
+        """;
+
+    mockServer.expect(requestTo("http://localhost:8080/donaciones-service/donantes/me"))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(withBadRequest().body(errorJson).contentType(MediaType.APPLICATION_JSON));
+
+    DonantePerfilUpdateRequest req = new DonantePerfilUpdateRequest(null, null, " ", null, null);
+    ResultadoOperacion res = donanteApiService.actualizarMiPerfil(req);
+
+    assertFalse(res.exito());
+    assertEquals("La razón social es inválida", res.mensaje());
+    mockServer.verify();
+  }
+
+  @Test
+  void cambiarMiPassword_204_retornaOk() {
+    mockServer.expect(requestTo("http://localhost:8080/donaciones-service/donantes/me/password"))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(withStatus(HttpStatus.NO_CONTENT));
+
+    CambioPasswordRequest req = new CambioPasswordRequest("Actual1234", "NuevaPassword123");
+    ResultadoOperacion res = donanteApiService.cambiarMiPassword(req);
+
+    assertTrue(res.exito());
+    assertTrue(res.mensaje().contains("correctamente"));
+    mockServer.verify();
+  }
+
+  @Test
+  void cambiarMiPassword_400_retornaErrorBackend() {
+    String errorJson = """
+        {"message": "La contraseña actual es incorrecta."}
+        """;
+
+    mockServer.expect(requestTo("http://localhost:8080/donaciones-service/donantes/me/password"))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(withBadRequest().body(errorJson).contentType(MediaType.APPLICATION_JSON));
+
+    CambioPasswordRequest req = new CambioPasswordRequest("Erronea123", "NuevaPassword123");
+    ResultadoOperacion res = donanteApiService.cambiarMiPassword(req);
+
+    assertFalse(res.exito());
+    assertEquals("La contraseña actual es incorrecta.", res.mensaje());
     mockServer.verify();
   }
 }

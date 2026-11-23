@@ -41,6 +41,19 @@
     </span>
 </div>
 
+<!-- Chip de usuario interactivo para perfil -->
+<a th:fragment="usuario-link(destino, activo)" th:href="${destino}"
+   class="user-chip user-chip-link"
+   th:classappend="${activo == 'perfil'} ? 'active'"
+   th:aria-current="${activo == 'perfil'} ? 'page'"
+   title="Mi perfil — Editar datos y contraseña">
+    <span class="avatar" th:text="${usuarioActual.iniciales}">EM</span>
+    <span class="user-chip-meta">
+        <span class="name" th:text="${usuarioActual.nombre}">Elena Martínez</span>
+        <span class="role" th:text="${usuarioActual.etiquetaRol}">Donante</span>
+    </span>
+</a>
+
 <!-- Campana de notificaciones. Botón de solo ícono: requiere aria-label. -->
 <a th:fragment="notificaciones(destino, sinLeer)" th:href="${destino}"
    class="icon-btn"
@@ -88,7 +101,7 @@
     </nav>
     <div class="navbar-actions">
         <a th:replace="~{fragments/navbar :: notificaciones(@{/donante/dashboard} + '#notificaciones', ${sinLeer})}"></a>
-        <div th:replace="~{fragments/navbar :: usuario}"></div>
+        <a th:replace="~{fragments/navbar :: usuario-link(@{/donante/perfil}, ${activo})}"></a>
         <form th:replace="~{fragments/navbar :: logout}"></form>
         <button th:replace="~{fragments/navbar :: toggle}"></button>
     </div>

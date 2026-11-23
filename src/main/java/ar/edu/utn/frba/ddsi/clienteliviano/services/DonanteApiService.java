@@ -1,11 +1,15 @@
 package ar.edu.utn.frba.ddsi.clienteliviano.services;
 
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.CambioPasswordRequest;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DashboardDonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonacionResumenDTO;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonantePerfilUpdateRequest;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.DonanteResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.EntidadResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.EntregaSeguimientoDTO;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.NecesidadResponse;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.RankingMensualResponse;
+import ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.BienDetalleVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.DonacionVista;
 import ar.edu.utn.frba.ddsi.clienteliviano.models.vista.EntidadVista;
@@ -416,5 +420,113 @@ public class DonanteApiService {
       log.warn("Error al obtener entregas activas del donante desde logistica ({}): {}", logisticaUrl, e.getMessage());
       return List.of();
     }
+  }
+
+  /**
+   * Obtiene los datos del perfil del donante autenticado.
+   */
+  public Optional<DonanteResponse> obtenerMiPerfil() {
+    try {
+      var respuesta = restTemplate.getForEntity(backendApiUrl + "/donantes/me", DonanteResponse.class);
+      return respuesta.getStatusCode().is2xxSuccessful()
+          ? Optional.ofNullable(respuesta.getBody())
+          : Optional.empty();
+    } catch (Exception e) {
+      log.warn("No se pudo obtener el perfil del donante desde backend ({}): {}", backendApiUrl, e.getMessage());
+      return Optional.empty();
+    }
+  }
+
+  /**
+   * Actualiza los datos personales o de razón social del donante autenticado.
+   */
+  public ResultadoOperacion actualizarMiPerfil(DonantePerfilUpdateRequest request) {
+    if (request == null) {
+      return ResultadoOperacion.error("Los datos de perfil no pueden ser nulos.");
+    }
+    try {
+      var entidadHttp = new org.springframework.http.HttpEntity<>(request);
+      var respuesta = restTemplate.exchange(
+          backendApiUrl + "/donantes/me",
+          HttpMethod.PUT,
+          entidadHttp,
+          DonanteResponse.class
+      );
+      if (respuesta.getStatusCode().is2xxSuccessful()) {
+        return ResultadoOperacion.ok("Perfil actualizado correctamente.");
+      }
+      return ResultadoOperacion.error("No se pudo actualizar el perfil.");
+    } catch (HttpStatusCodeException e) {
+      log.warn("Error HTTP al actualizar perfil del donante: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+      return ResultadoOperacion.error(extraerMensajeError(e, "Error al actualizar los datos de perfil."));
+    } catch (Exception e) {
+      log.error("Error inesperado al actualizar perfil del donante: {}", e.getMessage());
+      return ResultadoOperacion.error("No se pudo conectar con el servicio de donaciones.");
+    }
+  }
+
+  /**
+   * Actualiza la contraseña del donante autenticado en Keycloak a través del servicio de donaciones.
+   */
+  public ResultadoOperacion cambiarMiPassword(CambioPasswordRequest request) {
+    if (request == null || request.nuevaPassword() == null || request.nuevaPassword().isBlank()) {
+      return ResultadoOperacion.error("La nueva contraseña no puede estar vacía.");
+    }
+    try {
+      var entidadHttp = new org.springframework.http.HttpEntity<>(request);
+      var respuesta = restTemplate.exchange(
+          backendApiUrl + "/donantes/me/password",
+          HttpMethod.PUT,
+          entidadHttp,
+          Void.class
+      );
+      if (respuesta.getStatusCode().is2xxSuccessful()) {
+        return ResultadoOperacion.ok("Contraseña actualizada correctamente.");
+      }
+      return ResultadoOperacion.error("No se pudo actualizar la contraseña.");
+    } catch (HttpStatusCodeException e) {
+      log.warn("Error HTTP al cambiar contraseña del donante: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+      return ResultadoOperacion.error(extraerMensajeError(e, "Error al actualizar la contraseña."));
+    } catch (Exception e) {
+      log.error("Error inesperado al cambiar contraseña del donante: {}", e.getMessage());
+      return ResultadoOperacion.error("No se pudo conectar con el servicio de autenticación.");
+    }
+  }
+
+  private String extraerMensajeError(HttpStatusCodeException e, String mensajePorDefecto) {
+    try {
+      String body = e.getResponseBodyAsString();
+      if (body != null && !body.isBlank()) {
+        try {
+          tools.jackson.databind.JsonNode root = tools.jackson.databind.json.JsonMapper.builder().build().readTree(body);
+          if (root.hasNonNull("message") && !root.get("message").asText().isBlank()) {
+            return root.get("message").asText();
+          }
+          if (root.hasNonNull("mensaje") && !root.get("mensaje").asText().isBlank()) {
+            return root.get("mensaje").asText();
+          }
+          if (root.hasNonNull("error")) {
+            String err = root.get("error").asText();
+            if (!err.isBlank() && !"Conflict".equalsIgnoreCase(err) && !"Internal Server Error".equalsIgnoreCase(err)) {
+              return err;
+            }
+          }
+        } catch (Exception parseEx) {
+          log.debug("No se pudo parsear el cuerpo del error como JSON: {}", parseEx.getMessage());
+        }
+      }
+    } catch (Exception ignored) {
+    }
+
+    if (e.getStatusCode() == org.springframework.http.HttpStatus.BAD_REQUEST) {
+      return mensajePorDefecto != null ? mensajePorDefecto : "Datos de solicitud inválidos.";
+    }
+    if (e.getStatusCode() == org.springframework.http.HttpStatus.NOT_FOUND) {
+      return "El recurso solicitado no fue encontrado.";
+    }
+    if (e.getStatusCode() == org.springframework.http.HttpStatus.CONFLICT) {
+      return "Conflicto con los datos existentes.";
+    }
+    return mensajePorDefecto != null ? mensajePorDefecto : "Ocurrió un error al procesar la solicitud.";
   }
 }

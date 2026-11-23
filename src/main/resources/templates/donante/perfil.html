@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(
+        'Mi perfil',
+        'Editá tus datos personales y actualizá tu contraseña.')}"></head>
+<body>
+<a th:replace="~{fragments/layout :: skip-link}"></a>
+<header th:replace="~{fragments/navbar :: donante('perfil')}"></header>
+<div th:replace="~{fragments/layout :: toast-region}"></div>
+
+<main id="main" class="main-content">
+
+    <nav th:replace="~{fragments/componentes :: breadcrumb(
+            'Mis donaciones', @{/donante/dashboard},
+            'Mi perfil')}"></nav>
+
+    <!-- Encabezado de perfil -->
+    <div class="card" style="margin: var(--space-4) 0 var(--space-5); padding: var(--space-4) var(--space-5);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4);">
+            <div style="display: flex; align-items: center; gap: var(--space-4);">
+                <span class="avatar" style="width: 64px; height: 64px; font-size: var(--text-xl); border: 3px solid var(--color-primary-light);"
+                      th:text="${usuarioActual.iniciales}">EM</span>
+                <div>
+                    <div style="display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;">
+                        <h1 style="margin: 0; font-size: var(--text-xl);" th:text="${usuarioActual.nombre}">Elena Martínez</h1>
+                        <span class="badge badge-primary" th:text="${usuarioActual.etiquetaRol}">Donante</span>
+                    </div>
+                    <p class="card-subtitle" style="margin: var(--space-1) 0 0;" th:text="${perfilForm.email}">elena@donantes.org</p>
+                </div>
+            </div>
+            <div>
+                <a th:href="@{/donante/dashboard}" class="btn btn-secondary btn-sm">Volver a mis donaciones</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Banner informativo de credenciales temporales -->
+    <div class="banner banner-info" style="margin-bottom: var(--space-5);">
+        <span aria-hidden="true">ℹ</span>
+        <p>
+            <strong>Información de la cuenta</strong>
+            <span>Si ingresaste con credenciales temporales enviadas por correo tras una importación, podés actualizar tus datos de contacto y cambiar tu contraseña acá de forma segura.</span>
+        </p>
+    </div>
+
+    <!-- Banner de error si la API falló -->
+    <div th:replace="~{fragments/componentes :: banner-error(${bannerError})}"></div>
+
+    <!-- Grid responsive con 2 columnas para Datos y Seguridad -->
+    <div class="grid grid-cols-2 gap-5" style="align-items: start;">
+
+        <!-- ============ Tarjeta 1: Datos Personales ============ -->
+        <section class="card" style="padding: var(--space-5);" aria-labelledby="titulo-datos">
+            <h2 id="titulo-datos" class="heading-md" style="margin-bottom: var(--space-2);">Mis datos personales</h2>
+            <p class="card-subtitle" style="margin-bottom: var(--space-4);">
+                Mantené tu información de contacto actualizada para las comunicaciones sobre donaciones.
+            </p>
+
+            <div class="banner banner-warning" role="alert" th:if="${errorDatos != null}" style="margin-bottom: var(--space-4);">
+                <span aria-hidden="true">⚠</span>
+                <p><span th:text="${errorDatos}">Ocurrió un error al actualizar los datos.</span></p>
+            </div>
+
+            <form th:action="@{/donante/perfil/datos}" th:object="${perfilForm}" method="post" aria-labelledby="titulo-datos">
+                <input type="hidden" th:field="*{esJuridico}">
+
+                <div class="field">
+                    <label for="email-cuenta">Email de la cuenta</label>
+                    <input type="email" id="email-cuenta" th:field="*{email}" disabled readonly
+                           style="background: var(--color-bg); cursor: not-allowed;">
+                    <span class="hint">El correo electrónico está vinculado a tu cuenta y no puede modificarse.</span>
+                </div>
+
+                <!-- Persona humana -->
+                <div th:if="${!perfilForm.esJuridico}">
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="nombre">Nombre <span style="color: var(--color-danger);">*</span></label>
+                            <input type="text" id="nombre" th:field="*{nombre}" required autocomplete="given-name" placeholder="Tu nombre">
+                        </div>
+                        <div class="field">
+                            <label for="apellido">Apellido</label>
+                            <input type="text" id="apellido" th:field="*{apellido}" autocomplete="family-name" placeholder="Tu apellido">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Persona jurídica -->
+                <div th:if="${perfilForm.esJuridico}">
+                    <div class="field">
+                        <label for="razonSocial">Razón social <span style="color: var(--color-danger);">*</span></label>
+                        <input type="text" id="razonSocial" th:field="*{razonSocial}" required autocomplete="organization" placeholder="Nombre legal de la organización">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="direccion">Dirección</label>
+                    <input type="text" id="direccion" th:field="*{direccion}" autocomplete="street-address" placeholder="Ej: Av. Rivadavia 4520, CABA">
+                </div>
+
+                <div class="field">
+                    <label for="telefono">Teléfono</label>
+                    <input type="tel" id="telefono" th:field="*{telefono}" autocomplete="tel" placeholder="Ej: +54 11 4555-0112">
+                </div>
+
+                <div style="margin-top: var(--space-5);">
+                    <button type="submit" class="btn btn-primary" data-loading-on-submit data-loading-texto="Guardando…">
+                        Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- ============ Tarjeta 2: Cambiar Contraseña ============ -->
+        <section class="card" id="seguridad" style="padding: var(--space-5);" aria-labelledby="titulo-password">
+            <h2 id="titulo-password" class="heading-md" style="margin-bottom: var(--space-2);">Cambiar contraseña</h2>
+            <p class="card-subtitle" style="margin-bottom: var(--space-4);">
+                Elegí una contraseña segura de al menos 8 caracteres para proteger tu cuenta.
+            </p>
+
+            <div class="banner banner-warning" role="alert" th:if="${errorPassword != null}" style="margin-bottom: var(--space-4);">
+                <span aria-hidden="true">⚠</span>
+                <p><span th:text="${errorPassword}">Ocurrió un error con la contraseña.</span></p>
+            </div>
+
+            <div class="banner banner-success" role="status" th:if="${exitoPassword != null}" style="margin-bottom: var(--space-4);">
+                <span aria-hidden="true">✓</span>
+                <p><span th:text="${exitoPassword}">Contraseña actualizada correctamente.</span></p>
+            </div>
+
+            <form th:action="@{/donante/perfil/password}" th:object="${passwordForm}" method="post" aria-labelledby="titulo-password">
+                <!-- Username oculto para gestores de contraseñas -->
+                <input type="email" autocomplete="username" th:value="${perfilForm.email}" class="visually-hidden" tabindex="-1" aria-hidden="true">
+
+                <div class="field">
+                    <label for="passwordActual">Contraseña actual <span style="color: var(--color-danger);">*</span></label>
+                    <div class="password-input-wrap">
+                        <input type="password" id="passwordActual" th:field="*{passwordActual}" required autocomplete="current-password" placeholder="Tu contraseña actual">
+                        <button type="button" class="password-toggle" data-toggle-password="passwordActual" aria-pressed="false" aria-label="Mostrar contraseña actual">Mostrar</button>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="nuevaPassword">Nueva contraseña <span style="color: var(--color-danger);">*</span></label>
+                    <div class="password-input-wrap">
+                        <input type="password" id="nuevaPassword" th:field="*{nuevaPassword}" required minlength="8" autocomplete="new-password" aria-describedby="hint-nueva-password" placeholder="Mínimo 8 caracteres">
+                        <button type="button" class="password-toggle" data-toggle-password="nuevaPassword" aria-pressed="false" aria-label="Mostrar nueva contraseña">Mostrar</button>
+                    </div>
+                    <span id="hint-nueva-password" class="hint">Mínimo 8 caracteres. Podés pegar una contraseña generada.</span>
+                </div>
+
+                <div class="field">
+                    <label for="confirmacionPassword">Confirmar nueva contraseña <span style="color: var(--color-danger);">*</span></label>
+                    <div class="password-input-wrap">
+                        <input type="password" id="confirmacionPassword" th:field="*{confirmacionPassword}" required minlength="8" autocomplete="new-password" placeholder="Repetí la nueva contraseña">
+                        <button type="button" class="password-toggle" data-toggle-password="confirmacionPassword" aria-pressed="false" aria-label="Mostrar confirmación de contraseña">Mostrar</button>
+                    </div>
+                </div>
+
+                <div style="margin-top: var(--space-5);">
+                    <button type="submit" class="btn btn-primary" data-loading-on-submit data-loading-texto="Actualizando…">
+                        Actualizar contraseña
+                    </button>
+                </div>
+            </form>
+        </section>
+
+    </div>
+
+</main>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+
+<script th:inline="none">
+document.addEventListener('DOMContentLoaded', function () {
+    // Alternar visibilidad de contraseñas
+    document.querySelectorAll('[data-toggle-password]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var targetId = this.getAttribute('data-toggle-password');
+            var input = document.getElementById(targetId);
+            if (!input) return;
+
+            var esPassword = input.type === 'password';
+            input.type = esPassword ? 'text' : 'password';
+            this.setAttribute('aria-pressed', esPassword ? 'true' : 'false');
+            this.textContent = esPassword ? 'Ocultar' : 'Mostrar';
+            var campoNombre = targetId === 'passwordActual' ? 'contraseña actual' : (targetId === 'nuevaPassword' ? 'nueva contraseña' : 'confirmación de contraseña');
+            this.setAttribute('aria-label', (esPassword ? 'Ocultar ' : 'Mostrar ') + campoNombre);
+        });
+    });
+
+    // Validación accesible de coincidencia de contraseñas con setCustomValidity
+    var passNueva = document.getElementById('nuevaPassword');
+    var passConf = document.getElementById('confirmacionPassword');
+
+    function validarCoincidencia() {
+        if (!passNueva || !passConf) return;
+        if (passConf.value && passNueva.value !== passConf.value) {
+            passConf.setCustomValidity('Las contraseñas no coinciden.');
+        } else {
+            passConf.setCustomValidity('');
+        }
+    }
+
+    if (passConf && passNueva) {
+        passConf.addEventListener('blur', validarCoincidencia);
+        passConf.addEventListener('input', function () {
+            if (passConf.validity.customError) {
+                validarCoincidencia();
+            }
+        });
+        passNueva.addEventListener('input', function () {
+            if (passConf.value) {
+                validarCoincidencia();
+            }
+        });
+    }
+});
+</script>
+</body>
+</html>
