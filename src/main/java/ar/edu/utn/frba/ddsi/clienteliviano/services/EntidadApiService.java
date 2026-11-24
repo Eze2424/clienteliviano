@@ -104,7 +104,8 @@ public class EntidadApiService {
         entidadId,
         form.getDescripcion() != null ? form.getDescripcion().trim() : "",
         form.getCantidadSolicitada(),
-        form.isEsExtraordinaria()
+        form.isEsExtraordinaria(),
+        form.isEsExtraordinaria() ? null : form.getPeriodicidad()
     );
 
     try {
@@ -144,6 +145,12 @@ public class EntidadApiService {
       log.warn("Error HTTP al eliminar necesidad: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
       if (e.getStatusCode().value() == 403) {
         return ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion.error("No tienes permiso para dar de baja esta necesidad.");
+      }
+      if (e.getStatusCode().value() == 404) {
+        return ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion.error("La necesidad ya no existe.");
+      }
+      if (e.getResponseBodyAsString().contains("donaciones asignadas")) {
+        return ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion.error("No se puede eliminar una necesidad que ya tiene donaciones asignadas.");
       }
       return ar.edu.utn.frba.ddsi.clienteliviano.models.dto.ResultadoOperacion.error("No se pudo eliminar la necesidad.");
     } catch (Exception e) {

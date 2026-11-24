@@ -23,4 +23,5 @@ public class NecesidadForm {
 
   /** Extraordinaria = puntual y urgente. Recurrente = necesidad de todos los meses. */
   private boolean esExtraordinaria;
+  private String periodicidad = "MENSUAL";
 }

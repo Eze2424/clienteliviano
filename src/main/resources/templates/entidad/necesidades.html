@@ -78,15 +78,25 @@
                     <div class="radio-group">
                         <label class="radio-option">
                             <input type="radio" th:field="*{esExtraordinaria}" value="false">
-                            <span>Recurrente — la necesito todos los meses</span>
+                            <span>Recurrente — la necesito cada cierto tiempo</span>
                         </label>
                         <label class="radio-option">
                             <input type="radio" th:field="*{esExtraordinaria}" value="true">
                             <span>Extraordinaria — es puntual y urgente</span>
                         </label>
                     </div>
-                    <span class="hint">Las extraordinarias tienen prioridad en la asignación.</span>
+                    <span class="hint">Las extraordinarias tienen prioridad en la asignación y se cierran al cubrirse.</span>
                 </fieldset>
+
+                <div class="field" data-periodicidad>
+                    <label for="periodicidad">Cada cuánto la necesitás</label>
+                    <select id="periodicidad" th:field="*{periodicidad}" aria-describedby="hint-periodicidad">
+                        <option value="SEMANAL">Semanal (de lunes a domingo)</option>
+                        <option value="QUINCENAL">Quincenal (del 1 al 15 y del 16 a fin de mes)</option>
+                        <option value="MENSUAL">Mensual</option>
+                    </select>
+                    <span class="hint" id="hint-periodicidad">Al empezar cada período se vuelve a pedir la cantidad completa, sin que tengas que hacer nada.</span>
+                </div>
 
                 <button type="submit" class="btn btn-primary btn-block"
                         data-loading-on-submit data-loading-texto="Publicando…">Publicar necesidad</button>
@@ -110,8 +120,9 @@
                         <div class="necesidad-etiquetas" style="flex: 1; min-width: 0;">
                             <span class="chip" th:text="${n.subcategoria}">Alimentos</span>
                             <span class="chip" th:if="${n.esExtraordinaria}" style="background-color: #fef3c7; color: #92400e;">Urgente</span>
+                            <span class="chip" th:unless="${n.esExtraordinaria}" th:text="${n.periodicidadTexto()}">Mensual</span>
                             <span class="badge badge-success" th:if="${n.satisfecha}"
-                                  th:text="${n.esExtraordinaria} ? 'Cubierta' : 'Cubierta este mes'">Cubierta este mes</span>
+                                  th:text="${n.esExtraordinaria} ? 'Cubierta' : 'Cubierta este período'">Cubierta este período</span>
                             <span class="badge badge-neutral" th:unless="${n.satisfecha}">Abierta</span>
                         </div>
                         <!-- Baja por POST: cambia estado en el servidor, no puede ser un enlace -->
@@ -129,7 +140,11 @@
                         <p style="margin: var(--space-1) 0 var(--space-2); font-size: 0.875rem; color: var(--color-text-muted);">
                             Cubierto: <strong th:text="${#numbers.formatDecimal((n.cantidadCubierta != null ? n.cantidadCubierta : 0), 1, 'POINT', 0, 'COMMA')}">30</strong>
                             de <strong th:text="${#numbers.formatDecimal(n.cantidadSolicitada, 1, 'POINT', 0, 'COMMA')}">40</strong>
-                            <span th:unless="${n.esExtraordinaria}">este mes</span>
+                            <span th:unless="${n.esExtraordinaria}">este período</span>
+                            <th:block th:if="${!n.esExtraordinaria and n.periodoDesde != null}">
+                                (del <span th:text="${#temporals.format(n.periodoDesde, 'dd/MM')}">01/11</span>
+                                al <span th:text="${#temporals.format(n.periodoHasta, 'dd/MM')}">30/11</span>)
+                            </th:block>
                         </p>
                         <div class="progress-track" role="progressbar"
                              th:aria-valuenow="${n.porcentajeCubierto()}" aria-valuemin="0" aria-valuemax="100"
@@ -139,7 +154,18 @@
                         </div>
                         <p th:if="${n.satisfecha and !n.esExtraordinaria}"
                            style="margin: var(--space-2) 0 0; font-size: 0.875rem; color: var(--color-text-muted);">
-                            No vas a recibir más propuestas para esta necesidad hasta el 1° del mes próximo.
+                            No vas a recibir más propuestas para esta necesidad hasta el
+                            <strong th:text="${n.renuevaEl != null} ? ${#temporals.format(n.renuevaEl, 'dd/MM')} : 'próximo período'">01/12</strong>.
+                        </p>
+                        <p th:if="${!n.satisfecha and !n.esExtraordinaria and n.renuevaEl != null}"
+                           style="margin: var(--space-2) 0 0; font-size: 0.875rem; color: var(--color-text-muted);">
+                            El <strong th:text="${#temporals.format(n.renuevaEl, 'dd/MM')}">01/12</strong> empieza un nuevo período y se vuelven a pedir
+                            <strong th:text="${#numbers.formatDecimal(n.cantidadSolicitada, 1, 'POINT', 0, 'COMMA')}">40</strong>.
+                        </p>
+                        <p th:if="${!n.satisfecha and n.esExtraordinaria}"
+                           style="margin: var(--space-2) 0 0; font-size: 0.875rem; color: var(--color-text-muted);">
+                            Faltan <strong th:text="${#numbers.formatDecimal(n.cantidadRestante(), 1, 'POINT', 0, 'COMMA')}">24</strong>.
+                            La necesidad se cierra cuando se cubra la cantidad total.
                         </p>
                         <p th:if="${n.satisfecha and n.esExtraordinaria}"
                            style="margin: var(--space-2) 0 0; font-size: 0.875rem; color: var(--color-text-muted);">
@@ -156,6 +182,19 @@
 <div th:replace="~{fragments/layout :: scripts}"></div>
 <script th:inline="javascript">
     window.CATEGORIAS = /*[[${categorias}]]*/ [];
+</script>
+<script>
+    (function () {
+        const campo = document.querySelector('[data-periodicidad]');
+        const radios = document.querySelectorAll('input[name="esExtraordinaria"]');
+        if (!campo || !radios.length) return;
+        const actualizar = () => {
+            const extraordinaria = document.querySelector('input[name="esExtraordinaria"]:checked')?.value === 'true';
+            campo.hidden = extraordinaria;
+        };
+        radios.forEach(r => r.addEventListener('change', actualizar));
+        actualizar();
+    })();
 </script>
 <script th:src="@{/js/categorias.js}"></script>
 </body>

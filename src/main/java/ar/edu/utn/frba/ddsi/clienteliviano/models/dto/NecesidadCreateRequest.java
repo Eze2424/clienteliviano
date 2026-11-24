@@ -5,5 +5,6 @@ public record NecesidadCreateRequest(
     Long entidadId,
     String descripcion,
     double cantidadSolicitada,
-    boolean esExtraordinaria
+    boolean esExtraordinaria,
+    String periodicidad
 ) {}
